@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.3
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : ven. 30 oct. 2026 à 13:24
--- Version du serveur : 11.4.9-MariaDB
--- Version de PHP : 8.3.28
+-- Généré le : lun. 02 nov. 2026 à 10:02
+-- Version du serveur : 11.5.2-MariaDB
+-- Version de PHP : 8.3.14
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -69,15 +69,14 @@ CREATE TABLE IF NOT EXISTS `events` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `events_show_id_foreign` (`show_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `events`
 --
 
 INSERT INTO `events` (`id`, `show_id`, `title`, `description`, `performance_date`, `ticket_price`, `created_at`, `updated_at`) VALUES
-(1, 1, 'Concert de fally Ipupa - Abidjan 31-10-2026', 'Concert de fally Ipupa', '2026-10-31 17:30:00', 0.00, '2026-10-30 12:21:02', '2026-10-30 12:21:02'),
-(2, 3, 'Concert de Alain Djiz Novembre 2026', '10 ans de carrière', '2026-11-07 18:30:00', 0.00, '2026-10-30 12:50:11', '2026-10-30 12:50:11');
+(1, 1, 'Grand Concert Concert d\'Ouverture', NULL, '2026-10-31 20:00:00', 15000.00, '2026-10-31 09:07:47', '2026-10-31 09:07:47');
 
 -- --------------------------------------------------------
 
@@ -158,7 +157,15 @@ CREATE TABLE IF NOT EXISTS `magnetic_cards` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `magnetic_cards_card_uid_unique` (`card_uid`),
   KEY `magnetic_cards_room_id_foreign` (`room_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `magnetic_cards`
+--
+
+INSERT INTO `magnetic_cards` (`id`, `card_uid`, `security_token`, `room_id`, `expires_at`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'RFID_98X76A', 'vf3DtHYXLYerILN73nJGZx9kM1k2ygcI', 4, '2026-11-03 09:07:47', 1, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(2, 'RFID_44B12C', 'gSzqD1xR1KH6hnQoypUJmWX2KwvTxpvH', 2, '2026-11-01 09:07:47', 1, '2026-10-31 09:07:47', '2026-10-31 09:07:47');
 
 -- --------------------------------------------------------
 
@@ -177,7 +184,15 @@ CREATE TABLE IF NOT EXISTS `menu_items` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `menu_items`
+--
+
+INSERT INTO `menu_items` (`id`, `name`, `description`, `price`, `location_type`, `is_available`, `created_at`, `updated_at`) VALUES
+(1, 'Garba de Luxe au Thon', 'Attiéké local avec darne de thon frit, piments et oignons frais.', 3500.00, 'restaurant', 1, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(2, 'Cocktail l\'Abidjanaise', 'Mélange rafraîchissant à base de fruits exotiques et de liqueur locale.', 5000.00, 'bar_piscine', 1, '2026-10-31 09:07:47', '2026-10-31 09:07:47');
 
 -- --------------------------------------------------------
 
@@ -213,7 +228,7 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (13, '2026_10_29_103026_create_show_bookings_table', 1),
 (14, '2026_10_30_113332_create_events_table', 1),
 (15, '2026_10_30_114045_alter_shows_table_to_venues', 1),
-(16, '2026_10_30_124424_add_ticket_details_to_show_bookings_table', 2);
+(16, '2026_10_30_124424_add_ticket_details_to_show_bookings_table', 1);
 
 -- --------------------------------------------------------
 
@@ -308,7 +323,15 @@ CREATE TABLE IF NOT EXISTS `restaurant_tables` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `restaurant_tables`
+--
+
+INSERT INTO `restaurant_tables` (`id`, `number`, `location_type`, `status`, `created_at`, `updated_at`) VALUES
+(1, 'Table 5', 'restaurant', 'free', '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(2, 'Transat B2', 'bar_piscine', 'occupied', '2026-10-31 09:07:47', '2026-10-31 09:07:47');
 
 -- --------------------------------------------------------
 
@@ -327,7 +350,23 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `rooms_number_unique` (`number`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `rooms`
+--
+
+INSERT INTO `rooms` (`id`, `number`, `type`, `status`, `price_per_night`, `created_at`, `updated_at`) VALUES
+(1, 'Chambre 101', 'Standard', 'available', 45000.00, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(2, 'Chambre 102', 'Luxe', 'occupied', 75000.00, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(3, 'Chambre 103', 'Standard', 'available', 45000.00, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(4, 'Chambre 104', 'Luxe', 'occupied', 75000.00, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(5, 'Chambre 105', 'Standard', 'available', 45000.00, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(6, 'Chambre 106', 'Luxe', 'available', 75000.00, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(7, 'Chambre 107', 'Standard', 'occupied', 45000.00, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(8, 'Chambre 108', 'Luxe', 'available', 75000.00, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(9, 'Chambre 109', 'Standard', 'available', 45000.00, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
+(10, 'Chambre 110', 'Luxe', 'available', 75000.00, '2026-10-31 09:07:47', '2026-10-31 09:07:47');
 
 -- --------------------------------------------------------
 
@@ -345,7 +384,15 @@ CREATE TABLE IF NOT EXISTS `room_access_logs` (
   PRIMARY KEY (`id`),
   KEY `room_access_logs_room_id_foreign` (`room_id`),
   KEY `room_access_logs_magnetic_card_id_foreign` (`magnetic_card_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `room_access_logs`
+--
+
+INSERT INTO `room_access_logs` (`id`, `room_id`, `magnetic_card_id`, `action`, `scanned_at`) VALUES
+(1, 4, 1, 'access_granted', '2026-10-31 08:52:47'),
+(2, 2, NULL, 'access_denied', '2026-10-31 08:37:47');
 
 -- --------------------------------------------------------
 
@@ -371,7 +418,9 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('sI95V3IO6YDqmNcgEGSpUag2FI0eBTkerpL15TM1', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJnSkFydDg1S3hOb3Rnc09FRTJZWUVLSUNzejh5VzJkNWtLZFltUnBaIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9ib29raW5nc1wvc2hvd3MiLCJyb3V0ZSI6ImJvb2tpbmdzLnNob3dzLmZvcm0ifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1793364894);
+('bcgq5YVDH04zLyiZAILbytmbbNIHIBtyQpXEr4oZ', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJWUE5xanNnU2d1UFRVTDFlMXY5S3h2Mm54Wm9KNWxrSUpkZWs0VXRPIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOm51bGx9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19', 1793444088),
+('kyriaPggkoIErBaLM5d2nXig70CX9Y2Gl4gWUQ98', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiI4dnVzdVM4eFl2TmxwY0x6ODVGQ3MxU2h1SHVUb3EzalhWS0RBem1KIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9hZG1pblwvdmVudWVzXC9jcmVhdGUiLCJyb3V0ZSI6ImFkbWluLnZlbnVlcy5jcmVhdGUifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1793455311),
+('MdtCGuDeufYPF6l4MJcDOqNAJ4tjpSJGFZMBOUl2', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJBQk8wTXRDb0RoUHpDSWZob1FHNGZSdUFFMnNsd1FORVRsSGJTVEhaIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOm51bGx9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19', 1793538984);
 
 -- --------------------------------------------------------
 
@@ -388,16 +437,14 @@ CREATE TABLE IF NOT EXISTS `shows` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `shows`
 --
 
 INSERT INTO `shows` (`id`, `title`, `description`, `total_capacity`, `created_at`, `updated_at`) VALUES
-(1, 'Salle Kodjo Ebouclé', 'Espace culturel configuré.', 2500, '2026-10-30 12:15:58', '2026-10-30 12:15:58'),
-(2, 'Salle Ernesto Djédjé', 'Espace culturel configuré.', 6000, '2026-10-30 12:17:26', '2026-10-30 12:17:26'),
-(3, 'Salle François Lougah', 'Espace culturel configuré.', 4500, '2026-10-30 12:18:30', '2026-10-30 12:18:30');
+(1, 'Grand Concert Concert d\'Ouverture', 'Spectacle musical en direct dans la grande salle de l\'hôtel.', 200, '2026-10-31 09:07:47', '2026-10-31 09:07:47');
 
 -- --------------------------------------------------------
 
@@ -441,7 +488,14 @@ CREATE TABLE IF NOT EXISTS `users` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `users_email_unique` (`email`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `users`
+--
+
+INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
+(1, 'Admin', 'admin@hotel.com', NULL, '$2y$12$rK1JkPRz1gf/9oGJok2vY.EjWzQI2tCWBtz70x8sn0N8EGZV5J.hS', NULL, '2026-10-31 09:07:47', '2026-10-31 09:07:47');
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
