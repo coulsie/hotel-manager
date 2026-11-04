@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : mer. 04 nov. 2026 à 15:52
+-- Généré le : mer. 04 nov. 2026 à 16:05
 -- Version du serveur : 11.4.9-MariaDB
 -- Version de PHP : 8.3.28
 
@@ -42,16 +42,17 @@ CREATE TABLE IF NOT EXISTS `billings` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `billings_receipt_number_unique` (`receipt_number`),
-  KEY `billings_room_id_foreign` (`room_id`),
   KEY `billings_order_id_foreign` (`order_id`),
-  KEY `billings_event_ticket_id_foreign` (`event_ticket_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `billings_event_ticket_id_foreign` (`event_ticket_id`),
+  KEY `room_id` (`room_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `billings`
 --
 
 INSERT INTO `billings` (`id`, `receipt_number`, `room_id`, `order_id`, `event_ticket_id`, `service_type`, `amount_paid`, `payment_method`, `status`, `created_at`, `updated_at`) VALUES
+(7, 'REC-20261104-0003', 1, 1, NULL, 'restaurant', 18500.00, 'cash', 'completed', '2026-11-04 15:59:48', '2026-11-04 15:59:48'),
 (6, 'REC-20261104-0002', 2, NULL, NULL, 'room_booking', 125000.00, 'cash', 'completed', '2026-11-04 15:05:01', '2026-11-04 15:05:01'),
 (5, 'REC-20261104-0001', 1, NULL, NULL, 'room_booking', 30000.00, 'cash', 'completed', '2026-11-04 14:52:48', '2026-11-04 14:52:48');
 
@@ -249,7 +250,8 @@ CREATE TABLE IF NOT EXISTS `magnetic_cards` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `magnetic_cards_card_uid_unique` (`card_uid`),
-  KEY `magnetic_cards_room_id_foreign` (`room_id`)
+  KEY `magnetic_cards_room_id_foreign` (`room_id`),
+  KEY `room_id` (`room_id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -344,8 +346,16 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `orders_restaurant_table_id_foreign` (`restaurant_table_id`),
-  KEY `orders_room_id_foreign` (`room_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `orders_room_id_foreign` (`room_id`),
+  KEY `room_id` (`room_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `orders`
+--
+
+INSERT INTO `orders` (`id`, `restaurant_table_id`, `room_id`, `total_amount`, `status`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 18500.00, 'paid', '2026-11-04 15:56:37', '2026-11-04 15:59:48');
 
 -- --------------------------------------------------------
 
@@ -365,7 +375,15 @@ CREATE TABLE IF NOT EXISTS `order_items` (
   PRIMARY KEY (`id`),
   KEY `order_items_order_id_foreign` (`order_id`),
   KEY `order_items_menu_item_id_foreign` (`menu_item_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `order_items`
+--
+
+INSERT INTO `order_items` (`id`, `order_id`, `menu_item_id`, `quantity`, `price_at_order`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 1, 3500.00, '2026-11-04 15:56:37', '2026-11-04 15:56:37'),
+(2, 1, 2, 3, 5000.00, '2026-11-04 15:56:37', '2026-11-04 15:56:37');
 
 -- --------------------------------------------------------
 
@@ -516,7 +534,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
 ('U8hOpb17Q4vk28Ts3WlWPTDlwTJAg85DOZhP3Ks9', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJhSG5BN2d6dzNtaG1sTWVBWUU5eTBiSlY5RDBnYkxUNGx3Y0xiVVhCIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9jaGVja2luIiwicm91dGUiOiJjaGVja2luLmZvcm0ifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1793793426),
-('3QzwrjekNbBFUAkRLUJj3Q5MpmW2KPprvOgfLl8D', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJ0cEpyNWR2NXExaGdJaGtRdU8za0QyMzZLVWl6TEZwR2hmdEdNNkpPIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9iaWxsaW5nXC9yb29tXC8yIiwicm91dGUiOiJiaWxsaW5nLnJvb20ifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1793807523);
+('3QzwrjekNbBFUAkRLUJj3Q5MpmW2KPprvOgfLl8D', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJ0cEpyNWR2NXExaGdJaGtRdU8za0QyMzZLVWl6TEZwR2hmdEdNNkpPIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9yb29tc1wvc3RhdHVzIiwicm91dGUiOiJyb29tcy5zdGF0dXMifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1793808130);
 
 -- --------------------------------------------------------
 
