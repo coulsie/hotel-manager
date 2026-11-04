@@ -91,7 +91,7 @@ class ShowController extends Controller
     /**
      * Traiter la réservation du billet pour un spectacle donné
      */
-   
+
         public function venueCreate()
     {
         return view('admin.shows.create_venue'); // Une vue dédiée à la création de salle
@@ -156,5 +156,15 @@ class ShowController extends Controller
 
         return redirect()->route('bookings.shows.form')->with('success', $msg);
     }
+
+public function index()
+{
+    // Récupère toutes les salles de spectacle (table show)
+    $venues = \App\Models\Show::all();
+
+    return view('admin.shows.index', compact('venues'));
+}
+
+
 
 }

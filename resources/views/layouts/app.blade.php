@@ -186,10 +186,11 @@
                             <span>Culture & Événements</span>
                         </h6>
                         <li class="nav-item">
-                            <a class="nav-link {{ Request::routeIs('admin.venues.index') ? 'active' : '' }}" href="{{ route('admin.venues.index') }}">
+                            <a class="nav-link {{ Request::routeIs('admin.shows.index') ? 'active' : '' }}" href="{{ route('admin.shows.index') }}">
                                 <i class="bi bi-building-gear me-2"></i> Salles de Spectacle
                             </a>
                         </li>
+
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('bookings.shows.form') ? 'active' : '' }}" href="{{ route('bookings.shows.form') }}">
                                 <i class="bi bi-ticket-perforated me-2"></i> Billetterie Spectacle
@@ -211,8 +212,11 @@
                             </a>
                         </li>
                          <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.shows.create') }}"><i class="bi bi-theater me-2"></i> + Nouveau Spectacle</a>
+                            <a class="nav-link" href="{{ route('admin.events.create') }}">
+                                <i class="bi bi-theater me-2"></i> + Nouveau Spectacle
+                            </a>
                         </li>
+
 
 
 

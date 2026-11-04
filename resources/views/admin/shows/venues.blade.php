@@ -17,11 +17,13 @@
         </a>
 
         <!-- BOUTON EXISTANT : Planifier un événement/spectacle -->
-        <a href="{{ route('admin.shows.create') }}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+        <a href="{{ route('admin.events.create') }}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
             <i class="bi bi-calendar-plus me-1"></i> Programmer un Spectacle
         </a>
     </div>
 </div>
+
+
 
 @if(session('success'))
     <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4">

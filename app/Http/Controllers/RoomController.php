@@ -6,7 +6,10 @@ use App\Models\Room;
 use Illuminate\Http\Request;
 use App\Models\MagneticCard;
 use Illuminate\Support\Str;
-
+// 👇 AJOUTEZ CES INSTRUCTIONS D'IMPORTATION ICI
+use Illuminate\Support\Facades\DB;       // Résout l'erreur : Class 'DB' is not imported
+use App\Models\Billing;                  // Résout l'erreur : Class 'Billing' is not imported
+use App\Models\Customer;                 // Résout l'erreur : Model: Customer / App\Models\Customer
 class RoomController extends Controller
 {
     /**
@@ -60,30 +63,85 @@ class RoomController extends Controller
     // Traiter l'attribution de la carte magnétique
         // Traiter l'attribution de la carte magnétique
        // Traiter l'attribution de la carte magnétique
-    public function processCheckin(Request $request)
+        public function processCheckin(Request $request)
     {
+        // 1. Validation stricte des données du formulaire
         $request->validate([
-            'room_id' => 'required|exists:rooms,id',
-            'card_uid' => 'required|string|unique:magnetic_cards,card_uid',
-            'days' => 'required|integer|min:1'
+            'customer_name'  => 'required|string|max:191',
+            'customer_phone' => 'nullable|string|max:50',
+            'id_card_number' => 'nullable|string|max:50',
+            'room_id'        => 'required|exists:rooms,id',
+            'card_uid'       => 'required|string|max:191',
+            'days'           => 'required|integer|min:1',
+            'payment_type'   => 'required|in:full,partial,later',
+            'payment_method' => 'required_unless:payment_type,later|string',
+            'amount_paid'    => 'required|numeric|min:0',
         ]);
 
-        // 1. Mettre à jour le statut de la chambre à 'occupée'
-        $room = Room::find($request->room_id);
-        $room->update(['status' => 'occupied']);
+        // Utilisation d'une transaction de base de données pour tout sécuriser
+        DB::beginTransaction();
 
-        // 2. Générer un jeton de sécurité unique pour l'IoT et enregistrer la carte
-        // CORRIGÉ : On force la conversion de $request->days en entier (int)
-        $room_id = $room->id;
-        MagneticCard::create([
-            'card_uid' => $request->card_uid,
-            'security_token' => Str::random(32),
-            'room_id' => $room_id,
-            'expires_at' => now()->addDays((int) $request->days),
-            'is_active' => true
-        ]);
+        try {
+            // 2. Création du client dans la table 'customers'
+            $customer = Customer::create([
+                'full_name'      => $request->input('customer_name'),
+                'phone'          => $request->input('customer_phone'),
+                'id_card_number' => $request->input('id_card_number'),
+            ]);
 
-        return redirect()->route('checkin.form')->with('success', "Check-in réussi ! La carte virtuelle a été associée avec succès à la {$room->number}.");
+            // 3. Mise à jour du statut de la Chambre
+            $room = Room::findOrFail($request->input('room_id'));
+            $room->update([
+                'status' => 'occupied',
+            ]);
+
+            // 👇 3.5 ENREGISTREMENT ET VALIDATION DE LA CARTE MAGNÉTIQUE (Avec durée directe)
+            // On calcule l'expiration à partir du nombre de jours saisis
+            $days = intval($request->input('days'));
+            $expiresAt = now()->addDays($days)->setTime(12, 0, 0); // Expiration par défaut à midi le jour du départ
+
+           
+            DB::table('magnetic_cards')->insert([
+                'card_uid'       => $request->input('card_uid'),
+                'security_token' => \Illuminate\Support\Str::random(32), // 👈 CODE ABSOLU MODIFIÉ
+                'room_id'        => $room->id,
+                'duration_days'  => $days,
+                'expires_at'     => $expiresAt,
+                'is_active'      => 1,
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ]);
+
+
+            // 4. ALIMENTATION DE LA TABLE BILLINGS (Si le paiement n'est pas différé)
+            if ($request->input('payment_type') !== 'later' && $request->input('amount_paid') > 0) {
+                Billing::create([
+                    'receipt_number' => Billing::generateReceiptNumber(),
+                    'room_id'        => $room->id,
+                    'order_id'       => null,
+                    'event_ticket_id'=> null,
+                    'service_type'   => 'room_booking',
+                    'amount_paid'    => $request->input('amount_paid'),
+                    'payment_method' => $request->input('payment_method'),
+                    'status'         => 'completed'
+                ]);
+            }
+
+            DB::commit();
+
+            $msg = "Check-in réussi ! Le client {$customer->full_name} a été enregistré avec succès à la Chambre {$room->number}.";
+            if ($request->input('payment_type') === 'later') {
+                $msg .= " (Frais imputés sur la note de chambre)";
+            } else {
+                $msg .= " (Paiement enregistré dans le Grand Livre)";
+            }
+
+            return redirect()->route('checkin.form')->with('success', $msg);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withInput()->with('error', "Une erreur est survenue lors de l'enregistrement : " . $e->getMessage());
+        }
     }
 
 
