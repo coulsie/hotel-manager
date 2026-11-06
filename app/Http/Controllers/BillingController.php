@@ -92,43 +92,73 @@ class BillingController extends Controller
      * PAGE 2 : Grand Livre des Recettes (billing.payments)
      * URL : http://127.0.0
      */
-    public function paymentsHistory()
-    {
-        $billings = \App\Models\Billing::with(['room', 'order.restaurantTable', 'eventTicket.event'])
-            ->latest()
-            ->get();
+   public function paymentsHistory(\Illuminate\Http\Request $request)
+{
+    // 1. Initialisation de la requête de base avec chargement des relations
+    $query = \App\Models\Billing::with(['room', 'order.restaurantTable', 'eventTicket.event']);
 
-        foreach ($billings as $billing) {
-            $remaining = 0;
-
-            if ($billing->service_type === 'room_booking' && $billing->room) {
-                // Extraction de la carte associée à la chambre
-                $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
-                    ->where('room_id', $billing->room_id)
-                    ->latest()
-                    ->first();
-
-                // Lecture directe de la durée enregistrée (duration_days)
-                $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
-
-                // Coût total brut de l'hébergement
-                $totalCost = $billing->room->price_per_night * $days;
-
-                // Somme totale cumulée de tous les paiements effectués pour cette chambre
-                $totalPaidForRoom = \App\Models\Billing::where('room_id', $billing->room_id)
-                    ->where('service_type', 'room_booking')
-                    ->sum('amount_paid');
-
-                // Reste à solder pour cette chambre
-                $remaining = $totalCost - $totalPaidForRoom;
-                $billing->remaining_to_pay = $remaining > 0 ? $remaining : 0;
-            } else {
-                $billing->remaining_to_pay = 0;
-            }
+    // 2. Filtrage Temporel (Journalier, Hebdomadaire, Mensuel)
+    if ($request->filled('period')) {
+        switch ($request->input('period')) {
+            case 'daily':
+                $query->whereDate('created_at', \Carbon\Carbon::today());
+                break;
+            case 'weekly':
+                $query->whereBetween('created_at', [\Carbon\Carbon::now()->startOfWeek(), \Carbon\Carbon::now()->endOfWeek()]);
+                break;
+            case 'monthly':
+                $query->whereMonth('created_at', \Carbon\Carbon::now()->month)
+                      ->whereYear('created_at', \Carbon\Carbon::now()->year);
+                break;
         }
-
-        return view('billing.payments', compact('billings'));
     }
+
+    // 3. Moteur de Recherche multicritère (N° Reçu, Mode, Numéro de Chambre)
+    if ($request->filled('search')) {
+        $search = $request->input('search');
+        $query->where(function($q) use ($search) {
+            $q->where('receipt_number', 'LIKE', "%{$search}%")
+              ->orWhere('payment_method', 'LIKE', "%{$search}%")
+              ->orWhereHas('room', function($r) use ($search) {
+                  $r->where('number', 'LIKE', "%{$search}%");
+              });
+        });
+    }
+
+    // 🌟 4. CALCUL DU TOTAL DES RECETTES DE LA PÉRIODE FILTRÉE (Avant pagination)
+    $periodTotal = $query->sum('amount_paid');
+
+    // 5. Récupération des transactions avec pagination (15 par page pour stopper les lenteurs)
+    $billings = $query->latest()->paginate(15);
+
+    // 6. Conservation de votre logique de calcul des restes à payer
+    foreach ($billings as $billing) {
+        $remaining = 0;
+
+        if ($billing->service_type === 'room_booking' && $billing->room) {
+            $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
+                ->where('room_id', $billing->room_id)
+                ->latest()
+                ->first();
+
+            $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
+            $totalCost = $billing->room->price_per_night * $days;
+
+            $totalPaidForRoom = \App\Models\Billing::where('room_id', $billing->room_id)
+                ->where('service_type', 'room_booking')
+                ->sum('amount_paid');
+
+            $remaining = $totalCost - $totalPaidForRoom;
+            $billing->remaining_to_pay = $remaining > 0 ? $remaining : 0;
+        } else {
+            $billing->remaining_to_pay = 0;
+        }
+    }
+
+    // 7. Envoi à la vue avec la variable du total global de la période
+    return view('billing.payments', compact('billings', 'periodTotal'));
+}
+
 
     /**
      * Valide le paiement d'une commande restaurant et génère le reçu dans le Grand Livre.
