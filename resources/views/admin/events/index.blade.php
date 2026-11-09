@@ -81,10 +81,16 @@
                 </td>
                 <!-- COLONNE ACTIONS CORRIGÉE -->
                 <td class="text-end pe-4">
+
                     <div class="d-flex justify-content-end gap-2">
                         <a href="{{ route('admin.events.edit', $event->id) }}" class="btn btn-sm btn-warning text-dark rounded-pill px-3 fw-bold shadow-sm" title="Modifier le spectacle">
                             <i class="bi bi-pencil-square me-1"></i> Modifier
                         </a>
+                        <!-- Ajoutez ce bouton à côté du bouton de modification existant -->
+                        <a href="{{ route('admin.events.sales', $event->id) }}" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm" title="Voir l'état des ventes">
+                            <i class="bi bi-graph-up-arrow me-1"></i> Ventes
+                        </a>
+
                     </div>
                 </td>
             </tr>

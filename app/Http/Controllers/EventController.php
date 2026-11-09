@@ -142,4 +142,22 @@ public function update(Request $request, $id)
                 ->withErrors(['error' => 'Une erreur est survenue lors de l\'enregistrement : ' . $e->getMessage()]);
         }
     }
+
+    /**
+ * Afficher l'état des ventes et le taux de remplissage d'un concert.
+ */
+public function salesDashboard($id)
+{
+    // Charge le concert avec sa salle (venue) et sa grille tarifaire (tickets)
+    $event = Event::with(['venue', 'tickets'])->findOrFail($id);
+
+    // Récupère toutes les réservations validées pour ce concert (table show_bookings)
+    $bookings = \App\Models\ShowBooking::where('event_id', $event->id)
+        ->whereIn('status', ['confirmed', 'charged_to_room'])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    return view('admin.events.sales', compact('event', 'bookings'));
+}
+
 }

@@ -78,13 +78,21 @@ class ShowController extends Controller
     /**
      * Afficher le formulaire de réservation de billet pour un spectacle
      */
+
     public function showBookingForm()
     {
-        // On récupère les spectacles dont la date n'est pas passée, avec les infos de leur salle (venue)
-        $shows = Event::with('venue')->where('performance_date', '>', now())->get();
-        $rooms = Room::where('status', 'occupied')->get(); // Chambres occupées pour imputation
-        $users = User::all(); // Pour associer à un client/utilisateur
+        // 1. Récupération des spectacles à venir avec leurs tickets ET leur salle (venue)
+        $shows = Event::with(['tickets', 'venue'])
+            ->where('performance_date', '>', now())
+            ->get();
 
+        // 2. Récupération des chambres occupées pour l'imputation sur note
+        $rooms = Room::where('status', 'occupied')->get();
+
+        // 3. Récupération de tous les utilisateurs pour l'association client
+        $users = User::all();
+
+        // 4. Envoi unique et propre des variables à la vue Blade
         return view('bookings.shows', compact('shows', 'rooms', 'users'));
     }
 
@@ -99,63 +107,102 @@ class ShowController extends Controller
 
 
         // Traiter la réservation du billet avec multi-tarifs
-    public function processShowBooking(Request $request)
-    {
-        // 1. Validation des données du formulaire incluant le type et le prix
-        $request->validate([
-            'event_id'         => 'required|exists:events,id',
-            'user_id'          => 'required|exists:users,id',
-            'ticket_type'      => 'required|string|in:populaire,honneurs,vip,gratuit',
-            'calculated_price' => 'required|numeric|min:0',
-            'charge_type'      => 'required|string|in:direct,room',
-            'room_id'          => 'required_if:charge_type,room|nullable|exists:rooms,id',
-        ]);
+ public function processShowBooking(Request $request)
+{
+    // 1. Validation conditionnelle rigoureuse
+    $request->validate([
+        'event_id'         => 'required|exists:events,id',
+        'beneficiary_type' => 'required|string|in:existing,manual',
 
-        // 2. Récupération du spectacle (Event) et de sa salle physique (Venue)
-        $event = Event::with('venue')->findOrFail($request->event_id);
-        $venue = $event->venue;
+        // user_id est obligatoire UNIQUEMENT si le bénéficiaire est un client enregistré ("existing")
+        'user_id'          => 'required_if:beneficiary_type,existing|exclude_if:beneficiary_type,manual|nullable|exists:users,id',
 
-        // 3. Vérification stricte de la jauge / capacité de la salle
-        $currentBookings = ShowBooking::where('event_id', $event->id)
-            ->whereIn('status', ['confirmed', 'charged_to_room'])
-            ->count();
+        // customer_name est obligatoire UNIQUEMENT si le bénéficiaire est saisi manuellement ("manual")
+        'customer_name'    => 'required_if:beneficiary_type,manual|exclude_if:beneficiary_type,existing|nullable|string|max:191',
 
-        if ($currentBookings >= $venue->total_capacity) {
-            return back()->withErrors(['event_id' => "Désolé, la salle \"{$venue->title}\" est complète pour ce spectacle !"])->withInput();
+        'ticket_type'      => 'required|string',
+        'calculated_price' => 'required|numeric|min:0',
+        'charge_type'      => 'required|string|in:direct,room',
+        'room_id'          => 'required_if:charge_type,room|nullable|exists:rooms,id',
+    ]);
+
+    // 2. Récupération du spectacle (Event) et de sa salle physique (Venue)
+    $event = Event::with('venue')->findOrFail($request->event_id);
+    $venue = $event->venue;
+
+    // 🛑 3. RÉCUPÉRATION ET VÉRIFICATION DU STOCK D'UN TYPE DE TICKET SPÉCIFIQUE
+    // Liaison directe avec votre table event_tickets
+    $ticketStock = \App\Models\EventTicket::where('event_id', $event->id)
+        ->where('ticket_type', $request->ticket_type)
+        ->first();
+
+    if (!$ticketStock) {
+        return back()->withErrors(['ticket_type' => "Cette catégorie de tarification n'existe pas pour ce spectacle."])->withInput();
+    }
+
+    // Vérification s'il reste des places dans cette catégorie précise
+    if ($ticketStock->available_seats <= 0) {
+        return back()->withErrors(['ticket_type' => "Désolé, la catégorie [ " . strtoupper($request->ticket_type) . " ] est complète !"])->withInput();
+    }
+
+    // 4. Libellés propres pour le type de ticket
+    $ticketLabels = [
+        'populaire' => 'Populaire',
+        'honneurs'  => "Invité d'Honneur",
+        'vip'       => 'VIP / Privilège',
+        'gratuit'   => 'Invitation / Gratuit'
+    ];
+    $typeLibelle = $ticketLabels[$request->ticket_type] ?? strtoupper($request->ticket_type);
+
+    // 5. Détermination du nom à afficher dans le message de succès
+    $clientName = "Client Externe";
+    if ($request->beneficiary_type === 'existing') {
+        $user = User::find($request->user_id);
+        if ($user) {
+            $clientName = $user->name;
         }
+    } else {
+        $clientName = $request->customer_name;
+    }
 
-        // 4. Libellés propres pour le type de ticket
-        $ticketLabels = [
-            'populaire' => 'Populaire',
-            'honneurs'  => "Invité d'Honneur",
-            'vip'       => 'VIP / Privilège',
-            'gratuit'   => 'Invitation / Gratuit'
-        ];
-        $typeLibelle = $ticketLabels[$request->ticket_type] ?? 'Standard';
+    // 🛑 6. TRANSACTION SQL SÉCURISÉE : ÉVITE LES SURRÉSERVATIONS EN SIMULTANÉ
+    $seatNumber = '';
+    \DB::transaction(function () use ($event, $venue, $request, $ticketStock, &$seatNumber) {
 
-        // 5. Création de la réservation avec prix et type de ticket
+        // Décrémentation de -1 sur la ligne de ticket concernée
+        $ticketStock->decrement('available_seats');
+
+        // Attribution du numéro de siège dynamique basé sur les ventes de la catégorie
+        $seatNumber = 'S-' . ($ticketStock->total_capacity - $ticketStock->available_seats);
+
+        // Création de la réservation avec gestion des clés conditionnelles
         ShowBooking::create([
-            'event_id'     => $event->id,
-            'show_id'      => $venue->id, // Référence de la salle historique
-            'user_id'      => $request->user_id,
-            'room_id'      => $request->charge_type === 'room' ? $request->room_id : null,
-            'status'       => $request->charge_type === 'room' ? 'charged_to_room' : 'confirmed',
-            'seat_number'  => 'S-' . ($currentBookings + 1),
-            'ticket_type'  => $request->ticket_type,      // Enregistre: populaire, vip, etc.
-            'amount_paid'  => $request->calculated_price, // Enregistre le montant exact calculé
+            'event_id'      => $event->id,
+            'show_id'       => $venue->id,
+            'user_id'       => $request->beneficiary_type === 'existing' ? $request->user_id : null,
+            'customer_name' => $request->beneficiary_type === 'manual' ? $request->customer_name : null,
+            'room_id'       => $request->charge_type === 'room' ? $request->room_id : null,
+            'status'        => $request->charge_type === 'room' ? 'charged_to_room' : 'confirmed',
+            'seat_number'   => $seatNumber,
+            'ticket_type'   => $request->ticket_type,
+            'amount_paid'   => $request->calculated_price,
         ]);
+    });
 
-        // 6. Préparation du message de confirmation
-        $formattedPrice = number_format($request->calculated_price, 0, ',', ' ');
-        $msg = "Billet [{$typeLibelle}] émis avec succès pour \"{$event->title}\". Place : S-" . ($currentBookings + 1) . " (Montant : {$formattedPrice} F CFA).";
+    // 7. Préparation du message de confirmation
+    $formattedPrice = number_format($request->calculated_price, 0, ',', ' ');
+    $msg = "Billet [{$typeLibelle}] émis avec succès pour {$clientName} (\"{$event->title}\"). Place : {$seatNumber} (Montant : {$formattedPrice} F CFA).";
 
-        if ($request->charge_type === 'room') {
-            $room = Room::find($request->room_id);
+    if ($request->charge_type === 'room') {
+        $room = Room::find($request->room_id);
+        if ($room) {
             $msg .= " Les frais ont été imputés sur la note de la chambre {$room->number}.";
         }
-
-        return redirect()->route('bookings.shows.form')->with('success', $msg);
     }
+
+    return redirect()->route('bookings.shows.form')->with('success', $msg);
+}
+
 
 public function index()
 {

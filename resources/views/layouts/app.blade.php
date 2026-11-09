@@ -6,7 +6,7 @@
     <title>@yield('title', 'Hotel Manager')</title>
     <!-- Chargement de Bootstrap via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <!-- Icônes Bootstrap (CDN corrigé) -->
+    <!-- Icônes Bootstrap -->
     <link rel="stylesheet" href="https://jsdelivr.net">
 
     <style>
@@ -101,6 +101,29 @@
             padding: 24px;
             min-height: 80vh;
         }
+
+        /* Classes de couleurs de fond légères et éclatantes pour les en-têtes du menu */
+        .bg-light-indigo { background-color: #f5f3ff; color: #4f46e5 !important; }
+        .bg-light-amber { background-color: #fffbeb; color: #d97706 !important; }
+        .bg-light-emerald { background-color: #ecfdf5; color: #059669 !important; }
+        .bg-light-pink { background-color: #fdf2f8; color: #db2777 !important; }
+        .bg-light-slate { background-color: #f8fafc; color: #475569 !important; }
+        .bg-light-danger { background-color: #fef2f2; transition: all 0.2s; }
+        .bg-light-danger:hover { background-color: #fee2e2 !important; color: #dc2626 !important; }
+
+        /* Customisation des icônes individuelles */
+        .text-teal { color: #0d9488 !important; }
+        .text-purple { color: #9333ea !important; }
+        .text-orange { color: #ea580c !important; }
+        .text-emerald { color: #10b981 !important; }
+
+        /* Amélioration de l'espacement des en-têtes */
+        .sidebar-heading {
+            font-size: 0.75rem !important;
+            letter-spacing: 0.8px;
+            border-left: 3px solid currentColor;
+        }
+
     </style>
 </head>
 <body>
@@ -124,109 +147,116 @@
             <!-- Menu latéral -->
             <nav id="sidebarMenu" class="col-md-3 col-lg-2 bg-light sidebar border-end">
                 <div class="position-sticky pt-2" style="max-height: calc(100vh - 80px); overflow-y: auto;">
-                    <ul class="nav flex-column mb-4">
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('/') ? 'active' : '' }}" href="{{ url('/') }}">
-                                <i class="bi bi-speedometer2 me-2"></i> Tableau de bord
+
+                   <ul class="nav flex-column mb-4 px-2">
+                        <!-- Tableau de bord général -->
+                        <li class="nav-item mb-3">
+                            <a class="nav-link {{ Request::is('/') ? 'active' : '' }} fw-bold border-bottom pb-2 rounded-0 text-dark" href="{{ url('/') }}">
+                                <i class="bi bi-speedometer2 text-info me-3 fs-5"></i> Tableau de bord
                             </a>
                         </li>
 
                         <!-- SECTION : Chambres & IoT -->
-                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 text-uppercase heading-iot">
-                            <span>Chambres & IoT</span>
+                        <h6 class="sidebar-heading d-flex align-items-center px-3 py-1.5 rounded-3 text-uppercase heading-iot bg-light-indigo fw-bold mb-2">
+                            <i class="bi bi-cpu me-2"></i><span>Chambres & IoT</span>
                         </h6>
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('checkin.form') ? 'active' : '' }}" href="{{ route('checkin.form') }}">
-                                <i class="bi bi-person-plus me-2"></i> Réservation / Check-in
+                                <i class="bi bi-person-plus text-primary me-2"></i> Réservation / Check-in
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('iot.logs.index') ? 'active' : '' }}" href="{{ route('iot.logs.index') }}">
-                                <i class="bi bi-rfid me-2"></i> Suivi des Cartes RFID
+                                <i class="bi bi-rfid text-indigo me-2"></i> Suivi des Cartes RFID
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('rooms.status') ? 'active' : '' }}" href="{{ route('rooms.status') }}">
-                                <i class="bi bi-door-closed me-2"></i> État des Chambres
+                                <i class="bi bi-door-closed text-teal me-2"></i> État des Chambres
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item mb-3">
                             <a class="nav-link {{ Request::routeIs('housekeeping.index') ? 'active' : '' }}" href="{{ route('housekeeping.index') }}">
-                                <i class="bi bi-brush me-2"></i> Planification Ménage
+                                <i class="bi bi-brush text-purple me-2"></i> Planification Ménage
                             </a>
                         </li>
 
                         <!-- SECTION : Restauration -->
-                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 text-uppercase heading-resto">
-                            <span>Restauration</span>
+                        <h6 class="sidebar-heading d-flex align-items-center px-3 py-1.5 rounded-3 text-uppercase heading-resto bg-light-amber fw-bold mb-2">
+                            <i class="bi bi-cup-hot me-2"></i><span>Restauration</span>
                         </h6>
-                        <li class="nav-item">
+                        <li class="nav-item mb-3">
                             <a class="nav-link {{ Request::routeIs('orders.create') ? 'active' : '' }}" href="{{ route('orders.create') }}">
-                                <i class="bi bi-egg-fried me-2"></i> Prise de Commande
+                                <i class="bi bi-egg-fried text-warning me-2"></i> Prise de Commande
                             </a>
                         </li>
 
                         <!-- SECTION : Comptabilité -->
-                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 text-uppercase heading-compta">
-                            <span>Comptabilité</span>
+                        <h6 class="sidebar-heading d-flex align-items-center px-3 py-1.5 rounded-3 text-uppercase heading-compta bg-light-emerald fw-bold mb-2">
+                            <i class="bi bi-cash-stack me-2"></i><span>Comptabilité</span>
                         </h6>
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('billing.index') ? 'active' : '' }}" href="{{ route('billing.index') }}">
-                                <i class="bi bi-calculator me-2"></i> Encours & Factures
+                                <i class="bi bi-calculator text-success me-2"></i> Encours & Factures
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item mb-3">
                             <a class="nav-link {{ Request::routeIs('billing.payments') ? 'active' : '' }}" href="{{ route('billing.payments') }}">
-                                <i class="bi bi-cash-coin me-2"></i> Historique Paiements
+                                <i class="bi bi-cash-coin text-emerald me-2"></i> Historique Paiements
                             </a>
                         </li>
 
-                        <!-- SECTION : Culture -->
-                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 text-uppercase heading-culture">
-                            <span>Culture & Événements</span>
+                        <!-- SECTION : Culture & Événements -->
+                        <h6 class="sidebar-heading d-flex align-items-center px-3 py-1.5 rounded-3 text-uppercase heading-culture bg-light-pink fw-bold mb-2">
+                            <i class="bi bi-music-note-beamed me-2"></i><span>Culture & Billetterie</span>
+                        </h6>
+                        <li class="nav-item mb-3">
+                            <a class="nav-link {{ Request::routeIs('bookings.shows.form') ? 'active' : '' }}" href="{{ route('bookings.shows.form') }}">
+                                <i class="bi bi-ticket-perforated text-danger me-2"></i> Émettre un Billet
+                            </a>
+                        </li>
+
+                        <!-- SECTION : Configurations Hôtelières (Administrateur uniquement) -->
+                        @can('configurer_salles')
+                        <h6 class="sidebar-heading d-flex align-items-center px-3 py-1.5 rounded-3 text-uppercase heading-config bg-light-slate fw-bold mb-2">
+                            <i class="bi bi-gear-fill me-2"></i><span>Configuration</span>
                         </h6>
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('admin.shows.index') ? 'active' : '' }}" href="{{ route('admin.shows.index') }}">
-                                <i class="bi bi-building-gear me-2"></i> Salles de Spectacle
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::routeIs('bookings.shows.form') ? 'active' : '' }}" href="{{ route('bookings.shows.form') }}">
-                                <i class="bi bi-ticket-perforated me-2"></i> Billetterie Spectacle
-                            </a>
-                        </li>
-
-                        <!-- SECTION : Configuration -->
-                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 text-uppercase heading-config">
-                            <span>Configuration</span>
-                        </h6>
-                        <li class="nav-item">
-                            <a class="nav-link text-success fw-bold" href="{{ route('admin.rooms.create') }}">
-                                <i class="bi bi-plus-circle-fill me-2 text-success"></i> Nouvelle Chambre
+                                <i class="bi bi-building-gear text-secondary me-2"></i> Salles de Spectacle
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-warning fw-bold" href="{{ route('admin.menu.create') }}">
-                                <i class="bi bi-plus-circle-fill me-2 text-warning"></i> Nouveau Repas
+                            <a class="nav-link {{ Request::routeIs('admin.events.index') ? 'active' : '' }}" href="{{ route('admin.events.index') }}">
+                                <i class="bi bi-calendar-event text-orange me-2"></i> Grilles & Concerts
                             </a>
                         </li>
-                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.events.create') }}">
-                                <i class="bi bi-theater me-2"></i> + Nouveau Spectacle
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::routeIs('admin.users.index') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
+                                <i class="bi bi-shield-lock-fill text-dark me-2"></i> Gestion des Utilisateurs
                             </a>
                         </li>
+                        @endcan
 
-
-
-
+                        <!-- Déconnexion sécurisée -->
+                        <li class="nav-item mt-4 border-top pt-3 mx-2">
+                            <form action="{{ route('logout') }}" method="POST" id="logout-form" class="d-none">
+                                @csrf
+                            </form>
+                            <a class="nav-link text-danger fw-bold rounded-3 bg-light-danger" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="bi bi-box-arrow-left me-2 text-danger fs-5"></i> Déconnexion
+                            </a>
+                        </li>
                     </ul>
+
                 </div>
             </nav>
 
-            <!-- Contenu de la page -->
+            <!-- ZONE PRINCIPALE : Injection dynamique des vues de l'application -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                @yield('content')
+                <div class="main-card-container my-4">
+                    @yield('content')
+                </div>
             </main>
         </div>
     </div>
