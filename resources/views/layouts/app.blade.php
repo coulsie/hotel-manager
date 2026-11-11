@@ -7,124 +7,120 @@
     <!-- Chargement de Bootstrap via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- Icônes Bootstrap -->
-    <link rel="stylesheet" href="https://jsdelivr.net">
+   
 
     <style>
-        body {
-            font-size: .875rem;
-            padding-top: 56px;
-            background-color: #f8fafc;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
+    body {
+        font-size: .875rem;
+        padding-top: 56px;
+        background-color: #f8fafc;
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
 
-        /* Navbar Haute Moderne */
-        .navbar-custom {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        .navbar-brand {
-            padding-top: .75rem;
-            padding-bottom: .75rem;
-            font-size: 1.1rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            background-color: rgba(255, 255, 255, 0.05);
-            transition: all 0.2s;
-        }
-        .navbar-brand:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
+    /* Navbar Haute Moderne */
+    .navbar-custom {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .navbar-brand {
+        padding-top: .75rem;
+        padding-bottom: .75rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        background-color: rgba(255, 255, 255, 0.05);
+        transition: all 0.2s;
+    }
+    .navbar-brand:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
 
-        /* Menu Latéral Propre & Coloré */
-        .sidebar {
-            position: fixed;
-            top: 56px;
-            bottom: 0;
-            left: 0;
-            z-index: 100;
-            padding: 24px 0 0;
-            background-color: #ffffff !important;
-            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
-        }
-        .sidebar .nav-link {
-            font-weight: 500;
-            color: #64748b;
-            padding: 0.65rem 1.25rem;
-            margin: 2px 12px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            transition: all 0.2s ease-in-out;
-        }
-        .sidebar .nav-link i {
-            font-size: 1.1rem;
-            transition: transform 0.2s;
-        }
-        .sidebar .nav-link:hover {
-            color: #0284c7;
-            background-color: #f0f9ff;
-        }
-        .sidebar .nav-link:hover i {
-            transform: scale(1.1);
-        }
-        .sidebar .nav-link.active {
-            color: #ffffff;
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
-        }
+    /* Menu Latéral Propre & Coloré */
+    .sidebar {
+        position: fixed;
+        top: 56px;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        padding: 20px 0 0;
+        background-color: #ffffff !important;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.03);
+    }
+    .sidebar .nav-link {
+        font-weight: 500;
+        color: #475569;
+        padding: 0.65rem 1.25rem;
+        margin: 2px 8px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease-in-out;
+    }
+    .sidebar .nav-link i {
+        font-size: 1.1rem;
+        transition: transform 0.2s, color 0.2s;
+    }
+    .sidebar .nav-link:hover {
+        color: #0284c7;
+        background-color: #f0f9ff;
+    }
+    .sidebar .nav-link:hover i {
+        transform: scale(1.1);
+    }
 
-        /* Titres de sections (Headings) */
-        .sidebar-heading {
-            font-size: 0.72rem;
-            letter-spacing: 1px;
-            font-weight: 700;
-            padding: 0.5rem 1.5rem;
-            margin-top: 1.5rem !important;
-            margin-bottom: 0.25rem;
-        }
+    /* État Actif avec Contraste Blanc Garanti */
+   /* État Actif Sombre / Foncé (Ardoise Foncée) */
+    .sidebar .nav-link.active {
+        color: #ffffff !important;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+        font-weight: 600;
+    }
+    .sidebar .nav-link.active i {
+        color: #38bdf8 !important; /* Bleu ciel lumineux pour faire ressortir l'icône sur le fond foncé */
+    }
 
-        /* Couleurs thématiques par bloc */
-        .heading-iot { color: #6366f1 !important; }        /* Indigo */
-        .heading-resto { color: #f59e0b !important; }      /* Ambre */
-        .heading-compta { color: #10b981 !important; }     /* Émeraude */
-        .heading-culture { color: #ec4899 !important; }    /* Rose */
-        .heading-config { color: #64748b !important; }     /* Ardoise */
+    /* Titres de sections unifiés (Headings) */
+    .sidebar-heading {
+        font-size: 0.74rem;
+        letter-spacing: 0.8px;
+        font-weight: 700;
+        padding: 0.45rem 1rem;
+        margin: 1.25rem 8px 0.4rem 8px;
+        border-left: 3px solid currentColor;
+    }
 
-        /* Conteneur principal */
-        main {
-            padding-top: 24px;
-        }
-        .main-card-container {
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            padding: 24px;
-            min-height: 80vh;
-        }
+    /* Arrière-plans et couleurs thématiques par bloc */
+    .bg-light-indigo { background-color: #f5f3ff; color: #4f46e5 !important; }
+    .bg-light-amber { background-color: #fffbeb; color: #d97706 !important; }
+    .bg-light-emerald { background-color: #ecfdf5; color: #059669 !important; }
+    .bg-light-pink { background-color: #fdf2f8; color: #db2777 !important; }
+    .bg-light-slate { background-color: #f1f5f9; color: #475569 !important; }
 
-        /* Classes de couleurs de fond légères et éclatantes pour les en-têtes du menu */
-        .bg-light-indigo { background-color: #f5f3ff; color: #4f46e5 !important; }
-        .bg-light-amber { background-color: #fffbeb; color: #d97706 !important; }
-        .bg-light-emerald { background-color: #ecfdf5; color: #059669 !important; }
-        .bg-light-pink { background-color: #fdf2f8; color: #db2777 !important; }
-        .bg-light-slate { background-color: #f8fafc; color: #475569 !important; }
-        .bg-light-danger { background-color: #fef2f2; transition: all 0.2s; }
-        .bg-light-danger:hover { background-color: #fee2e2 !important; color: #dc2626 !important; }
+    /* Bouton de déconnexion */
+    .bg-light-danger { background-color: #fef2f2; transition: all 0.2s; }
+    .bg-light-danger:hover { background-color: #fee2e2 !important; color: #dc2626 !important; }
 
-        /* Customisation des icônes individuelles */
-        .text-teal { color: #0d9488 !important; }
-        .text-purple { color: #9333ea !important; }
-        .text-orange { color: #ea580c !important; }
-        .text-emerald { color: #10b981 !important; }
+    /* Palette d'icônes individuelles */
+    .text-indigo { color: #6366f1 !important; }
+    .text-teal { color: #0d9488 !important; }
+    .text-purple { color: #9333ea !important; }
+    .text-orange { color: #ea580c !important; }
+    .text-emerald { color: #10b981 !important; }
 
-        /* Amélioration de l'espacement des en-têtes */
-        .sidebar-heading {
-            font-size: 0.75rem !important;
-            letter-spacing: 0.8px;
-            border-left: 3px solid currentColor;
-        }
+    /* Conteneur principal */
+    main {
+        padding-top: 24px;
+    }
+    .main-card-container {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        padding: 24px;
+        min-height: 80vh;
+    }
+</style>
 
-    </style>
 </head>
 <body>
 

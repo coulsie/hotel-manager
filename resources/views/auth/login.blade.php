@@ -7,7 +7,7 @@
     <!-- Chargement de Bootstrap via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- Icônes Bootstrap -->
-    <link rel="stylesheet" href="https://jsdelivr.net">
+   
 
     <style>
         body {
