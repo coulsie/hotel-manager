@@ -7,7 +7,7 @@
     <!-- Chargement de Bootstrap via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- Icônes Bootstrap -->
-   
+
 
     <style>
     body {
@@ -198,7 +198,7 @@
                         </li>
                         <li class="nav-item mb-3">
                             <a class="nav-link {{ Request::routeIs('billing.payments') ? 'active' : '' }}" href="{{ route('billing.payments') }}">
-                                <i class="bi bi-cash-coin text-emerald me-2"></i> Historique Paiements
+                                <i class="bi bi-cash-coin text-emerald me-2"></i> Grand Livre des recettes
                             </a>
                         </li>
 

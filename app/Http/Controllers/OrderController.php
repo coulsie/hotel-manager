@@ -44,13 +44,15 @@ class OrderController extends Controller
             return back()->withErrors(['items' => 'Veuillez sélectionner au moins un article avec une quantité supérieure à zéro.'])->withInput();
         }
 
-        // 1. Création de la commande principale
+       
+        // 1. Création de la commande principale (en attente de règlement à la caisse)
         $order = Order::create([
             'restaurant_table_id' => $request->restaurant_table_id,
-            'room_id' => $request->payment_method === 'room' ? $request->room_id : null,
-            'status' => $request->payment_method === 'room' ? 'charged_to_room' : 'paid',
-            'total_amount' => 0, // Sera calculé juste après
+            'room_id'             => $request->payment_method === 'room' ? $request->room_id : null,
+            'status'              => $request->payment_method === 'room' ? 'charged_to_room' : 'pending',
+            'total_amount'        => 0,
         ]);
+
 
         $totalAmount = 0;
 

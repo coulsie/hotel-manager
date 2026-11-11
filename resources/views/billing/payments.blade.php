@@ -153,10 +153,23 @@
                             </td>
 
                             <td class="text-center">
-                                <a href="{{ route('billing.print', $billing->id) }}" target="_blank" class="btn btn-sm btn-primary" title="Imprimer le reçu de caisse">
-                                    <i class="bi bi-printer-fill me-1"></i> Imprimer
-                                </a>
+                                <div class="d-flex justify-content-center align-items-center gap-1">
+                                    <a href="{{ route('billing.print', $billing->id) }}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3" title="Imprimer le reçu de caisse">
+                                        <i class="bi bi-printer-fill me-1"></i> Imprimer
+                                    </a>
+
+                                    @role('Admin')
+                                    <form action="{{ route('billing.payments.destroy', $billing->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Voulez-vous vraiment supprimer ce reçu du Grand Livre ?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill" title="Supprimer cette écriture">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    @endrole
+                                </div>
                             </td>
+
                         </tr>
                     @empty
                         <tr>

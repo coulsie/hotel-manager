@@ -288,7 +288,7 @@
 </div>
 
 <!-- SCRIPT DU GRAPHIQUE FINANCIER (CHART.JS) -->
-<script src="https://jsdelivr.net"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const ctx = document.getElementById('revenueChart');

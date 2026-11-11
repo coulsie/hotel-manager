@@ -27,57 +27,77 @@ class BillingController extends Controller
      * PAGE 1 : Encours Clients & Factures en Attente (billing.index)
      * Basé sur la colonne simplifiée duration_days
      */
-    public function index()
-    {
-        // 1. Récupération des commandes de restaurant en attente
-        $pendingOrders = \App\Models\Order::with(['restaurantTable', 'room'])
-            ->whereNotIn('status', ['paid', 'completed'])
+ public function index()
+{
+    // 1. Récupération des commandes restaurant non soldées (comptoir + chambres)
+    $pendingOrders = \App\Models\Order::with(['restaurantTable', 'room'])
+        ->where(function ($query) {
+            $query->whereNotIn('status', ['paid', 'completed'])
+                  ->orWhereNull('status');
+        })
+        ->latest()
+        ->get();
+
+    // 2. Suivi complet de TOUTES les chambres actuellement occupées
+    $occupiedRooms = \App\Models\Room::where('status', 'occupied')->get();
+    $pendingRooms = [];
+
+    foreach ($occupiedRooms as $room) {
+        $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
+            ->where('room_id', $room->id)
+            ->where('is_active', 1)
             ->latest()
-            ->get();
+            ->first();
 
-        // 2. Calcul dynamique et exact des encours d'hébergement
-        $occupiedRooms = \App\Models\Room::where('status', 'occupied')->get();
-        $pendingRooms = [];
+        $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
+        $stayStartDate = $activeCard ? \Carbon\Carbon::parse($activeCard->created_at) : now()->startOfDay();
+        $checkoutDate  = ($activeCard && $activeCard->expires_at)
+            ? \Carbon\Carbon::parse($activeCard->expires_at)
+            : $stayStartDate->copy()->addDays($days)->setTime(12, 0, 0);
 
-        foreach ($occupiedRooms as $room) {
-            // Extraction de la carte active associée à la chambre
-            $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
-                ->where('room_id', $room->id)
-                ->where('is_active', 1)
-                ->latest()
-                ->first();
+        // Coût des nuitées (Hébergement seul)
+        $roomCost = $room->price_per_night * $days;
 
-            // LECTURE DIRECTE : On prend la durée exacte enregistrée, sinon 1 nuitée par défaut
-            $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
+        // Consommations annexes (Restaurant & Extras non encore soldés sur ce séjour)
+        $extrasCost = \App\Models\Order::where('room_id', $room->id)
+            ->where('created_at', '>=', $stayStartDate)
+            ->where(function ($q) {
+                $q->whereNotIn('status', ['paid', 'completed'])
+                  ->orWhereNull('status');
+            })
+            ->sum('total_amount');
 
-            // Frais totaux de la chambre (Prix de la nuitée × Durée brute simplifiée)
-            $totalCost = $room->price_per_night * $days;
+        // Total cumulé (Chambre + Restaurant)
+        $totalCost = $roomCost + $extrasCost;
 
-            // Somme totale des acomptes déjà perçus en caisse pour cette chambre
-            $amountPaid = \App\Models\Billing::where('room_id', $room->id)
-                ->where('service_type', 'room_booking')
-                ->sum('amount_paid');
+        // Somme déjà réglée pour ce séjour
+        $amountPaid = \App\Models\Billing::where('room_id', $room->id)
+            ->where('service_type', 'room_booking')
+            ->where('status', 'completed')
+            ->where('created_at', '>=', $stayStartDate)
+            ->sum('amount_paid');
 
-            // Calcul du reste à solder
-            $remainingToPay = $totalCost - $amountPaid;
+        $remainingToPay = max(0, $totalCost - $amountPaid);
 
-            // On ajoute uniquement si le compte client présente un solde débiteur (reste à payer > 0)
-            if ($remainingToPay > 0) {
-                $pendingRooms[] = [
-                    'id'          => $room->id,
-                    'room_number' => $room->number,
-                    'room_type'   => $room->type,
-                    'created_at'  => $activeCard ? \Carbon\Carbon::parse($activeCard->created_at) : now(),
-                    'days'        => $days,
-                    'total_cost'  => $totalCost,
-                    'amount_paid' => $amountPaid,
-                    'remaining'   => $remainingToPay
-                ];
-            }
-        }
-
-        return view('billing.index', compact('pendingOrders', 'pendingRooms'));
+        // On ajoute TOUTES les chambres occupées dans le tableau
+        $pendingRooms[] = [
+            'id'            => $room->id,
+            'room_number'   => $room->number,
+            'room_type'     => $room->type,
+            'created_at'    => $stayStartDate,
+            'checkout_date' => $checkoutDate,
+            'days'          => $days,
+            'room_cost'     => $roomCost,
+            'extras_cost'   => $extrasCost,
+            'total_cost'    => $totalCost,
+            'amount_paid'   => $amountPaid,
+            'remaining'     => $remainingToPay
+        ];
     }
+
+    return view('billing.index', compact('pendingOrders', 'pendingRooms'));
+}
+
 
 
     /**
@@ -132,24 +152,32 @@ class BillingController extends Controller
     $billings = $query->latest()->paginate(15);
 
     // 6. Conservation de votre logique de calcul des restes à payer
+   // 6. Calcul précis des restes à payer par séjour
     foreach ($billings as $billing) {
         $remaining = 0;
 
         if ($billing->service_type === 'room_booking' && $billing->room) {
-            $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
-                ->where('room_id', $billing->room_id)
-                ->latest()
-                ->first();
+            // Si la chambre est déjà libérée ('available'), le séjour est clôturé et soldé
+            if ($billing->room->status === 'available') {
+                $billing->remaining_to_pay = 0;
+            } else {
+                $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
+                    ->where('room_id', $billing->room_id)
+                    ->latest()
+                    ->first();
 
-            $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
-            $totalCost = $billing->room->price_per_night * $days;
+                $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
+                $stayStartDate = $activeCard ? $activeCard->created_at : $billing->created_at->startOfDay();
+                $totalCost = $billing->room->price_per_night * $days;
 
-            $totalPaidForRoom = \App\Models\Billing::where('room_id', $billing->room_id)
-                ->where('service_type', 'room_booking')
-                ->sum('amount_paid');
+                $totalPaidForRoom = \App\Models\Billing::where('room_id', $billing->room_id)
+                    ->where('service_type', 'room_booking')
+                    ->where('created_at', '>=', $stayStartDate)
+                    ->sum('amount_paid');
 
-            $remaining = $totalCost - $totalPaidForRoom;
-            $billing->remaining_to_pay = $remaining > 0 ? $remaining : 0;
+                $remaining = $totalCost - $totalPaidForRoom;
+                $billing->remaining_to_pay = $remaining > 0 ? $remaining : 0;
+            }
         } else {
             $billing->remaining_to_pay = 0;
         }
@@ -198,41 +226,57 @@ public function showRoomInvoice($roomId)
 {
     $room = \App\Models\Room::findOrFail($roomId);
 
-    // 1. Récupération de la carte magnétique active pour avoir le nombre exact de jours (duration_days)
+    // 1. Récupération de la carte magnétique du séjour actuel
     $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
         ->where('room_id', $room->id)
         ->latest()
         ->first();
 
-    // Utilisation de duration_days (comme sur le grand livre) au lieu de days
     $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
+    $stayStartDate = $activeCard ? $activeCard->created_at : now()->startOfDay();
 
     // Coût théorique initial de l'hébergement
     $roomCost = $room->price_per_night * $days;
 
-    // 2. On récupère toutes les commandes restaurant directement liées à cette chambre
-    $orders = \App\Models\Order::where('room_id', $room->id)->with('restaurantTable')->get();
-    $restaurantTotal = $orders->sum('total_amount');
+    // 2. Commandes restaurant du séjour actuel (uniquement celles non payées en cash)
+    $orders = \App\Models\Order::where('room_id', $room->id)
+        ->where('created_at', '>=', $stayStartDate)
+        ->where('status', '!=', 'paid')
+        ->with('restaurantTable')
+        ->get();
 
-    // Totaux annexes
+    $restaurantTotal = $orders->sum('total_amount');
     $showsTotal = 0;
 
-    // 3. Calcul du COÛT TOTAL global de la facture (Hébergement + Restaurant)
+    // 3. Coût total global de la facture
     $totalInvoice = $roomCost + $restaurantTotal + $showsTotal;
 
-    // 4. Calcul de l'ACOMPTE (Somme déjà payée par le client pour ce séjour)
-    $alreadyPaid = \App\Models\Billing::where('room_id', $room->id)
-        ->where('service_type', 'room_booking')
-        ->where('status', 'completed')
-        ->sum('amount_paid');
+    // 4. Vérifie si la chambre vient d'être clôturée (statut différent de 'occupied')
+    $isPaid = ($room->status !== 'occupied');
 
-    // 5. Calcul du RESTE À PAYER (Solde dû pour clôturer)
-    $remainingToPay = $totalInvoice - $alreadyPaid;
-    if ($remainingToPay < 0) {
+    if ($isPaid) {
+        // Si clôturée : on récupère uniquement l'acompte initial (le premier paiement s'il était inférieur au total)
+        $firstPayment = \App\Models\Billing::where('room_id', $room->id)
+            ->where('service_type', 'room_booking')
+            ->where('status', 'completed')
+            ->where('created_at', '>=', $stayStartDate)
+            ->orderBy('created_at', 'asc')
+            ->first();
+
+        $alreadyPaid = ($firstPayment && $firstPayment->amount_paid < $totalInvoice) ? $firstPayment->amount_paid : 0;
         $remainingToPay = 0;
+    } else {
+        // Si en cours : somme des acomptes versés uniquement depuis le début de ce séjour
+        $alreadyPaid = \App\Models\Billing::where('room_id', $room->id)
+            ->where('service_type', 'room_booking')
+            ->where('status', 'completed')
+            ->where('created_at', '>=', $stayStartDate)
+            ->sum('amount_paid');
+
+        $remainingToPay = max(0, $totalInvoice - $alreadyPaid);
     }
 
-    // Renvoie vers la vue avec toutes les variables synchronisées
+    // 5. Envoi vers la vue avec 'isPaid' inclus dans le compact()
     return view('billing.room_invoice', compact(
         'room',
         'roomCost',
@@ -242,7 +286,8 @@ public function showRoomInvoice($roomId)
         'totalInvoice',
         'alreadyPaid',
         'remainingToPay',
-        'days'
+        'days',
+        'isPaid'
     ));
 }
 
@@ -250,29 +295,42 @@ public function showRoomInvoice($roomId)
     /**
      * Enregistre le paiement final ou un acompte pour l'hébergement
      */
-    public function storeRoomPayment(Request $request, $roomId)
-    {
-        $room = Room::findOrFail($roomId);
+ public function storeRoomPayment(Request $request, $roomId)
+{
+    $room = Room::findOrFail($roomId);
 
-        $request->validate([
-            'amount_paid'    => 'required|numeric|min:0',
-            'payment_method' => 'required|string'
+    $request->validate([
+        'amount_paid'    => 'required|numeric|min:0',
+        'payment_method' => 'required|string'
+    ]);
+
+    // 1. Enregistrement du règlement dans le Grand Livre avec votre numéro de reçu
+    $billing = Billing::create([
+        'receipt_number' => Billing::generateReceiptNumber(),
+        'room_id'        => $room->id,
+        'service_type'   => 'room_booking',
+        'amount_paid'    => $request->input('amount_paid'),
+        'payment_method' => $request->input('payment_method'),
+        'status'         => 'completed'
+    ]);
+
+    // 2. Clôturer les commandes restaurant non payées de cette chambre
+    \App\Models\Order::where('room_id', $room->id)
+        ->where('status', '!=', 'paid')
+        ->update([
+            'status' => 'paid'
         ]);
 
-        $billing = Billing::create([
-            'receipt_number' => Billing::generateReceiptNumber(),
-            'room_id'        => $room->id,
-            'service_type'   => 'room_booking',
-            'amount_paid'    => $request->input('amount_paid'),
-            'payment_method' => $request->input('payment_method'),
-            'status'         => 'completed'
-        ]);
+    // La désactivation du badge et la libération de la chambre se font désormais
+    // automatiquement à la fin du séjour (12h00) via la commande planifiée.
 
-        // Optionnel : Si le montant payé solde complètement la facture,
-        // vous pouvez ajouter ici une logique pour libérer la chambre ou désactiver la carte magnétique.
+    // 3. Retourner sur la facture avec le signal d'impression automatique
+    return redirect()->route('billing.room', $room->id)
+        ->with('success', "Encaissement Hébergement validé (Reçu n° {$billing->receipt_number}). La chambre reste attribuée jusqu'à la fin du séjour.")
+        ->with('print_now', true);
 
-        return redirect()->route('billing.payments')->with('success', "Encaissement Hébergement validé. Reçu n° {$billing->receipt_number}");
-    }
+
+}
 
     /**
      * Enregistre la vente d'un ticket de spectacle
@@ -306,5 +364,16 @@ public function showRoomInvoice($roomId)
 
         return view('pdf.receipt', compact('billing'));
     }
+
+
+    public function destroyPayment($id)
+    {
+        $billing = \App\Models\Billing::findOrFail($id);
+        $billing->delete();
+
+        return redirect()->route('billing.payments')
+            ->with('success', "La ligne du reçu n° {$billing->receipt_number} a été supprimée du Grand Livre.");
+    }
+
 
 }

@@ -54,6 +54,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/restaurant/{order}', [BillingController::class, 'storeRestaurantPayment'])->name('restaurant.pay');
         Route::post('/room/{room}', [BillingController::class, 'storeRoomPayment'])->name('room.pay');
         Route::get('/{id}/print', [BillingController::class, 'printReceipt'])->name('print');
+        Route::delete('/payments/{id}', [BillingController::class, 'destroyPayment'])->name('payments.destroy');
+
     });
 
     // 8. Module d'Administration centralisé (Salles, Concerts, Personnel)
