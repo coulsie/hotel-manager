@@ -53,27 +53,57 @@ class ShowController extends Controller
     /**
      * Enregistrer un spectacle (Lié à une salle, prix de ticket optionnel)
      */
-    public function store(Request $request)
+   /**
+ * Enregistrer une nouvelle salle de spectacle (Infrastructure dans la table 'shows').
+ */
+public function store(Request $request)
+{
+    // 1. Validation des champs propres à la salle physique
+    $validated = $request->validate([
+        'title'          => 'required|string|max:191',
+        'total_capacity' => 'required|integer|min:1',
+        'description'    => 'nullable|string',
+    ]);
+
+    // 2. Insertion de la salle dans la table 'shows'
+    Show::create([
+        'title'          => $validated['title'],
+        'total_capacity' => $validated['total_capacity'],
+        'description'    => $validated['description'],
+    ]);
+
+    // 3. Redirection vers la liste des salles (admin.shows.index)
+    return redirect()->route('admin.shows.index')
+        ->with('success', 'La nouvelle salle de spectacle a été ajoutée avec succès !');
+}
+
+    /**
+     * Mettre à jour les informations d'une salle de spectacle existante.
+     */
+    public function update(Request $request, $id)
     {
-        $request->validate([
-            'show_id' => 'required|exists:shows,id', // ID de la salle physique sélectionnée
-            'title' => 'required|string|max:191',
-            'performance_date' => 'required|date',
-            'ticket_price' => 'nullable|numeric|min:0', // RENDU OPTIONNEL ICI
-            'description' => 'nullable|string',
+        // 1. Récupération de la salle concernée (table: shows)
+        $venue = Show::findOrFail($id);
+
+        // 2. Validation des données reçues depuis la fenêtre modale
+        $validated = $request->validate([
+            'title'          => 'required|string|max:191',
+            'total_capacity' => 'required|integer|min:1',
+            'description'    => 'nullable|string',
         ]);
 
-        Event::create([
-            'show_id' => $request->show_id,
-            'title' => $request->title, // Nom du spectacle (ex: Concert de Jazz)
-            'description' => $request->description ?? 'Spectacle programmé',
-            'performance_date' => $request->performance_date,
-            // Si le prix n'est pas fourni, on lui affecte 0 par défaut
-            'ticket_price' => $request->ticket_price ?? 0,
+        // 3. Mise à jour en base de données
+        $venue->update([
+            'title'          => $validated['title'],
+            'total_capacity' => $validated['total_capacity'],
+            'description'    => $validated['description'],
         ]);
 
-        return redirect()->route('admin.venues.index')->with('success', 'Le spectacle a été programmé avec succès !');
+        // 4. Redirection vers la liste avec un message de confirmation
+        return redirect()->route('admin.shows.index')
+            ->with('success', "La salle « {$venue->title} » a été mise à jour avec succès.");
     }
+
 
     /**
      * Afficher le formulaire de réservation de billet pour un spectacle

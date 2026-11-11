@@ -6,9 +6,10 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="bi bi-building me-2 text-primary"></i>État des Salles de Spectacle</h1>
     <!-- Ce bouton ouvre instantanément la fenêtre modale en mode Création -->
-    <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" onclick="openShowModal()">
+   <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#showModal" data-mode="create">
         <i class="bi bi-plus-circle me-1"></i> Ajouter une Salle
     </button>
+
 </div>
 
 @if(session('success'))
@@ -28,6 +29,7 @@
 @endif
 
 <!-- Grille d'affichage des salles de la table 'shows' -->
+<!-- Grille d'affichage des salles de la table 'shows' -->
 <div class="row">
     @forelse($venues as $venue)
         <div class="col-md-4 mb-4">
@@ -45,10 +47,13 @@
                     </p>
 
                     <div class="border-top pt-3 d-flex justify-content-end gap-2">
-                        <!-- Ce bouton transmet les informations SQL de la salle à la modale en JavaScript -->
-                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold"
-                                onclick="openShowModal({{ json_encode($venue) }})">
-                            <i class="bi bi-pencil me-1"></i> Modifier
+                        <!-- Correction de la variable : $venue au lieu de $show -->
+                        <button type="button" class="btn btn-sm btn-outline-warning text-dark rounded-pill px-3 fw-bold"
+                                data-bs-toggle="modal"
+                                data-bs-target="#showModal"
+                                data-mode="edit"
+                                data-show="{{ json_encode($venue) }}">
+                            <i class="bi bi-pencil-square me-1"></i> Modifier
                         </button>
                     </div>
                 </div>
@@ -61,6 +66,7 @@
         </div>
     @endforelse
 </div>
+
 
 <!-- FENÊTRE MODALE UNIQUE POUR LA CRÉATION ET LA MODIFICATION -->
 <div class="modal fade" id="showModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="showModalLabel" aria-hidden="true">
@@ -107,43 +113,59 @@
 
 <!-- PILOTAGE JAVASCRIPT DE LA BOÎTE MODALE -->
 <script>
-function openShowModal(venueData = null) {
-    var form = document.getElementById('showForm');
-    var modalTitle = document.getElementById('showModalLabel');
-    var methodContainer = document.getElementById('method-container');
-    var submitBtnText = document.getElementById('btn-submit-text');
+document.addEventListener('DOMContentLoaded', function () {
+    const modalElement = document.getElementById('showModal');
+    if (!modalElement) return;
 
-    var inputTitle = document.getElementById('modal_title');
-    var inputCapacity = document.getElementById('modal_capacity');
-    var inputDescription = document.getElementById('modal_description');
+    modalElement.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        if (!button) return;
 
-    var myModal = new bootstrap.Modal(document.getElementById('showModal'));
+        const mode = button.getAttribute('data-mode');
+        const form = modalElement.querySelector('form');
+        const modalTitle = modalElement.querySelector('.modal-title');
+        const submitBtn = modalElement.querySelector('button[type="submit"]');
 
-    if (venueData) {
-        // Mode Éditon
-        modalTitle.innerHTML = '<i class="bi bi-pencil-square me-2 text-warning"></i>Modifier la Salle : ' + venueData.title;
-        submitBtnText.textContent = "Mettre à jour";
-        form.action = "{{ url('admin/shows') }}/" + venueData.id;
-        methodContainer.innerHTML = '<input type="hidden" name="_method" value="PUT">';
+        // Suppression de l'ancien champ caché _method (PUT) s'il existe
+        const existingMethod = form.querySelector('input[name="_method"]');
+        if (existingMethod) existingMethod.remove();
 
-        inputTitle.value = venueData.title;
-        inputCapacity.value = venueData.total_capacity;
-        inputDescription.value = venueData.description ? venueData.description : '';
-    } else {
-        // Mode Création
-        modalTitle.innerHTML = '<i class="bi bi-plus-circle me-2 text-success"></i>Ajouter une nouvelle Salle';
-        submitBtnText.textContent = "Créer la salle";
-        form.action = "{{ route('admin.shows.store') }}";
-        methodContainer.innerHTML = '';
+        if (mode === 'edit') {
+            const showData = JSON.parse(button.getAttribute('data-show'));
 
-        inputTitle.value = '';
-        inputCapacity.value = '';
-        inputDescription.value = '';
-    }
+            if (modalTitle) modalTitle.innerHTML = '<i class="bi bi-pencil-square text-warning me-2"></i>Modifier la salle : ' + showData.title;
+            if (submitBtn) {
+                submitBtn.textContent = 'Mettre à jour';
+                submitBtn.className = 'btn btn-warning text-dark rounded-pill px-4 fw-bold';
+            }
 
-    myModal.show();
-}
+            form.action = "{{ url('admin/shows') }}/" + showData.id;
+
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'PUT';
+            form.appendChild(methodInput);
+
+            // Remplissage automatique des champs selon leur attribut name
+            if (form.querySelector('[name="title"]')) form.querySelector('[name="title"]').value = showData.title || '';
+            if (form.querySelector('[name="total_capacity"]')) form.querySelector('[name="total_capacity"]').value = showData.total_capacity || '';
+            if (form.querySelector('[name="description"]')) form.querySelector('[name="description"]').value = showData.description || '';
+        } else {
+            if (modalTitle) modalTitle.innerHTML = '<i class="bi bi-plus-circle text-info me-2"></i>Ajouter une nouvelle salle';
+            if (submitBtn) {
+                submitBtn.textContent = 'Enregistrer la salle';
+                submitBtn.className = 'btn btn-primary rounded-pill px-4 fw-bold';
+            }
+
+            form.action = "{{ route('admin.shows.store') }}";
+            form.reset();
+        }
+    });
+});
 </script>
+
+
 
 <style>
 .card-hover {

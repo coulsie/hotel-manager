@@ -8,51 +8,56 @@ use App\Models\ShowBooking;
 use App\Models\RoomAccessLog;
 use App\Models\Room;
 use App\Models\Order;
-use App\Models\Show;
-
-use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // 1. Calcul des chambres occupées sur le total
-        $totalRooms = Room::count();
-        $occupiedRooms = Room::where('status', 'occupied')->count();
-        // Valeurs de secours si la base est vide pour le test
-        $roomsStats = $totalRooms > 0 ? "$occupiedRooms / $totalRooms" : "12 / 40";
+        // 1. Statistiques réelles des Chambres (sans fausses valeurs de secours)
+        $totalRooms     = Room::count();
+        $occupiedRooms  = Room::where('status', 'occupied')->count();
+        $availableRooms = Room::where('status', 'available')->count();
+        $cleaningRooms  = Room::where('status', 'cleaning')->count();
 
-        // 2. Chiffre d'affaires du jour pour le Restaurant & Bar Piscine
+        $roomsStats     = "$occupiedRooms / $totalRooms";
+        $occupancyRate  = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) : 0;
+
+        // 2. Chiffre d'affaires du jour (Restauration + Billetterie)
         $restaurantRevenue = Order::whereDate('created_at', Carbon::today())
             ->whereIn('status', ['paid', 'charged_to_room'])
             ->sum('total_amount');
-        $revenueStats = $restaurantRevenue > 0 ? number_format($restaurantRevenue, 0, ',', ' ') . ' F' : "345 000 F";
+
+        $ticketRevenue = ShowBooking::whereDate('created_at', Carbon::today())
+            ->whereIn('status', ['confirmed', 'charged_to_room'])
+            ->sum('amount_paid');
+
+        $totalTodayRevenue = $restaurantRevenue + $ticketRevenue;
+        $revenueStats = number_format($totalTodayRevenue, 0, ',', ' ') . ' F';
 
         // 3. Nombre de scans IoT lors des dernières 24 heures
         $iotScansCount = RoomAccessLog::where('scanned_at', '>=', now()->subDay())->count();
-        $iotStats = $iotScansCount > 0 ? "$iotScansCount scans" : "142 scans";
+        $iotStats = "$iotScansCount scans";
 
-        // 4. Taux de remplissage du spectacle de ce soir
-        // 4. Taux de remplissage du spectacle de ce soir
-        $nextEvent = Event::whereDate('performance_date', Carbon::today())->first();
+        // 4. Taux de remplissage du prochain spectacle (Relation 'venue' corrigée)
+        $nextEvent = Event::with(['venue', 'tickets'])
+            ->where('performance_date', '>=', Carbon::today())
+            ->orderBy('performance_date', 'asc')
+            ->first();
 
-        if ($nextEvent) {
-            // Récupération de la capacité via la relation avec le show (la salle)
-            $totalCapacity = $nextEvent->show->total_capacity ?? 0;
-
+        if ($nextEvent && $nextEvent->venue) {
+            $totalCapacity = $nextEvent->venue->total_capacity ?? 0;
             if ($totalCapacity > 0) {
-                $bookingsCount = ShowBooking::where('show_id', $nextEvent->show_id)
-                    ->where('status', 'confirmed')
+                $bookingsCount = ShowBooking::where('event_id', $nextEvent->id)
+                    ->whereIn('status', ['confirmed', 'charged_to_room'])
                     ->count();
                 $percentage = round(($bookingsCount / $totalCapacity) * 100);
                 $showStats = "$percentage% Plein";
             } else {
-                $showStats = "85% Plein";
+                $showStats = "0% Plein";
             }
         } else {
-            $showStats = "85% Plein";
+            $showStats = "Aucun concert";
         }
-
 
         // 5. Récupération des 10 derniers logs d'accès pour le suivi en direct
         $recentLogs = RoomAccessLog::with(['room', 'magneticCard'])
@@ -60,6 +65,48 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        return view('welcome', compact('roomsStats', 'revenueStats', 'iotStats', 'showStats', 'recentLogs'));
+        // 6. Données des 7 derniers jours pour la courbe d'évolution financière
+        $chartLabels = [];
+        $chartRestoData = [];
+        $chartTicketData = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::today()->subDays($i);
+            $chartLabels[] = $date->format('d/m');
+
+            $chartRestoData[] = Order::whereDate('created_at', $date)
+                ->whereIn('status', ['paid', 'charged_to_room'])
+                ->sum('total_amount');
+
+            $chartTicketData[] = ShowBooking::whereDate('created_at', $date)
+                ->whereIn('status', ['confirmed', 'charged_to_room'])
+                ->sum('amount_paid');
+        }
+
+        // 7. Liste des prochains concerts pour le tableau de suivi
+        $upcomingEvents = Event::with(['venue', 'tickets'])
+            ->where('performance_date', '>=', now())
+            ->orderBy('performance_date', 'asc')
+            ->take(4)
+            ->get();
+
+        return view('welcome', compact(
+            'roomsStats',
+            'revenueStats',
+            'iotStats',
+            'showStats',
+            'recentLogs',
+            'totalRooms',
+            'occupiedRooms',
+            'availableRooms',
+            'cleaningRooms',
+            'occupancyRate',
+            'restaurantRevenue',
+            'ticketRevenue',
+            'upcomingEvents',
+            'chartLabels',
+            'chartRestoData',
+            'chartTicketData'
+        ));
     }
 }

@@ -1,92 +1,119 @@
+
+
 @extends('layouts.app')
 
 @section('title', 'Attribution Carte RFID - Hotel Manager')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2"><i class="bi bi-card-list me-2"></i>Check-in : Attribution de Carte Magnétique</h1>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 text-dark fw-bold">
+        <i class="bi bi-card-list text-primary me-2"></i>Check-in : <span class="text-primary">Attribution de Carte Magnétique</span>
+    </h1>
+    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-bold">
+        <i class="bi bi-door-open-fill me-1"></i> Accueil & Réception
+    </span>
 </div>
 
 @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i>{!! session('success') !!}
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4 mb-4" role="alert">
+        <i class="bi bi-check-circle-fill me-2 fs-5"></i>{!! session('success') !!}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 @endif
 
 <div class="row">
-    <div class="col-md-7">
-        <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">
-                <h5 class="card-title mb-0">Enregistrer un nouveau client</h5>
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <!-- En-tête Dégradé Bleu Royal -->
+            <div class="card-header bg-gradient bg-primary text-white py-3 px-4">
+                <h5 class="card-title mb-0 fw-bold">
+                    <i class="bi bi-person-plus-fill text-warning me-2"></i>Enregistrer un nouveau client
+                </h5>
             </div>
-            <div class="card-body">
+
+            <div class="card-body p-4">
                 <form action="{{ route('checkin.save') }}" method="POST">
                     @csrf
 
-                    <!-- SECTION CLIENT -->
-                    <div class="p-3 bg-light border rounded-3 mb-4">
-                        <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-person-bounding-box me-2"></i>Identité du Client</h6>
+                    <!-- 1. SECTION CLIENT (Thème Indigo / Bleu Clair) -->
+                    <div class="p-4 rounded-4 mb-4 border border-primary-subtle" style="background-color: #f0f7ff;">
+                        <h6 class="fw-bold text-primary mb-3 text-uppercase small" style="letter-spacing: 0.5px;">
+                            <i class="bi bi-person-bounding-box me-2 fs-5"></i>1. Identité du Client
+                        </h6>
 
                         <div class="mb-3">
-                            <label for="customer_name" class="form-label fw-bold small text-uppercase">Nom Complet / Raison Sociale</label>
-                            <input type="text" class="form-control @error('customer_name') is-invalid @enderror" id="customer_name" name="customer_name" placeholder="Ex: COULIBALY YOUSSEF" required>
+                            <label for="customer_name" class="form-label fw-bold text-dark small text-uppercase">Nom Complet / Raison Sociale</label>
+                            <input type="text" class="form-control fw-semibold border-primary-subtle @error('customer_name') is-invalid @enderror" id="customer_name" name="customer_name" placeholder="Ex: COULIBALY YOUSSEF" required>
                             @error('customer_name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
-                        <div class="row g-2">
+                        <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="customer_phone" class="form-label fw-bold small text-uppercase">N° Téléphone (Paiements)</label>
-                                <input type="text" class="form-control" id="customer_phone" name="customer_phone" placeholder="Ex: 0700000000">
+                                <label for="customer_phone" class="form-label fw-bold text-dark small text-uppercase">N° Téléphone (Paiements)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-primary border-primary-subtle"><i class="bi bi-telephone-fill"></i></span>
+                                    <input type="text" class="form-control border-primary-subtle" id="customer_phone" name="customer_phone" placeholder="Ex: 0700000000">
+                                </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="id_card_number" class="form-label fw-bold small text-uppercase">N° Pièce d'identité</label>
-                                <input type="text" class="form-control" id="id_card_number" name="id_card_number" placeholder="Ex: CNI / Passeport">
+                                <label for="id_card_number" class="form-label fw-bold text-dark small text-uppercase">N° Pièce d'identité</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-primary border-primary-subtle"><i class="bi bi-person-vcard-fill"></i></span>
+                                    <input type="text" class="form-control border-primary-subtle" id="id_card_number" name="id_card_number" placeholder="Ex: CNI / Passeport">
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Sélection de la chambre -->
-                    <div class="mb-3">
-                        <label for="room_id" class="form-label fw-bold">Sélectionner la Chambre disponible</label>
-                        <select class="form-select @error('room_id') is-invalid @enderror" id="room_id" name="room_id" required>
-                            <option value="" selected disabled>Choisir une chambre...</option>
-                            @foreach($rooms as $room)
-                                <option value="{{ $room->id }}" data-price="{{ $room->price_per_night }}">
-                                    {{ $room->number }} ({{ $room->type }} - {{ number_format($room->price_per_night, 0, ',', ' ') }} F/nuit)
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('room_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
+                    <!-- 2. SECTION CHAMBRE & BADGE RFID (Thème Cyan / Turquoise) -->
+                    <div class="p-4 rounded-4 mb-4 border border-info-subtle" style="background-color: #f0fdfa;">
+                        <h6 class="fw-bold text-info-emphasis mb-3 text-uppercase small" style="letter-spacing: 0.5px;">
+                            <i class="bi bi-key-fill text-info me-2 fs-5"></i>2. Attribution Chambre & Serrure RFID
+                        </h6>
 
-                    <!-- Code RFID de la carte avec Générateur Virtuel -->
-                    <div class="mb-3">
-                        <label for="card_uid" class="form-label fw-bold">Numéro Physique de la Carte (UID RFID)</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="bi bi-upc-scan"></i></span>
-                            <input type="text" class="form-control @error('card_uid') is-invalid @enderror" id="card_uid" name="card_uid" placeholder="Ex: RFID_88Z99K" required>
-                            <button class="btn btn-outline-secondary" type="button" id="btn-simulate-card" onclick="simulateCardScan()">
-                                <i class="bi bi-cpu-fill me-1"></i> Simuler un Badge
-                            </button>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-8">
+                                <label for="room_id" class="form-label fw-bold text-dark small text-uppercase">Chambre disponible</label>
+                                <select class="form-select fw-bold text-dark border-info-subtle @error('room_id') is-invalid @enderror" id="room_id" name="room_id" required>
+                                    <option value="" selected disabled>Choisir une chambre...</option>
+                                    @foreach($rooms as $room)
+                                        <option value="{{ $room->id }}" data-price="{{ $room->price_per_night }}">
+                                            🚪 {{ $room->number }} — {{ strtoupper($room->type) }} ({{ number_format($room->price_per_night, 0, ',', ' ') }} F/nuit)
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('room_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="days" class="form-label fw-bold text-dark small text-uppercase">Séjour (Nuits)</label>
+                                <input type="number" class="form-control fw-bold text-center text-primary border-info-subtle @error('days') is-invalid @enderror" id="days" name="days" min="1" value="1" required>
+                                @error('days') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
                         </div>
-                        @error('card_uid') <div class="invalid-feedback">{{ $message }}</div> @enderror
+
+                        <div>
+                            <label for="card_uid" class="form-label fw-bold text-dark small text-uppercase">Numéro Physique de la Carte (UID RFID)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white text-info border-info-subtle"><i class="bi bi-upc-scan"></i></span>
+                                <input type="text" class="form-control fw-bold text-dark border-info-subtle @error('card_uid') is-invalid @enderror" id="card_uid" name="card_uid" placeholder="Ex: RFID_88Z99K" required>
+                                <button class="btn btn-info text-white fw-bold px-3" type="button" id="btn-simulate-card" onclick="simulateCardScan()">
+                                    <i class="bi bi-cpu-fill me-1"></i> Simuler un Badge
+                                </button>
+                            </div>
+                            @error('card_uid') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
                     </div>
 
-                    <!-- Durée du séjour -->
-                    <div class="mb-3">
-                        <label for="days" class="form-label fw-bold">Durée du séjour (Nuits)</label>
-                        <input type="number" class="form-control @error('days') is-invalid @enderror" id="days" name="days" min="1" value="1" required>
-                        @error('days') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-
-                    <!-- BLOC RÈGLEMENT & OPTION DIFFÉRÉE -->
-                    <div class="p-3 bg-light border border-warning rounded-3 mb-4 shadow-sm">
-                        <h6 class="fw-bold text-warning-emphasis mb-3"><i class="bi bi-wallet2 me-2"></i>Règlement des frais d'hébergement</h6>
+                    <!-- 3. BLOC RÈGLEMENT & OPTION DIFFÉRÉE (Thème Ambre & Émeraude) -->
+                    <div class="p-4 rounded-4 mb-4 border border-warning" style="background-color: #fffbeb;">
+                        <h6 class="fw-bold text-warning-emphasis mb-3 text-uppercase small" style="letter-spacing: 0.5px;">
+                            <i class="bi bi-wallet2 text-warning me-2 fs-5"></i>3. Règlement des frais d'hébergement
+                        </h6>
 
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Option de facturation</label>
-                            <select class="form-select fw-bold border-primary" id="payment_type" name="payment_type" required>
+                            <label class="form-label small fw-bold text-dark text-uppercase">Option de facturation</label>
+                            <select class="form-select fw-bold border-warning text-dark" id="payment_type" name="payment_type" required>
                                 <option value="full">💳 Paiement Total Immédiat (Garanti)</option>
                                 <option value="partial">💵 Acompte / Paiement Partiel</option>
                                 <option value="later">⏳ Payer plus tard / À la sortie (Note de Chambre)</option>
@@ -96,8 +123,8 @@
                         <div id="payment-details-wrapper">
                             <div class="row g-2 mb-3">
                                 <div class="col-md-12">
-                                    <label class="form-label small fw-bold">Mode de Règlement</label>
-                                    <select class="form-select" name="payment_method">
+                                    <label class="form-label small fw-bold text-dark text-uppercase">Mode de Règlement</label>
+                                    <select class="form-select fw-semibold border-warning-subtle" name="payment_method">
                                         <option value="cash">💵 Espèces / Cash</option>
                                         <option value="wave">🧡 Wave</option>
                                         <option value="orange_money">🍊 Orange Money</option>
@@ -108,132 +135,141 @@
                             </div>
 
                             <div class="mb-3" id="custom-amount-wrapper" style="display:none;">
-                                <label class="form-label small fw-bold">Montant versé ce jour (F CFA)</label>
-                                <input type="number" class="form-control fw-bold text-success" id="amount_paid" name="amount_paid" min="0" value="0">
+                                <label class="form-label small fw-bold text-success text-uppercase">Montant versé ce jour (F CFA)</label>
+                                <input type="number" class="form-control fw-bold text-success border-success fs-5" id="amount_paid" name="amount_paid" min="0" value="0">
                             </div>
                         </div>
 
-                        <div class="alert alert-warning mb-2 py-2" id="alert-later-msg" style="display:none;">
-                            <i class="bi bi-clock-history me-2"></i>Les nuitées seront imputées sur la note de chambre et payables au Checkout.
+
+                                                <div class="alert alert-warning border-warning mb-3 py-2 rounded-3" id="alert-later-msg" style="display:none;">
+                            <i class="bi bi-clock-history me-2 fw-bold"></i>Les nuitées seront imputées sur la note de chambre et payables au Checkout.
                         </div>
 
-                        <!-- BLOC DES CALCULS EN DIRECTS (NET & RESTE À PAYER) -->
-                        <div class="border-top pt-2 mt-2">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="fw-bold text-muted small text-uppercase">Net à Payer (Total) :</span>
-                                <span class="fw-bold text-dark fs-5" id="net-total-display">0 F CFA</span>
+                        <!-- BLOC DES CALCULS EN DIRECT (NET & RESTE À PAYER) -->
+                        <div class="p-3 bg-white rounded-3 border border-success-subtle shadow-sm mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <span class="fw-bold text-secondary small text-uppercase">Net à Payer (Total) :</span>
+                                <span class="fw-bold text-success fs-4" id="net-total-display">0 F CFA</span>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="fw-bold text-muted small text-uppercase">Montant Encaissé :</span>
-                                <span class="fw-bold text-success fs-5" id="amount-paid-display">0 F CFA</span>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center border-top border-secondary-subtle pt-1">
-                                <span class="fw-bold text-muted small text-uppercase" id="label-total">Reste à Payer :</span>
-                                <span class="fs-4 fw-bold text-danger" id="total-display">0 F CFA</span>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-secondary small text-uppercase">Reste à Payer (Solde) :</span>
+                                <span class="fw-bold text-danger fs-5" id="remaining-balance-display">0 F CFA</span>
                             </div>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 fw-bold"><i class="bi bi-check2-square me-2"></i>Valider et Enregistrer l'Arrivée</button>
+                    <!-- BOUTON DE VALIDATION FINAL -->
+                    <button type="submit" class="btn btn-success btn-lg w-100 rounded-pill fw-bold shadow py-3 text-uppercase" style="letter-spacing: 0.5px;">
+                        <i class="bi bi-check-circle-fill me-2"></i>Valider l'arrivée et activer le badge
+                    </button>
                 </form>
             </div>
         </div>
     </div>
-
-    <!-- Instructions à droite -->
-    <div class="col-md-5">
-        <div class="alert alert-info shadow-sm mb-4">
-            <h5><i class="bi bi-info-circle-fill me-2"></i>Aperçu de la Facturation</h5>
-            <p class="mb-0">Les données calculées ici seront retransmises à l'identique dans vos rapports d'encours et l'historique comptable général.</p>
-        </div>
-    </div>
 </div>
 
-<!-- LOGIQUE DE CALCUL DYNAMIQUE DU NET ET RESTE A PAYER -->
+<!-- SCRIPT JAVASCRIPT : CALCUL EN TEMPS RÉEL & GÉNÉRATEUR RFID -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+// 1. Générateur virtuel de badge RFID
+function simulateCardScan() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let uid = 'RFID_';
+    for (let i = 0; i < 6; i++) {
+        uid += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const cardInput = document.getElementById('card_uid');
+    if (cardInput) {
+        cardInput.value = uid;
+        // Petit flash vert visuel pour confirmer le scan
+        cardInput.classList.add('is-valid');
+        setTimeout(() => cardInput.classList.remove('is-valid'), 1500);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
     const roomSelect = document.getElementById('room_id');
     const daysInput = document.getElementById('days');
-    const paymentTypeSelect = document.getElementById('payment_type');
+    const paymentType = document.getElementById('payment_type');
     const paymentDetailsWrapper = document.getElementById('payment-details-wrapper');
     const customAmountWrapper = document.getElementById('custom-amount-wrapper');
     const amountPaidInput = document.getElementById('amount_paid');
     const alertLaterMsg = document.getElementById('alert-later-msg');
-    const labelTotal = document.getElementById('label-total');
+
     const netTotalDisplay = document.getElementById('net-total-display');
-    const amountPaidDisplay = document.getElementById('amount-paid-display');
-    const totalDisplay = document.getElementById('total-display');
+    const remainingDisplay = document.getElementById('remaining-balance-display');
 
-    function calculateTotal(e) {
-        const selectedOption = roomSelect ? roomSelect.options[roomSelect.selectedIndex] : null;
-        const pricePerNight = selectedOption ? parseFloat(selectedOption.getAttribute('data-price')) : 0;
-        const days = daysInput ? (parseInt(daysInput.value) || 1) : 1;
-        const grandTotal = pricePerNight * days;
+    // 2. Fonction globale de recalcul des montants
+    function calculateTotals() {
+        let pricePerNight = 0;
+        if (roomSelect && roomSelect.selectedIndex > 0) {
+            const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+            pricePerNight = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+        }
 
-        let finalPaid = 0;
-        let remaining = grandTotal;
+        const days = parseInt(daysInput ? daysInput.value : 1) || 1;
+        const netTotal = pricePerNight * days;
+        const type = paymentType ? paymentType.value : 'full';
 
-        if (paymentTypeSelect && paymentTypeSelect.value === 'full') {
-            if (paymentDetailsWrapper) paymentDetailsWrapper.style.display = 'block';
-            if (customAmountWrapper) customAmountWrapper.style.display = 'none';
-            if (alertLaterMsg) alertLaterMsg.style.display = 'none';
+        let paid = 0;
+        let remaining = netTotal;
 
-            finalPaid = grandTotal;
+        if (type === 'full') {
+            paid = netTotal;
             remaining = 0;
-            if (amountPaidInput) amountPaidInput.value = grandTotal;
-        }
-        else if (paymentTypeSelect && paymentTypeSelect.value === 'partial') {
-            if (paymentDetailsWrapper) paymentDetailsWrapper.style.display = 'block';
-            if (customAmountWrapper) customAmountWrapper.style.display = 'block';
-            if (alertLaterMsg) alertLaterMsg.style.display = 'none';
-
-            // Correction : On ne réinitialise à vide QUE si le changement vient du type de paiement
-            if (e && e.type === 'change' && e.target === paymentTypeSelect) {
-                if (amountPaidInput) amountPaidInput.value = '';
+            if (amountPaidInput) amountPaidInput.value = netTotal;
+        } else if (type === 'partial') {
+            paid = parseFloat(amountPaidInput ? amountPaidInput.value : 0) || 0;
+            if (paid > netTotal) {
+                paid = netTotal; // Empêche de saisir un acompte supérieur au total
+                if (amountPaidInput) amountPaidInput.value = netTotal;
             }
-
-            finalPaid = amountPaidInput ? (parseFloat(amountPaidInput.value) || 0) : 0;
-            remaining = grandTotal - finalPaid;
-            if (remaining < 0) remaining = 0;
-        }
-        else if (paymentTypeSelect && paymentTypeSelect.value === 'later') {
-            if (paymentDetailsWrapper) paymentDetailsWrapper.style.display = 'none';
-            if (alertLaterMsg) alertLaterMsg.style.display = 'block';
-
-            finalPaid = 0;
-            remaining = grandTotal;
+            remaining = netTotal - paid;
+        } else if (type === 'later') {
+            paid = 0;
+            remaining = netTotal;
             if (amountPaidInput) amountPaidInput.value = 0;
         }
 
-        // Affichage des trois indicateurs au franc près
-        const formatter = new Intl.NumberFormat('fr-FR');
-        if (netTotalDisplay) netTotalDisplay.textContent = formatter.format(grandTotal) + ' F CFA';
-        if (amountPaidDisplay) amountPaidDisplay.textContent = formatter.format(finalPaid) + ' F CFA';
-        if (totalDisplay) {
-            totalDisplay.textContent = formatter.format(remaining) + ' F CFA';
-            totalDisplay.className = remaining > 0 ? "fs-4 fw-bold text-danger" : "fs-4 fw-bold text-success";
+        // Formatage en Francs CFA
+        if (netTotalDisplay) {
+            netTotalDisplay.textContent = new Intl.NumberFormat('fr-FR').format(netTotal) + ' F CFA';
         }
-        if (labelTotal) labelTotal.textContent = "Reste à Payer :";
+        if (remainingDisplay) {
+            remainingDisplay.textContent = new Intl.NumberFormat('fr-FR').format(remaining) + ' F CFA';
+        }
     }
 
-    if (roomSelect) roomSelect.addEventListener('change', calculateTotal);
-    if (daysInput) daysInput.addEventListener('input', calculateTotal);
-    if (paymentTypeSelect) paymentTypeSelect.addEventListener('change', calculateTotal);
-    if (amountPaidInput) amountPaidInput.addEventListener('input', calculateTotal);
+    // 3. Commutation visuelle selon l'option de facturation
+    function handlePaymentTypeChange() {
+        if (!paymentType) return;
+        const type = paymentType.value;
 
-    // Premier calcul au chargement de la page
-    calculateTotal();
+        if (type === 'full') {
+            if (paymentDetailsWrapper) paymentDetailsWrapper.style.display = 'block';
+            if (customAmountWrapper) customAmountWrapper.style.display = 'none';
+            if (alertLaterMsg) alertLaterMsg.style.display = 'none';
+        } else if (type === 'partial') {
+            if (paymentDetailsWrapper) paymentDetailsWrapper.style.display = 'block';
+            if (customAmountWrapper) customAmountWrapper.style.display = 'block';
+            if (alertLaterMsg) alertLaterMsg.style.display = 'none';
+            if (amountPaidInput) amountPaidInput.value = 0;
+        } else if (type === 'later') {
+            if (paymentDetailsWrapper) paymentDetailsWrapper.style.display = 'none';
+            if (customAmountWrapper) customAmountWrapper.style.display = 'none';
+            if (alertLaterMsg) alertLaterMsg.style.display = 'block';
+        }
+
+        calculateTotals();
+    }
+
+    // 4. Écouteurs d'événements en direct
+    if (roomSelect) roomSelect.addEventListener('change', calculateTotals);
+    if (daysInput) daysInput.addEventListener('input', calculateTotals);
+    if (paymentType) paymentType.addEventListener('change', handlePaymentTypeChange);
+    if (amountPaidInput) amountPaidInput.addEventListener('input', calculateTotals);
+
+    // Initialisation au chargement de la page
+    handlePaymentTypeChange();
 });
-
-function simulateCardScan() {
-    const characters = '0123456789ABCDEF';
-    let mockUid = 'RFID_';
-    for (let i = 0; i < 8; i++) {
-        mockUid += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    const cardInput = document.getElementById('card_uid');
-    if (cardInput) cardInput.value = mockUid;
-}
 </script>
-
 @endsection
