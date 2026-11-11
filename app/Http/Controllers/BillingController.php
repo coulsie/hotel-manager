@@ -58,28 +58,27 @@ class BillingController extends Controller
         // Coût des nuitées (Hébergement seul)
         $roomCost = $room->price_per_night * $days;
 
-        // Consommations annexes (Restaurant & Extras non encore soldés sur ce séjour)
+        // Cumul de TOUTES les consommations annexes (Restaurant & Extras) non soldées sur cette chambre
         $extrasCost = \App\Models\Order::where('room_id', $room->id)
-            ->where('created_at', '>=', $stayStartDate)
             ->where(function ($q) {
                 $q->whereNotIn('status', ['paid', 'completed'])
                   ->orWhereNull('status');
             })
             ->sum('total_amount');
 
-        // Total cumulé (Chambre + Restaurant)
+        // Total cumulé (Chambre + Extras Restaurant)
         $totalCost = $roomCost + $extrasCost;
 
-        // Somme déjà réglée pour ce séjour
+        // Somme déjà réglée pour ce séjour (avec une marge de sécurité de 5 secondes pour la création)
         $amountPaid = \App\Models\Billing::where('room_id', $room->id)
             ->where('service_type', 'room_booking')
             ->where('status', 'completed')
-            ->where('created_at', '>=', $stayStartDate)
+            ->where('created_at', '>=', $stayStartDate->copy()->subSeconds(5))
             ->sum('amount_paid');
 
         $remainingToPay = max(0, $totalCost - $amountPaid);
 
-        // On ajoute TOUTES les chambres occupées dans le tableau
+        // Ajout de toutes les chambres occupées dans le tableau de suivi
         $pendingRooms[] = [
             'id'            => $room->id,
             'room_number'   => $room->number,
