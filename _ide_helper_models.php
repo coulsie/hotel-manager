@@ -122,6 +122,16 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property-read \App\Models\Room|null $room
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService query()
+ */
+	class ExtraService extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
  * @property int $id
  * @property string $card_uid
  * @property string $security_token
@@ -293,6 +303,15 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog query()
+ */
+	class ServiceCatalog extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
  * @property int $id
  * @property string $title
  * @property string|null $description
@@ -318,7 +337,9 @@ namespace App\Models{
 /**
  * @property int $id
  * @property int $show_id
- * @property int $user_id
+ * @property int|null $event_id
+ * @property int|null $user_id
+ * @property string|null $customer_name
  * @property int|null $room_id
  * @property string|null $seat_number
  * @property string $ticket_type
@@ -326,11 +347,15 @@ namespace App\Models{
  * @property string $status
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Event|null $event
+ * @property-read \App\Models\Show|null $venue
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ShowBooking newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ShowBooking newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ShowBooking query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ShowBooking whereAmountPaid($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ShowBooking whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShowBooking whereCustomerName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShowBooking whereEventId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ShowBooking whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ShowBooking whereRoomId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ShowBooking whereSeatNumber($value)
@@ -355,12 +380,21 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $permissions
+ * @property-read int|null $permissions_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Role> $roles
+ * @property-read int|null $roles_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $teams
+ * @property-read int|null $teams_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \Laravel\Sanctum\PersonalAccessToken> $tokens
  * @property-read int|null $tokens_count
  * @method static \Database\Factories\UserFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User permission($permissions, bool $without = false)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User role($roles, ?string $guard = null, bool $without = false)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User team($teams, bool $without = false)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmail($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmailVerifiedAt($value)
@@ -369,6 +403,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User wherePassword($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRememberToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User withoutPermission($permissions)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User withoutRole($roles, ?string $guard = null)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User withoutTeam($teams)
  */
 	class User extends \Eloquent {}
 }

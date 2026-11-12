@@ -4,17 +4,26 @@
 
 @section('content')
 <!-- En-tête de la page -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-3 mb-4 border-bottom">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-3 mb-4 border-bottom gap-3">
     <div>
         <h1 class="h2 fw-bold text-dark mb-0">
             <i class="bi bi-cash-coin text-success me-2"></i>Grand Livre des Recettes & Comptes Clients
         </h1>
         <p class="text-muted small mb-0 mt-1">Suivi consolidé des engagements chambres, extras restaurant et ventes directes</p>
     </div>
-    <a href="{{ route('billing.index') }}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
-        <i class="bi bi-calculator me-1"></i> Retour aux Encours
-    </a>
+
+    <!-- Groupe des deux boutons alignés à droite -->
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ route('billing.payments.export', request()->query()) }}" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Exporter Excel (CSV)
+        </a>
+
+        <a href="{{ route('billing.index') }}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+            <i class="bi bi-calculator me-1"></i> Retour aux Encours
+        </a>
+    </div>
 </div>
+
 
 @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4 mb-4" role="alert">

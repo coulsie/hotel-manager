@@ -1,91 +1,137 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ExtraServiceController;
 use App\Http\Controllers\ShowController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\AuthController;
 
 // ==========================================================================
-// ROUTES D'AUTHENTIFICATION (Accessibles publiquement sans connexion)
+// 0. AUTHENTIFICATION (Accès public)
 // ==========================================================================
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.process');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::controller(AuthController::class)->group(function () {
+    Route::get('/login', 'showLoginForm')->name('login');
+    Route::post('/login', 'login')->name('login.process');
+    Route::post('/logout', 'logout')->name('logout');
+});
 
 // ==========================================================================
-// SECTEUR SÉCURISÉ : TOUTES LES ROUTES CI-DESSOUS DEMANDENT UNE CONNEXION
+// SECTEUR SÉCURISÉ (Authentification requise)
 // ==========================================================================
 Route::middleware(['auth'])->group(function () {
 
     // 1. Accueil / Tableau de bord
-    Route::get('/', [DashboardController::class, 'index']);
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    // 2. Arrivées / Check-in
-    Route::get('/checkin', [RoomController::class, 'showCheckinForm'])->name('checkin.form');
-    Route::post('/checkin', [RoomController::class, 'processCheckin'])->name('checkin.save');
+    // 2. Réception : Arrivées, Chambres & Entretien (Housekeeping)
+    Route::controller(RoomController::class)->group(function () {
+        // Check-in
+        Route::get('/checkin', 'showCheckinForm')->name('checkin.form');
+        Route::post('/checkin', 'processCheckin')->name('checkin.save');
 
-    // 3. Commandes et Restauration
-    Route::get('/orders/create', [OrderController::class, 'create'])->name('orders.create');
-    Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
-    Route::get('/orders/{order}/receipt', [OrderController::class, 'showReceipt'])->name('orders.receipt');
+        // Gestion des séjours & État des chambres
+        Route::get('/rooms/status', 'statusGrid')->name('rooms.status');
+        Route::post('/rooms/{room}/checkout', 'earlyCheckout')->name('rooms.checkout');
+        Route::post('/rooms/{room}/extend', 'extendStay')->name('rooms.extend');
 
-    // 4. État des Chambres et Entretien (Housekeeping)
-    Route::get('/rooms/status', [RoomController::class, 'statusGrid'])->name('rooms.status');
-    Route::get('/housekeeping', [RoomController::class, 'housekeepingIndex'])->name('housekeeping.index');
-    Route::post('/housekeeping/room/{room}/status', [RoomController::class, 'updateHousekeepingStatus'])->name('housekeeping.update');
+        // Entretien (Housekeeping)
+        Route::get('/housekeeping', 'housekeepingIndex')->name('housekeeping.index');
+        Route::post('/housekeeping/room/{room}/status', 'updateHousekeepingStatus')->name('housekeeping.update');
 
-    // 5. Billetterie côté Comptoir / Front-Desk
-    Route::get('/bookings/shows', [ShowController::class, 'showBookingForm'])->name('bookings.shows.form');
-    Route::post('/bookings/shows', [ShowController::class, 'processShowBooking'])->name('bookings.shows.save');
-
-    // 6. IoT Logs
-    Route::get('/iot/access-logs', [RoomController::class, 'accessLogsIndex'])->name('iot.logs.index');
-
-    // 7. Module Comptabilité, Facturation & Grand Livre
-    Route::group(['prefix' => 'billing', 'as' => 'billing.'], function () {
-        Route::get('/', [BillingController::class, 'index'])->name('index');
-        Route::get('/payments', [BillingController::class, 'paymentsHistory'])->name('payments');
-        Route::get('/room/{room}', [BillingController::class, 'showRoomInvoice'])->name('room');
-        Route::post('/restaurant/{order}', [BillingController::class, 'storeRestaurantPayment'])->name('restaurant.pay');
-        Route::post('/room/{room}', [BillingController::class, 'storeRoomPayment'])->name('room.pay');
-        Route::get('/{id}/print', [BillingController::class, 'printReceipt'])->name('print');
-        Route::delete('/payments/{id}', [BillingController::class, 'destroyPayment'])->name('payments.destroy');
-
+        // Journaux d'accès IoT
+        Route::get('/iot/access-logs', 'accessLogsIndex')->name('iot.logs.index');
     });
 
-    // 8. Module d'Administration centralisé (Salles, Concerts, Personnel)
+    // 3. Restauration & Commandes
+    Route::prefix('orders')->name('orders.')->controller(OrderController::class)->group(function () {
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{order}/receipt', 'showReceipt')->name('receipt');
+    });
+
+    // 4. Services Annexes : Pressing & Lavage Auto
+    Route::prefix('services')->name('services.')->controller(ExtraServiceController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+
+        // Suivi atelier & encaissement
+        Route::post('/{service}/ready', 'markReady')->name('ready');
+        Route::post('/{service}/pay', 'payExternal')->name('pay');
+
+        // Gestion du catalogue tarifaire
+        Route::prefix('catalog')->name('catalog.')->group(function () {
+            Route::post('/', 'storeCatalog')->name('store');
+            Route::put('/{catalog}', 'updateCatalog')->name('update');
+            Route::delete('/{catalog}', 'destroyCatalog')->name('destroy');
+        });
+    });
+
+    // 5. Billetterie Comptoir (Front-Desk)
+    Route::prefix('bookings/shows')->name('bookings.shows.')->controller(ShowController::class)->group(function () {
+        Route::get('/', 'showBookingForm')->name('form');
+        Route::post('/', 'processShowBooking')->name('save');
+    });
+
+    // 6. Comptabilité, Facturation & Grand Livre
+    Route::prefix('billing')->name('billing.')->controller(BillingController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/daily-close', 'dailyCloseReport')->name('daily.close');
+        Route::get('/{id}/print', 'printReceipt')->name('print');
+
+        // Historique et export des paiements
+        Route::get('/payments', 'paymentsHistory')->name('payments');
+        Route::get('/payments/export', 'exportPaymentsCsv')->name('payments.export');
+        Route::delete('/payments/{id}', 'destroyPayment')->name('payments.destroy');
+
+        // Facturation Chambres & Restauration
+        Route::get('/room/{room}', 'showRoomInvoice')->name('room');
+        Route::post('/room/{room}', 'storeRoomPayment')->name('room.pay');
+        Route::post('/restaurant/{order}', 'storeRestaurantPayment')->name('restaurant.pay');
+    });
+
+    // 7. Administration Centralisée
     Route::prefix('admin')->name('admin.')->group(function () {
+
         // Gestion des Chambres
-        Route::get('/rooms/create', [RoomController::class, 'create'])->name('rooms.create');
-        Route::post('/rooms', [RoomController::class, 'store'])->name('rooms.store');
+        Route::prefix('rooms')->name('rooms.')->controller(RoomController::class)->group(function () {
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+        });
 
         // Gestion de la Carte / Menu Restauration
-        Route::get('/menu/create', [OrderController::class, 'createMenuItem'])->name('menu.create');
-        Route::post('/menu', [OrderController::class, 'storeMenuItem'])->name('menu.store');
+        Route::prefix('menu')->name('menu.')->controller(OrderController::class)->group(function () {
+            Route::get('/create', 'createMenuItem')->name('create');
+            Route::post('/', 'storeMenuItem')->name('store');
+        });
 
-        // État et Infrastructures des SALLES (shows.index.blade.php avec modales)
-        Route::get('/shows', [ShowController::class, 'index'])->name('shows.index');
-        Route::post('/shows', [ShowController::class, 'store'])->name('shows.store');
-        Route::put('/shows/{id}', [ShowController::class, 'update'])->name('shows.update');
+        // Infrastructures des Salles
+        Route::prefix('shows')->name('shows.')->controller(ShowController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::put('/{id}', 'update')->name('update');
+        });
 
-        // Programmation des Spectacles Multi-Tarifs (Module Events)
-        Route::get('/events', [EventController::class, 'index'])->name('events.index');
-        Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
-        Route::post('/events', [EventController::class, 'store'])->name('events.store');
-        Route::get('/events/{id}/edit', [EventController::class, 'edit'])->name('events.edit');
-        Route::put('/events/{id}', [EventController::class, 'update'])->name('events.update');
+        // Programmation des Spectacles & Rapports des ventes
+        Route::prefix('events')->name('events.')->controller(EventController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{id}/edit', 'edit')->name('edit');
+            Route::put('/{id}', 'update')->name('update');
+            Route::get('/{id}/sales', 'salesDashboard')->name('sales');
+        });
 
-        // 👇 INTÉGRATION SÉCURISÉE : Rapport d'analyse et état des ventes d'un concert donné
-        Route::get('/events/{id}/sales', [EventController::class, 'salesDashboard'])->name('events.sales');
-
-        // Gestion des Utilisateurs & Habilitations du personnel
-        Route::get('/users', [UserController::class, 'index'])->name('users.index');
-        Route::post('/users', [UserController::class, 'store'])->name('users.store');
-        Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
+        // Gestion des Utilisateurs & Habilitations
+        Route::prefix('users')->name('users.')->controller(UserController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::put('/{id}', 'update')->name('update');
+        });
     });
+
 });

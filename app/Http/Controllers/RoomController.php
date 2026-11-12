@@ -100,7 +100,7 @@ class RoomController extends Controller
             $days = intval($request->input('days'));
             $expiresAt = now()->addDays($days)->setTime(12, 0, 0); // Expiration par défaut à midi le jour du départ
 
-           
+
             DB::table('magnetic_cards')->insert([
                 'card_uid'       => $request->input('card_uid'),
                 'security_token' => \Illuminate\Support\Str::random(32), // 👈 CODE ABSOLU MODIFIÉ
@@ -210,5 +210,90 @@ class RoomController extends Controller
 
         return view('iot.logs', compact('logs'));
     }
+
+
+public function earlyCheckout(\App\Models\Room $room)
+{
+    // 1. Vérification de sécurité : empêche le départ si le séjour n'est pas soldé
+    $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
+        ->where('room_id', $room->id)
+        ->where('is_active', 1)
+        ->latest()
+        ->first();
+
+    $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
+    $stayStartDate = $activeCard ? \Carbon\Carbon::parse($activeCard->created_at) : now()->startOfDay();
+
+    $roomCost = $room->price_per_night * $days;
+    $unpaidOrders = \App\Models\Order::where('room_id', $room->id)
+        ->whereNotIn('status', ['paid', 'completed'])
+        ->sum('total_amount');
+
+    $totalDue = $roomCost + $unpaidOrders;
+
+    $totalPaid = \App\Models\Billing::where('room_id', $room->id)
+        ->where('service_type', 'room_booking')
+        ->where('status', 'completed')
+        ->where('created_at', '>=', $stayStartDate->copy()->subSeconds(5))
+        ->sum('amount_paid');
+
+    if ($totalDue > $totalPaid) {
+        $remaining = number_format($totalDue - $totalPaid, 0, ',', ' ');
+        return redirect()->route('billing.room', $room->id)
+            ->with('error', "Check-out bloqué : Il reste {$remaining} F CFA à solder avant de libérer la Chambre {$room->number}.");
+    }
+
+    // 2. Désactivation immédiate de la carte magnétique
+    \Illuminate\Support\Facades\DB::table('magnetic_cards')
+        ->where('room_id', $room->id)
+        ->where('is_active', 1)
+        ->update([
+            'is_active'  => 0,
+            'expires_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+    // 3. Libération de la chambre (passe en 'cleaning' pour le ménage ou 'available')
+    $room->update(['status' => 'cleaning']);
+
+    return redirect()->back()
+        ->with('success', "Check-out validé ! La Chambre {$room->number} a été libérée (envoyée au ménage) et son badge RFID est désactivé.");
+}
+
+
+public function extendStay(\Illuminate\Http\Request $request, \App\Models\Room $room)
+{
+    $request->validate([
+        'extra_days' => 'required|integer|min:1|max:60',
+    ]);
+
+    $extraDays = (int) $request->input('extra_days');
+
+    $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
+        ->where('room_id', $room->id)
+        ->where('is_active', 1)
+        ->latest()
+        ->first();
+
+    if (!$activeCard) {
+        return redirect()->back()->with('error', "Aucune carte magnétique active trouvée pour la Chambre {$room->number}.");
+    }
+
+    // Calcul de la nouvelle date d'expiration (ancienne date + X jours à 12h00 précise)
+    $currentExpiry = \Carbon\Carbon::parse($activeCard->expires_at);
+    $newExpiry     = $currentExpiry->copy()->addDays($extraDays)->setTime(12, 0, 0);
+    $newDuration   = ($activeCard->duration_days ?? 1) + $extraDays;
+
+    \Illuminate\Support\Facades\DB::table('magnetic_cards')
+        ->where('id', $activeCard->id)
+        ->update([
+            'duration_days' => $newDuration,
+            'expires_at'    => $newExpiry,
+            'updated_at'    => now(),
+        ]);
+
+    return redirect()->back()->with('success', "Séjour prolongé de {$extraDays} nuit(s) pour la Chambre {$room->number}. Nouveau départ : {$newExpiry->format('d/m/Y à H:i')}.");
+}
+
 
 }

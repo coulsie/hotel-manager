@@ -392,4 +392,109 @@ public function showRoomInvoice($roomId)
     }
 
 
+    public function exportPaymentsCsv(\Illuminate\Http\Request $request)
+    {
+        $query = \App\Models\Billing::with(['room', 'order', 'eventTicket.event'])
+            ->where('status', 'completed');
+
+        // Applique les mêmes filtres que sur la page Grand Livre
+        if ($request->filled('period')) {
+            switch ($request->input('period')) {
+                case 'daily':
+                    $query->whereDate('created_at', \Carbon\Carbon::today());
+                    break;
+                case 'weekly':
+                    $query->whereBetween('created_at', [\Carbon\Carbon::now()->startOfWeek(), \Carbon\Carbon::now()->endOfWeek()]);
+                    break;
+                case 'monthly':
+                    $query->whereMonth('created_at', \Carbon\Carbon::now()->month)
+                        ->whereYear('created_at', \Carbon\Carbon::now()->year);
+                    break;
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('receipt_number', 'LIKE', "%{$search}%")
+                ->orWhere('payment_method', 'LIKE', "%{$search}%")
+                ->orWhereHas('room', function ($r) use ($search) {
+                    $r->where('number', 'LIKE', "%{$search}%");
+                });
+            });
+        }
+
+        $billings = $query->latest()->get();
+        $fileName = 'Grand_Livre_Hotel_Manager_' . now()->format('Y-m-d_His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$fileName\"",
+        ];
+
+        $callback = function () use ($billings) {
+            $file = fopen('php://output', 'w');
+            // Ajout du BOM UTF-8 pour une ouverture parfaite dans Excel
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // En-têtes des colonnes
+            fputcsv($file, ['N° Reçu', 'Date & Heure', 'Type de Service', 'Chambre / Origine', 'Mode de Règlement', 'Montant Encaissé (F CFA)'], ';');
+
+            foreach ($billings as $b) {
+                $serviceLabel = match ($b->service_type) {
+                    'room_booking' => 'Hébergement Hôtel',
+                    'restaurant'   => 'Restauration & Bar',
+                    'show_ticket'  => 'Billetterie Spectacle',
+                    default        => $b->service_type,
+                };
+
+                $origin = $b->room ? 'Chambre ' . $b->room->number : ($b->order ? 'Commande #' . $b->order->id : 'Comptoir Direct');
+
+                fputcsv($file, [
+                    $b->receipt_number,
+                    $b->created_at ? $b->created_at->format('d/m/Y H:i') : '',
+                    $serviceLabel,
+                    $origin,
+                    strtoupper($b->payment_method),
+                    $b->amount_paid
+                ], ';');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+public function dailyCloseReport(\Illuminate\Http\Request $request)
+{
+    $date = $request->filled('date') ? \Carbon\Carbon::parse($request->input('date')) : \Carbon\Carbon::today();
+
+    $transactions = \App\Models\Billing::with(['room', 'order', 'eventTicket.event'])
+        ->where('status', 'completed')
+        ->whereDate('created_at', $date)
+        ->get();
+
+    // Ventilation par mode de paiement
+    $byMethod = [
+        'cash'         => $transactions->where('payment_method', 'cash')->sum('amount_paid'),
+        'wave'         => $transactions->where('payment_method', 'wave')->sum('amount_paid'),
+        'orange_money' => $transactions->where('payment_method', 'orange_money')->sum('amount_paid'),
+        'mtn_momo'     => $transactions->where('payment_method', 'mtn_momo')->sum('amount_paid'),
+        'moov_money'   => $transactions->where('payment_method', 'moov_money')->sum('amount_paid'),
+        'card'         => $transactions->where('payment_method', 'card')->sum('amount_paid'),
+    ];
+
+    // Ventilation par pôle d'activité
+    $byService = [
+        'room_booking' => $transactions->where('service_type', 'room_booking')->sum('amount_paid'),
+        'restaurant'   => $transactions->where('service_type', 'restaurant')->sum('amount_paid'),
+        'show_ticket'  => $transactions->where('service_type', 'show_ticket')->sum('amount_paid'),
+    ];
+
+    $grandTotal = $transactions->sum('amount_paid');
+
+    return view('billing.daily_close', compact('date', 'transactions', 'byMethod', 'byService', 'grandTotal'));
+}
+
 }

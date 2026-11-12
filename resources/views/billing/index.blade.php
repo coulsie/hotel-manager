@@ -135,16 +135,37 @@
                                 {{ number_format($pRoom['remaining'], 0, ',', ' ') }} F
                             </td>
                             <td class="text-center pe-4">
-                                @if($pRoom['remaining'] > 0)
-                                    <a href="{{ route('billing.room', $pRoom['id']) }}" class="btn btn-sm btn-danger rounded-pill fw-bold px-3 shadow-sm">
-                                        <i class="bi bi-receipt me-1"></i> Solder
-                                    </a>
-                                @else
-                                    <a href="{{ route('billing.room', $pRoom['id']) }}" class="btn btn-sm btn-success rounded-pill fw-bold px-3 shadow-sm">
-                                        <i class="bi bi-check-circle-fill me-1"></i> Soldé (Voir)
-                                    </a>
-                                @endif
+                                <div class="d-flex justify-content-center align-items-center gap-1 flex-wrap">
+                                    @if($pRoom['remaining'] > 0)
+                                        <a href="{{ route('billing.room', $pRoom['id']) }}" class="btn btn-sm btn-danger rounded-pill fw-bold px-3 shadow-sm">
+                                            <i class="bi bi-receipt me-1"></i> Solder
+                                        </a>
+                                    @else
+                                        <a href="{{ route('billing.room', $pRoom['id']) }}" class="btn btn-sm btn-outline-success rounded-pill fw-bold px-2" title="Voir la facture">
+                                            <i class="bi bi-eye-fill"></i>
+                                        </a>
+                                        <form action="{{ route('rooms.checkout', $pRoom['id']) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirmer le départ anticipé du client et désactiver le badge de la Chambre {{ $pRoom['room_number'] }} ?');">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-dark rounded-pill fw-bold px-3 shadow-sm" title="Libérer la chambre maintenant">
+                                                <i class="bi bi-door-open-fill text-warning me-1"></i> Check-out
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <!-- Bouton de prolongation de séjour toujours accessible -->
+                                    <button type="button" class="btn btn-sm btn-info text-white rounded-pill fw-bold px-3 shadow-sm"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#extendStayModal"
+                                            data-room-id="{{ $pRoom['id'] }}"
+                                            data-room-number="{{ $pRoom['room_number'] }}"
+                                            title="Prolonger le séjour">
+                                        <i class="bi bi-calendar-plus-fill me-1"></i> +Nuit
+                                    </button>
+                                </div>
                             </td>
+
+
+
                         </tr>
                     @empty
                         <tr>
@@ -224,4 +245,41 @@
         </div>
     </div>
 </div>
+<!-- Modale de prolongation à coller tout en bas de billing/index.blade.php avant  -->
+<div class="modal fade" id="extendStayModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header text-white py-3" style="background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);">
+                <h6 class="modal-title fw-bold"><i class="bi bi-calendar-plus me-2"></i>Prolonger <span id="extend-room-title"></span></h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="extendStayForm" method="POST" action="">
+                @csrf
+                <div class="modal-body p-4 text-center">
+                    <label class="form-label fw-bold small text-uppercase text-dark">Nombre de nuits à ajouter</label>
+                    <input type="number" name="extra_days" class="form-control form-control-lg fw-bold text-center text-primary border-primary" min="1" max="60" value="1" required>
+                </div>
+                <div class="modal-footer bg-light border-0 p-2 justify-content-center">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold w-100">Valider la prolongation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const extendModal = document.getElementById('extendStayModal');
+    if (extendModal) {
+        extendModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const roomId = button.getAttribute('data-room-id');
+            const roomNumber = button.getAttribute('data-room-number');
+            document.getElementById('extend-room-title').textContent = 'Chambre ' + roomNumber;
+            document.getElementById('extendStayForm').action = '/rooms/' + roomId + '/extend';
+        });
+    }
+});
+</script>
+
 @endsection
