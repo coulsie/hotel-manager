@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : jeu. 12 nov. 2026 à 13:41
+-- Généré le : jeu. 12 nov. 2026 à 16:15
 -- Version du serveur : 11.4.9-MariaDB
 -- Version de PHP : 8.3.28
 
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `billings` (
   KEY `billings_order_id_foreign` (`order_id`),
   KEY `billings_event_ticket_id_foreign` (`event_ticket_id`),
   KEY `room_id` (`room_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `billings`
@@ -67,7 +67,8 @@ INSERT INTO `billings` (`id`, `receipt_number`, `room_id`, `order_id`, `event_ti
 (13, 'REC-20261112-0004', 1, NULL, NULL, 'pressing', 6000.00, 'cash', 'completed', '2026-11-12 13:14:42', '2026-11-12 13:14:42'),
 (14, 'REC-20261112-0005', NULL, NULL, NULL, 'car_wash', 25000.00, 'cash', 'completed', '2026-11-12 13:19:55', '2026-11-12 13:19:55'),
 (15, 'REC-20261112-0006', NULL, NULL, NULL, 'pressing', 15000.00, 'cash', 'completed', '2026-11-12 13:20:42', '2026-11-12 13:20:42'),
-(16, 'REC-20261112-0007', 2, NULL, NULL, 'pressing', 3000.00, 'cash', 'completed', '2026-11-12 13:21:46', '2026-11-12 13:21:46');
+(16, 'REC-20261112-0007', 2, NULL, NULL, 'pressing', 3000.00, 'cash', 'completed', '2026-11-12 13:21:46', '2026-11-12 13:21:46'),
+(17, 'REC-20261112-0008', 6, NULL, NULL, 'room_booking', 52000.00, 'cash', 'completed', '2026-11-12 14:32:48', '2026-11-12 14:32:48');
 
 -- --------------------------------------------------------
 
@@ -89,7 +90,7 @@ CREATE TABLE IF NOT EXISTS `cache` (
 --
 
 INSERT INTO `cache` (`key`, `value`, `expiration`) VALUES
-('laravel-cache-spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:6:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:14:\"gerer_chambres\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:10:\"gerer_menu\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:18:\"consulter_iot_logs\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:15:\"emettre_billets\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:17:\"configurer_salles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:17:\"voir_comptabilite\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}}s:5:\"roles\";a:3:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"restauration\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:14:\"receptionniste\";s:1:\"c\";s:3:\"web\";}}}', 1794576954);
+('laravel-cache-spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:17:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:14:\"gerer_chambres\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:10:\"gerer_menu\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:18:\"consulter_iot_logs\";s:1:\"c\";s:3:\"web\";}i:3;a:3:{s:1:\"a\";i:4;s:1:\"b\";s:15:\"emettre_billets\";s:1:\"c\";s:3:\"web\";}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:17:\"configurer_salles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:5;a:3:{s:1:\"a\";i:6;s:1:\"b\";s:17:\"voir_comptabilite\";s:1:\"c\";s:3:\"web\";}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:14:\"voir_dashboard\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:13:\"gerer_checkin\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:8:\"voir_iot\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:13:\"voir_chambres\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"gerer_menage\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:18:\"gerer_restauration\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:14:\"gerer_services\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:13:\"gerer_encours\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:16:\"voir_grand_livre\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:14:\"voir_rapport_z\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:17:\"gerer_billetterie\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}}s:5:\"roles\";a:3:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:14:\"receptionniste\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"restauration\";s:1:\"c\";s:3:\"web\";}}}', 1794586262);
 
 -- --------------------------------------------------------
 
@@ -121,7 +122,7 @@ CREATE TABLE IF NOT EXISTS `customers` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `customers`
@@ -146,7 +147,8 @@ INSERT INTO `customers` (`id`, `full_name`, `phone`, `id_card_number`, `created_
 (16, 'Koffi Samption', '0143677424', 'CNI 24513578925', '2026-11-11 13:57:48', '2026-11-11 13:57:48'),
 (17, 'COULIBALY YOUSSEF', '0143677424', 'CNI 123333', '2026-11-11 14:22:09', '2026-11-11 14:22:09'),
 (18, 'KONE NAFATA', '0102034568', 'cni21022', '2026-11-11 14:22:59', '2026-11-11 14:22:59'),
-(19, 'Kouadio Seraphin', '0102034568', 'CNI21245', '2026-11-11 14:41:10', '2026-11-11 14:41:10');
+(19, 'Kouadio Seraphin', '0102034568', 'CNI21245', '2026-11-11 14:41:10', '2026-11-11 14:41:10'),
+(20, 'Amara Kanté', '0405021326', 'cni21022', '2026-11-12 14:32:48', '2026-11-12 14:32:48');
 
 -- --------------------------------------------------------
 
@@ -227,7 +229,7 @@ CREATE TABLE IF NOT EXISTS `extra_services` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `extra_services_room_id_foreign` (`room_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `extra_services`
@@ -237,7 +239,10 @@ INSERT INTO `extra_services` (`id`, `category`, `service_name`, `quantity`, `uni
 (1, 'pressing', 'Boubou long', 3, 2000.00, 6000.00, 1, NULL, 'ready', 'paid', '2026-11-12 12:46:43', '2026-11-12 13:14:42'),
 (2, 'car_wash', 'Camion', 5, 5000.00, 25000.00, NULL, 'KONE YAYA', 'ready', 'paid', '2026-11-12 13:19:50', '2026-11-12 13:19:58'),
 (3, 'pressing', 'jean', 10, 1500.00, 15000.00, NULL, 'KONE YAYA', 'ready', 'paid', '2026-11-12 13:20:40', '2026-11-12 13:20:43'),
-(4, 'pressing', 'Pantalon', 3, 1000.00, 3000.00, 2, NULL, 'pending', 'paid', '2026-11-12 13:21:22', '2026-11-12 13:21:46');
+(4, 'pressing', 'Pantalon', 3, 1000.00, 3000.00, 2, NULL, 'pending', 'paid', '2026-11-12 13:21:22', '2026-11-12 13:21:46'),
+(5, 'pressing', 'Boubou long', 2, 2000.00, 4000.00, 6, NULL, 'pending', 'unpaid', '2026-11-12 14:34:01', '2026-11-12 14:34:01'),
+(6, 'pressing', 'Chemise', 5, 1000.00, 5000.00, 6, NULL, 'pending', 'unpaid', '2026-11-12 14:34:17', '2026-11-12 14:34:17'),
+(7, 'pressing', 'Pantalon', 5, 1000.00, 5000.00, 6, NULL, 'pending', 'unpaid', '2026-11-12 14:34:34', '2026-11-12 14:34:34');
 
 -- --------------------------------------------------------
 
@@ -320,7 +325,7 @@ CREATE TABLE IF NOT EXISTS `magnetic_cards` (
   UNIQUE KEY `magnetic_cards_card_uid_unique` (`card_uid`),
   KEY `magnetic_cards_room_id_foreign` (`room_id`),
   KEY `room_id` (`room_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `magnetic_cards`
@@ -329,7 +334,8 @@ CREATE TABLE IF NOT EXISTS `magnetic_cards` (
 INSERT INTO `magnetic_cards` (`id`, `card_uid`, `security_token`, `room_id`, `duration_days`, `expires_at`, `is_active`, `created_at`, `updated_at`) VALUES
 (1, 'RFID_QHMTYA', 'eF2kV4iIh2HpPOlQlbUJmuacrxw18ZjF', 1, 6, '2026-11-17 12:00:00', 1, '2026-11-11 14:22:09', '2026-11-11 14:22:09'),
 (2, 'RFID_ZMNZYO', 'kFW51R8nP40740HOWTuFEpeqAf6i1CJs', 2, 5, '2026-11-16 12:00:00', 1, '2026-11-11 14:22:59', '2026-11-12 11:29:07'),
-(3, 'RFID_547NQO', 'gTr2lKBuMFTVPhNghHt3dxqIACv08BEY', 5, 6, '2026-11-17 12:00:00', 1, '2026-11-11 14:41:10', '2026-11-12 11:41:33');
+(3, 'RFID_547NQO', 'gTr2lKBuMFTVPhNghHt3dxqIACv08BEY', 5, 6, '2026-11-17 12:00:00', 1, '2026-11-11 14:41:10', '2026-11-12 11:41:33'),
+(4, 'RFID_L65ESH', '4XQtlOEzbvE1Q9bUZkj2ieRNe5H6m414', 6, 4, '2026-11-16 12:00:00', 1, '2026-11-12 14:32:48', '2026-11-12 14:38:06');
 
 -- --------------------------------------------------------
 
@@ -460,7 +466,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   KEY `orders_restaurant_table_id_foreign` (`restaurant_table_id`),
   KEY `orders_room_id_foreign` (`room_id`),
   KEY `room_id` (`room_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `orders`
@@ -473,7 +479,8 @@ INSERT INTO `orders` (`id`, `restaurant_table_id`, `room_id`, `total_amount`, `s
 (4, 1, 5, 8500.00, 'paid', '2026-11-11 14:43:07', '2026-11-11 15:06:41'),
 (5, 2, 5, 27500.00, 'paid', '2026-11-11 15:05:59', '2026-11-11 15:15:09'),
 (6, 1, 2, 27500.00, 'paid', '2026-11-11 15:21:34', '2026-11-12 08:57:21'),
-(7, 1, NULL, 22000.00, 'paid', '2026-11-12 08:57:01', '2026-11-12 08:58:25');
+(7, 1, NULL, 22000.00, 'paid', '2026-11-12 08:57:01', '2026-11-12 08:58:25'),
+(8, 1, 6, 42500.00, 'charged_to_room', '2026-11-12 14:33:39', '2026-11-12 14:33:39');
 
 -- --------------------------------------------------------
 
@@ -493,7 +500,7 @@ CREATE TABLE IF NOT EXISTS `order_items` (
   PRIMARY KEY (`id`),
   KEY `order_items_order_id_foreign` (`order_id`),
   KEY `order_items_menu_item_id_foreign` (`menu_item_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `order_items`
@@ -513,7 +520,9 @@ INSERT INTO `order_items` (`id`, `order_id`, `menu_item_id`, `quantity`, `price_
 (11, 6, 1, 5, 3500.00, '2026-11-11 15:21:34', '2026-11-11 15:21:34'),
 (12, 6, 2, 2, 5000.00, '2026-11-11 15:21:34', '2026-11-11 15:21:34'),
 (13, 7, 1, 2, 3500.00, '2026-11-12 08:57:01', '2026-11-12 08:57:01'),
-(14, 7, 2, 3, 5000.00, '2026-11-12 08:57:01', '2026-11-12 08:57:01');
+(14, 7, 2, 3, 5000.00, '2026-11-12 08:57:01', '2026-11-12 08:57:01'),
+(15, 8, 1, 5, 3500.00, '2026-11-12 14:33:39', '2026-11-12 14:33:39'),
+(16, 8, 2, 5, 5000.00, '2026-11-12 14:33:39', '2026-11-12 14:33:39');
 
 -- --------------------------------------------------------
 
@@ -544,7 +553,7 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`) USING HASH
-) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `permissions`
@@ -556,7 +565,18 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `created_at`, `updated_at
 (3, 'consulter_iot_logs', 'web', '2026-11-09 09:50:37', '2026-11-09 09:50:37'),
 (4, 'emettre_billets', 'web', '2026-11-09 09:50:37', '2026-11-09 09:50:37'),
 (5, 'configurer_salles', 'web', '2026-11-09 09:50:37', '2026-11-09 09:50:37'),
-(6, 'voir_comptabilite', 'web', '2026-11-09 09:50:37', '2026-11-09 09:50:37');
+(6, 'voir_comptabilite', 'web', '2026-11-09 09:50:37', '2026-11-09 09:50:37'),
+(7, 'voir_dashboard', 'web', '2026-11-12 15:41:06', '2026-11-12 15:41:06'),
+(8, 'gerer_checkin', 'web', '2026-11-12 15:41:06', '2026-11-12 15:41:06'),
+(9, 'voir_iot', 'web', '2026-11-12 15:41:06', '2026-11-12 15:41:06'),
+(10, 'voir_chambres', 'web', '2026-11-12 15:41:06', '2026-11-12 15:41:06'),
+(11, 'gerer_menage', 'web', '2026-11-12 15:41:06', '2026-11-12 15:41:06'),
+(12, 'gerer_restauration', 'web', '2026-11-12 15:41:06', '2026-11-12 15:41:06'),
+(13, 'gerer_services', 'web', '2026-11-12 15:41:06', '2026-11-12 15:41:06'),
+(14, 'gerer_encours', 'web', '2026-11-12 15:41:06', '2026-11-12 15:41:06'),
+(15, 'voir_grand_livre', 'web', '2026-11-12 15:41:06', '2026-11-12 15:41:06'),
+(16, 'voir_rapport_z', 'web', '2026-11-12 15:41:06', '2026-11-12 15:41:06'),
+(17, 'gerer_billetterie', 'web', '2026-11-12 15:41:06', '2026-11-12 15:41:06');
 
 -- --------------------------------------------------------
 
@@ -652,15 +672,30 @@ CREATE TABLE IF NOT EXISTS `role_has_permissions` (
 --
 
 INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
-(1, 1),
-(2, 1),
-(2, 3),
-(3, 1),
-(3, 2),
-(4, 1),
-(4, 2),
 (5, 1),
-(6, 1);
+(7, 1),
+(7, 2),
+(7, 3),
+(8, 1),
+(8, 2),
+(9, 1),
+(9, 2),
+(10, 1),
+(10, 2),
+(11, 1),
+(11, 2),
+(12, 1),
+(12, 3),
+(13, 1),
+(13, 2),
+(14, 1),
+(14, 2),
+(15, 1),
+(15, 2),
+(16, 1),
+(16, 2),
+(17, 1),
+(17, 2);
 
 -- --------------------------------------------------------
 
@@ -688,12 +723,12 @@ CREATE TABLE IF NOT EXISTS `rooms` (
 INSERT INTO `rooms` (`id`, `number`, `type`, `status`, `price_per_night`, `created_at`, `updated_at`) VALUES
 (1, 'Chambre 101', 'Standard', 'occupied', 45000.00, '2026-10-31 09:07:47', '2026-11-11 14:22:09'),
 (2, 'Chambre 102', 'Luxe', 'occupied', 75000.00, '2026-10-31 09:07:47', '2026-11-11 14:22:59'),
-(3, 'Chambre 103', 'Standard', 'cleaning', 45000.00, '2026-10-31 09:07:47', '2026-11-12 09:03:13'),
+(3, 'Chambre 103', 'Standard', 'available', 45000.00, '2026-10-31 09:07:47', '2026-11-12 16:14:36'),
 (4, 'Chambre 104', 'Luxe', 'available', 75000.00, '2026-10-31 09:07:47', '2026-11-11 14:18:52'),
 (5, 'Chambre 105', 'Standard', 'occupied', 45000.00, '2026-10-31 09:07:47', '2026-11-11 14:41:10'),
-(6, 'Chambre 106', 'Luxe', 'available', 75000.00, '2026-10-31 09:07:47', '2026-11-11 14:18:52'),
+(6, 'Chambre 106', 'Luxe', 'occupied', 75000.00, '2026-10-31 09:07:47', '2026-11-12 14:32:48'),
 (7, 'Chambre 107', 'Standard', 'available', 45000.00, '2026-10-31 09:07:47', '2026-11-11 14:18:52'),
-(8, 'Chambre 108', 'Luxe', 'cleaning', 75000.00, '2026-10-31 09:07:47', '2026-11-12 09:03:31'),
+(8, 'Chambre 108', 'Luxe', 'available', 75000.00, '2026-10-31 09:07:47', '2026-11-12 16:14:41'),
 (9, 'Chambre 109', 'Standard', 'available', 45000.00, '2026-10-31 09:07:47', '2026-11-11 14:18:52'),
 (10, 'Chambre 110', 'Luxe', 'available', 75000.00, '2026-10-31 09:07:47', '2026-11-11 14:18:52');
 
@@ -776,7 +811,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('SPdtLbPVUqgwdlNAsqNb3cGQLVKOHY5iEBb1yVII', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJZNFV2SHN2UlViRE1oVXFrYzRBUk41MGxGdDF3VG9uM2JDWk13YXpyIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9iaWxsaW5nXC9wYXltZW50cyIsInJvdXRlIjoiYmlsbGluZy5wYXltZW50cyJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794490756);
+('SPdtLbPVUqgwdlNAsqNb3cGQLVKOHY5iEBb1yVII', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJZNFV2SHN2UlViRE1oVXFrYzRBUk41MGxGdDF3VG9uM2JDWk13YXpyIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9ob3VzZWtlZXBpbmciLCJyb3V0ZSI6ImhvdXNla2VlcGluZy5pbmRleCJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794500081);
 
 -- --------------------------------------------------------
 
