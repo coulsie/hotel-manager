@@ -111,8 +111,11 @@
                 <h6 class="card-title mb-0 fw-bold text-dark">
                     <i class="bi bi-graph-up-arrow text-success me-2"></i>Évolution des Recettes sur 7 Jours (F CFA)
                 </h6>
-                <span class="badge bg-light text-secondary border rounded-pill px-3">Restauration vs Billetterie</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 fw-bold">
+                    Hébergement • Resto • Pressing • Auto • Spectacles
+                </span>
             </div>
+
             <div class="card-body p-4">
                 <div style="height: 280px;">
                     <canvas id="revenueChart"></canvas>
@@ -294,9 +297,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const ctx = document.getElementById('revenueChart');
     if (!ctx) return;
 
-    const labels = @json($chartLabels);
-    const restoData = @json($chartRestoData);
-    const ticketData = @json($chartTicketData);
+    const labels         = @json($chartLabels ?? []);
+    const lodgingData    = @json($lodgingData ?? []);
+    const restaurantData = @json($restaurantData ?? []);
+    const pressingData   = @json($pressingData ?? []);
+    const carWashData    = @json($carWashData ?? []);
+    const ticketsData    = @json($ticketsData ?? []);
 
     new Chart(ctx, {
         type: 'bar',
@@ -304,30 +310,55 @@ document.addEventListener('DOMContentLoaded', function () {
             labels: labels,
             datasets: [
                 {
-                    label: 'Restauration & Bar (F CFA)',
-                    data: restoData,
+                    label: '🏨 Hébergement (F CFA)',
+                    data: lodgingData,
                     backgroundColor: '#10b981',
                     borderRadius: 6,
-                    barPercentage: 0.6
+                    barPercentage: 0.75
                 },
                 {
-                    label: 'Billetterie Spectacles (F CFA)',
-                    data: ticketData,
-                    backgroundColor: '#3b82f6',
+                    label: '🍽️ Restauration & Bar (F CFA)',
+                    data: restaurantData,
+                    backgroundColor: '#f59e0b',
                     borderRadius: 6,
-                    barPercentage: 0.6
+                    barPercentage: 0.75
+                },
+                {
+                    label: '👔 Pressing (F CFA)',
+                    data: pressingData,
+                    backgroundColor: '#06b6d4',
+                    borderRadius: 6,
+                    barPercentage: 0.75
+                },
+                {
+                    label: '🚗 Lavage Auto (F CFA)',
+                    data: carWashData,
+                    backgroundColor: '#4f46e5',
+                    borderRadius: 6,
+                    barPercentage: 0.75
+                },
+                {
+                    label: '🎟️ Billetterie Spectacles (F CFA)',
+                    data: ticketsData,
+                    backgroundColor: '#db2777',
+                    borderRadius: 6,
+                    barPercentage: 0.75
                 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             plugins: {
                 legend: {
                     position: 'top',
                     labels: {
                         usePointStyle: true,
-                        font: { weight: 'bold' }
+                        font: { weight: 'bold', size: 11 }
                     }
                 },
                 tooltip: {
@@ -361,4 +392,5 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+
 @endsection

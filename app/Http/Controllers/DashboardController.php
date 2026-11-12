@@ -8,12 +8,14 @@ use App\Models\ShowBooking;
 use App\Models\RoomAccessLog;
 use App\Models\Room;
 use App\Models\Order;
+use App\Models\Billing;
+use App\Models\ExtraService;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // 1. Statistiques réelles des Chambres (sans fausses valeurs de secours)
+        // 1. Statistiques réelles des Chambres
         $totalRooms     = Room::count();
         $occupiedRooms  = Room::where('status', 'occupied')->count();
         $availableRooms = Room::where('status', 'available')->count();
@@ -22,23 +24,25 @@ class DashboardController extends Controller
         $roomsStats     = "$occupiedRooms / $totalRooms";
         $occupancyRate  = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) : 0;
 
-        // 2. Chiffre d'affaires du jour (Restauration + Billetterie)
-        $restaurantRevenue = Order::whereDate('created_at', Carbon::today())
-            ->whereIn('status', ['paid', 'charged_to_room'])
-            ->sum('total_amount');
+        // 2. Chiffre d'affaires encaissé du jour (Tous pôles confondus)
+        $todayBillings = Billing::whereDate('created_at', Carbon::today())
+            ->where('status', 'completed')
+            ->get();
 
-        $ticketRevenue = ShowBooking::whereDate('created_at', Carbon::today())
-            ->whereIn('status', ['confirmed', 'charged_to_room'])
-            ->sum('amount_paid');
+        $lodgingRevenue    = $todayBillings->where('service_type', 'room_booking')->sum('amount_paid');
+        $restaurantRevenue = $todayBillings->where('service_type', 'restaurant')->sum('amount_paid');
+        $pressingRevenue   = $todayBillings->where('service_type', 'pressing')->sum('amount_paid');
+        $carWashRevenue    = $todayBillings->where('service_type', 'car_wash')->sum('amount_paid');
+        $ticketRevenue     = $todayBillings->where('service_type', 'show_ticket')->sum('amount_paid');
 
-        $totalTodayRevenue = $restaurantRevenue + $ticketRevenue;
-        $revenueStats = number_format($totalTodayRevenue, 0, ',', ' ') . ' F';
+        $totalTodayRevenue = $todayBillings->sum('amount_paid');
+        $revenueStats      = number_format($totalTodayRevenue, 0, ',', ' ') . ' F';
 
         // 3. Nombre de scans IoT lors des dernières 24 heures
         $iotScansCount = RoomAccessLog::where('scanned_at', '>=', now()->subDay())->count();
-        $iotStats = "$iotScansCount scans";
+        $iotStats      = "$iotScansCount scans";
 
-        // 4. Taux de remplissage du prochain spectacle (Relation 'venue' corrigée)
+        // 4. Taux de remplissage du prochain spectacle
         $nextEvent = Event::with(['venue', 'tickets'])
             ->where('performance_date', '>=', Carbon::today())
             ->orderBy('performance_date', 'asc')
@@ -65,22 +69,27 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        // 6. Données des 7 derniers jours pour la courbe d'évolution financière
-        $chartLabels = [];
-        $chartRestoData = [];
-        $chartTicketData = [];
+        // 6. Données des 7 derniers jours pour la courbe d'évolution financière multi-pôles
+        $chartLabels    = [];
+        $lodgingData    = [];
+        $restaurantData = [];
+        $pressingData   = [];
+        $carWashData    = [];
+        $ticketsData    = [];
 
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $chartLabels[] = $date->format('d/m');
 
-            $chartRestoData[] = Order::whereDate('created_at', $date)
-                ->whereIn('status', ['paid', 'charged_to_room'])
-                ->sum('total_amount');
+            $dayBillings = Billing::whereDate('created_at', $date)
+                ->where('status', 'completed')
+                ->get();
 
-            $chartTicketData[] = ShowBooking::whereDate('created_at', $date)
-                ->whereIn('status', ['confirmed', 'charged_to_room'])
-                ->sum('amount_paid');
+            $lodgingData[]    = $dayBillings->where('service_type', 'room_booking')->sum('amount_paid');
+            $restaurantData[] = $dayBillings->where('service_type', 'restaurant')->sum('amount_paid');
+            $pressingData[]   = $dayBillings->where('service_type', 'pressing')->sum('amount_paid');
+            $carWashData[]    = $dayBillings->where('service_type', 'car_wash')->sum('amount_paid');
+            $ticketsData[]    = $dayBillings->where('service_type', 'show_ticket')->sum('amount_paid');
         }
 
         // 7. Liste des prochains concerts pour le tableau de suivi
@@ -101,12 +110,18 @@ class DashboardController extends Controller
             'availableRooms',
             'cleaningRooms',
             'occupancyRate',
+            'lodgingRevenue',
             'restaurantRevenue',
+            'pressingRevenue',
+            'carWashRevenue',
             'ticketRevenue',
             'upcomingEvents',
             'chartLabels',
-            'chartRestoData',
-            'chartTicketData'
+            'lodgingData',
+            'restaurantData',
+            'pressingData',
+            'carWashData',
+            'ticketsData'
         ));
     }
 }
