@@ -93,7 +93,7 @@
                     <td class="text-end pe-3 fw-bold text-primary">{{ number_format($total_lodging, 0, ',', ' ') }} F</td>
                 </tr>
 
-                <!-- 2. BLOC RESTAURATION (UTILISE $orders DU CONTRÔLEUR, HORS COMMANDES PAYÉES EN CASH) -->
+             <!-- 2. BLOC RESTAURATION (UTILISE $orders DU CONTRÔLEUR, HORS COMMANDES PAYÉES EN CASH) -->
                 @if(isset($orders) && $orders->count() > 0)
                     @foreach($orders as $order)
                         @if($order->status !== 'paid')
@@ -107,6 +107,25 @@
                                 <td class="text-end pe-3 fw-bold text-dark">{{ number_format($order->total_amount, 0, ',', ' ') }} F</td>
                             </tr>
                         @endif
+                    @endforeach
+                @endif
+
+                <!-- 3. BLOC PRESSING & LAVAGE AUTO (INDÉPENDANT DE LA RESTAURATION) -->
+                @if(isset($extraServices) && $extraServices->count() > 0)
+                    @foreach($extraServices as $srv)
+                        @php $grand_total += $srv->total_amount; @endphp
+                        <tr>
+                            <td class="ps-3 text-dark">
+                                @if($srv->category === 'pressing')
+                                    <i class="bi bi-droplet-half me-2 text-info"></i>Pressing - {{ $srv->service_name }}
+                                @else
+                                    <i class="bi bi-car-front-fill me-2 text-primary"></i>Lavage Auto - {{ $srv->service_name }}
+                                @endif
+                            </td>
+                            <td class="text-center">{{ $srv->quantity }}</td>
+                            <td class="text-end">{{ number_format($srv->unit_price, 0, ',', ' ') }} F</td>
+                            <td class="text-end pe-3 fw-bold text-dark">{{ number_format($srv->total_amount, 0, ',', ' ') }} F</td>
+                        </tr>
                     @endforeach
                 @endif
 

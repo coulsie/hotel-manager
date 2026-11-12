@@ -27,7 +27,7 @@ class BillingController extends Controller
      * PAGE 1 : Encours Clients & Factures en Attente (billing.index)
      * Basé sur la colonne simplifiée duration_days
      */
- public function index()
+public function index()
 {
     // 1. Récupération des commandes restaurant non soldées (comptoir + chambres)
     $pendingOrders = \App\Models\Order::with(['restaurantTable', 'room'])
@@ -35,6 +35,12 @@ class BillingController extends Controller
             $query->whereNotIn('status', ['paid', 'completed'])
                   ->orWhereNull('status');
         })
+        ->latest()
+        ->get();
+
+    // 1 bis. Récupération des prestations Pressing & Lavage Auto non soldées
+    $pendingExtraServices = \App\Models\ExtraService::with('room')
+        ->where('payment_status', 'unpaid')
         ->latest()
         ->get();
 
@@ -58,15 +64,23 @@ class BillingController extends Controller
         // Coût des nuitées (Hébergement seul)
         $roomCost = $room->price_per_night * $days;
 
-        // Cumul de TOUTES les consommations annexes (Restaurant & Extras) non soldées sur cette chambre
-        $extrasCost = \App\Models\Order::where('room_id', $room->id)
+        // Cumul de TOUTES les commandes Restaurant & Bar non soldées sur cette chambre
+        $restoCost = \App\Models\Order::where('room_id', $room->id)
             ->where(function ($q) {
                 $q->whereNotIn('status', ['paid', 'completed'])
                   ->orWhereNull('status');
             })
             ->sum('total_amount');
 
-        // Total cumulé (Chambre + Extras Restaurant)
+        // Cumul de TOUTES les prestations Pressing & Lavage Auto non soldées sur cette chambre
+        $pressingAutoCost = \App\Models\ExtraService::where('room_id', $room->id)
+            ->where('payment_status', 'unpaid')
+            ->sum('total_amount');
+
+        // Total combiné des extras (Restaurant + Pressing + Lavage Auto)
+        $extrasCost = $restoCost + $pressingAutoCost;
+
+        // Total cumulé (Chambre + Extras)
         $totalCost = $roomCost + $extrasCost;
 
         // Somme déjà réglée pour ce séjour (avec une marge de sécurité de 5 secondes pour la création)
@@ -94,7 +108,7 @@ class BillingController extends Controller
         ];
     }
 
-    return view('billing.index', compact('pendingOrders', 'pendingRooms'));
+    return view('billing.index', compact('pendingOrders', 'pendingExtraServices', 'pendingRooms'));
 }
 
 
@@ -111,7 +125,7 @@ class BillingController extends Controller
      * PAGE 2 : Grand Livre des Recettes (billing.payments)
      * URL : http://127.0.0
      */
-  public function paymentsHistory(\Illuminate\Http\Request $request)
+ public function paymentsHistory(\Illuminate\Http\Request $request)
 {
     // 1. Initialisation de la requête de base avec chargement des relations
     $query = \App\Models\Billing::with(['room', 'order.restaurantTable', 'eventTicket.event'])
@@ -149,7 +163,7 @@ class BillingController extends Controller
     $allBillings = $query->latest()->get();
     $periodTotal = $allBillings->sum('amount_paid');
 
-    // 5. REGROUPEMENT PAR DOSSIER CHAMBRE (Hébergement + Resto lié à la chambre)
+    // 5. REGROUPEMENT PAR DOSSIER CHAMBRE (Hébergement + Resto + Pressing + Auto + Spectacles)
     $roomAccounts = [];
     $roomBillings = $allBillings->whereNotNull('room_id')->groupBy('room_id');
 
@@ -172,12 +186,22 @@ class BillingController extends Controller
         $roomOrders = \App\Models\Order::where('room_id', $roomId)
             ->with('restaurantTable')
             ->get();
-        $restoTotal = $roomOrders->sum('total_amount');
 
-        // Engagement global (Chambre + Extras restaurant)
-        $totalEngagement = $roomBaseCost + $restoTotal;
+        // Prestations Pressing & Lavage Auto imputées sur cette chambre
+        $roomExtraServices = \App\Models\ExtraService::where('room_id', $roomId)->get();
 
-        // Somme totale déjà encaissée pour cette chambre (acomptes, soldes, repas payés)
+        // Billets de spectacle ou autres reçus imputés directement à cette chambre
+        $roomOtherBillings = $transactions->where('service_type', '!=', 'room_booking');
+
+        // Total combiné de tous les extras (Restaurant + Pressing + Lavage Auto + Spectacles/Autres)
+        $extrasTotal = $roomOrders->sum('total_amount')
+                     + $roomExtraServices->sum('total_amount')
+                     + $roomOtherBillings->sum('amount_paid');
+
+        // Engagement global (Chambre + Tous les Extras)
+        $totalEngagement = $roomBaseCost + $extrasTotal;
+
+        // Somme totale déjà encaissée pour cette chambre
         $totalPaid = $transactions->sum('amount_paid');
 
         // Calcul du reste à payer (0 si la chambre est déjà libérée)
@@ -187,16 +211,18 @@ class BillingController extends Controller
             'room'             => $room,
             'days'             => $days,
             'room_cost'        => $roomBaseCost,
-            'resto_cost'       => $restoTotal,
+            'resto_cost'       => $extrasTotal,
             'orders'           => $roomOrders,
+            'extra_services'   => $roomExtraServices,
+            'other_billings'   => $roomOtherBillings,
             'total_engagement' => $totalEngagement,
             'total_paid'       => $totalPaid,
             'remaining'        => $remaining,
-            'transactions'     => $transactions, // Tous les reçus individuels de cette chambre
+            'transactions'     => $transactions,
         ];
     }
 
-    // 6. VENTES DIRECTES HORS CHAMBRE (Clients de passage restaurant & billetterie)
+    // 6. VENTES DIRECTES HORS CHAMBRE (Clients de passage restaurant, pressing, auto & billetterie)
     $directTransactions = $allBillings->whereNull('room_id');
 
     // 7. Envoi vers la vue avec les dossiers groupés
@@ -249,55 +275,51 @@ public function showRoomInvoice($roomId)
         ->first();
 
     $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
-    $stayStartDate = $activeCard ? $activeCard->created_at : now()->startOfDay();
+    $stayStartDate = $activeCard ? \Carbon\Carbon::parse($activeCard->created_at) : now()->startOfDay();
 
     // Coût théorique initial de l'hébergement
     $roomCost = $room->price_per_night * $days;
 
-    // 2. Commandes restaurant du séjour actuel (uniquement celles non payées en cash)
+    // 2. Commandes restaurant du séjour actuel non payées
     $orders = \App\Models\Order::where('room_id', $room->id)
-        ->where('created_at', '>=', $stayStartDate)
-        ->where('status', '!=', 'paid')
+        ->where(function ($q) {
+            $q->whereNotIn('status', ['paid', 'completed'])
+              ->orWhereNull('status');
+        })
         ->with('restaurantTable')
         ->get();
 
     $restaurantTotal = $orders->sum('total_amount');
+
+    // 3. Prestations Pressing & Lavage Auto imputées à cette chambre et non payées
+    $extraServices = \App\Models\ExtraService::where('room_id', $room->id)
+        ->where('payment_status', 'unpaid')
+        ->get();
+
+    $extraServicesTotal = $extraServices->sum('total_amount');
     $showsTotal = 0;
 
-    // 3. Coût total global de la facture
-    $totalInvoice = $roomCost + $restaurantTotal + $showsTotal;
+    // 4. Coût total global de la facture (Hébergement + Restaurant + Pressing/Lavage Auto)
+    $totalInvoice = $roomCost + $restaurantTotal + $extraServicesTotal + $showsTotal;
 
-    // 4. Vérifie si la chambre vient d'être clôturée (statut différent de 'occupied')
-    $isPaid = ($room->status !== 'occupied');
+    // 5. Calcul des sommes déjà versées et du reste à payer
+    $alreadyPaid = \App\Models\Billing::where('room_id', $room->id)
+        ->where('service_type', 'room_booking')
+        ->where('status', 'completed')
+        ->where('created_at', '>=', $stayStartDate->copy()->subSeconds(5))
+        ->sum('amount_paid');
 
-    if ($isPaid) {
-        // Si clôturée : on récupère uniquement l'acompte initial (le premier paiement s'il était inférieur au total)
-        $firstPayment = \App\Models\Billing::where('room_id', $room->id)
-            ->where('service_type', 'room_booking')
-            ->where('status', 'completed')
-            ->where('created_at', '>=', $stayStartDate)
-            ->orderBy('created_at', 'asc')
-            ->first();
+    $remainingToPay = max(0, $totalInvoice - $alreadyPaid);
+    $isPaid = ($remainingToPay <= 0);
 
-        $alreadyPaid = ($firstPayment && $firstPayment->amount_paid < $totalInvoice) ? $firstPayment->amount_paid : 0;
-        $remainingToPay = 0;
-    } else {
-        // Si en cours : somme des acomptes versés uniquement depuis le début de ce séjour
-        $alreadyPaid = \App\Models\Billing::where('room_id', $room->id)
-            ->where('service_type', 'room_booking')
-            ->where('status', 'completed')
-            ->where('created_at', '>=', $stayStartDate)
-            ->sum('amount_paid');
-
-        $remainingToPay = max(0, $totalInvoice - $alreadyPaid);
-    }
-
-    // 5. Envoi vers la vue avec 'isPaid' inclus dans le compact()
+    // 6. Envoi vers la vue avec 'extraServices' et 'extraServicesTotal' inclus
     return view('billing.room_invoice', compact(
         'room',
         'roomCost',
         'orders',
         'restaurantTotal',
+        'extraServices',
+        'extraServicesTotal',
         'showsTotal',
         'totalInvoice',
         'alreadyPaid',
@@ -311,7 +333,7 @@ public function showRoomInvoice($roomId)
     /**
      * Enregistre le paiement final ou un acompte pour l'hébergement
      */
- public function storeRoomPayment(Request $request, $roomId)
+public function storeRoomPayment(Request $request, $roomId)
 {
     $room = Room::findOrFail($roomId);
 
@@ -320,7 +342,7 @@ public function showRoomInvoice($roomId)
         'payment_method' => 'required|string'
     ]);
 
-    // 1. Enregistrement du règlement dans le Grand Livre avec votre numéro de reçu
+    // 1. Enregistrement du règlement dans le Grand Livre avec numéro de reçu
     $billing = Billing::create([
         'receipt_number' => Billing::generateReceiptNumber(),
         'room_id'        => $room->id,
@@ -333,20 +355,22 @@ public function showRoomInvoice($roomId)
     // 2. Clôturer les commandes restaurant non payées de cette chambre
     \App\Models\Order::where('room_id', $room->id)
         ->where('status', '!=', 'paid')
-        ->update([
-            'status' => 'paid'
-        ]);
+        ->update(['status' => 'paid']);
 
-    // La désactivation du badge et la libération de la chambre se font désormais
-    // automatiquement à la fin du séjour (12h00) via la commande planifiée.
+    // 3. Clôturer les prestations Pressing & Lavage Auto non payées de cette chambre
+    \App\Models\ExtraService::where('room_id', $room->id)
+        ->where('payment_status', 'unpaid')
+        ->update(['payment_status' => 'paid']);
 
-    // 3. Retourner sur la facture avec le signal d'impression automatique
-    return redirect()->route('billing.room', $room->id)
+    // La désactivation du badge et la libération de la chambre se font automatiquement à 12h00
+    // ou manuellement via le bouton Check-out anticipé.
+
+    // 4. Redirection vers le Grand Livre (payments.blade.php) avec impression du reçu
+    return redirect()->route('billing.payments')
         ->with('success', "Encaissement Hébergement validé (Reçu n° {$billing->receipt_number}). La chambre reste attribuée jusqu'à la fin du séjour.")
-        ->with('print_now', true);
-
-
+        ->with('print_billing_id', $billing->id);
 }
+
 
     /**
      * Enregistre la vente d'un ticket de spectacle

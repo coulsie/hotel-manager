@@ -221,8 +221,13 @@
                                 <span>Prise de Commande</span>
                             </a>
                         </li>
-
-                        <!-- SECTION : Comptabilité -->
+                        <li class="nav-item mb-2">
+                            <a class="nav-link {{ Request::routeIs('services.index') ? 'active' : '' }}" href="{{ route('services.index') }}">
+                                <i class="bi bi-droplet-half text-info"></i>
+                                <span>Pressing & Lavage Auto</span>
+                            </a>
+                        </li>
+                                                <!-- SECTION : Comptabilité -->
                         <h6 class="sidebar-heading d-flex align-items-center bg-light-emerald">
                             <i class="bi bi-cash-stack me-2"></i><span>Comptabilité</span>
                         </h6>

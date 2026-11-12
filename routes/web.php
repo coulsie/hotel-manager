@@ -59,16 +59,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
 
-        // Suivi atelier & encaissement
-        Route::post('/{service}/ready', 'markReady')->name('ready');
-        Route::post('/{service}/pay', 'payExternal')->name('pay');
-
-        // Gestion du catalogue tarifaire
+        // Gestion du catalogue tarifaire (placé avant les routes paramétrées)
         Route::prefix('catalog')->name('catalog.')->group(function () {
             Route::post('/', 'storeCatalog')->name('store');
             Route::put('/{catalog}', 'updateCatalog')->name('update');
             Route::delete('/{catalog}', 'destroyCatalog')->name('destroy');
         });
+
+        // Suivi atelier & encaissement
+        Route::post('/{service}/ready', 'markReady')->name('ready');
+        Route::post('/{service}/pay', 'payExternal')->name('pay');
     });
 
     // 5. Billetterie Comptoir (Front-Desk)
@@ -81,7 +81,6 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('billing')->name('billing.')->controller(BillingController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/daily-close', 'dailyCloseReport')->name('daily.close');
-        Route::get('/{id}/print', 'printReceipt')->name('print');
 
         // Historique et export des paiements
         Route::get('/payments', 'paymentsHistory')->name('payments');
@@ -92,6 +91,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/room/{room}', 'showRoomInvoice')->name('room');
         Route::post('/room/{room}', 'storeRoomPayment')->name('room.pay');
         Route::post('/restaurant/{order}', 'storeRestaurantPayment')->name('restaurant.pay');
+
+        // Impression de reçu (placé en dernier car paramétré à la racine)
+        Route::get('/{id}/print', 'printReceipt')->name('print');
     });
 
     // 7. Administration Centralisée

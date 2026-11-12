@@ -23,11 +23,13 @@
     </div>
 @endif
 
+
 @php
     $totalRoomsRemaining = collect($pendingRooms)->sum('remaining');
     $totalRoomsPaid      = collect($pendingRooms)->sum('amount_paid');
-    $totalRestoPending   = $pendingOrders->sum('total_amount');
+    $totalRestoPending   = $pendingOrders->sum('total_amount') + (isset($pendingExtraServices) ? $pendingExtraServices->sum('total_amount') : 0);
 @endphp
+
 
 <!-- ===================================================================== -->
 <!-- 1. CARTES DE SYNTHÈSE DES ENCOURS (DÉGRADÉS ÉCLATANTS)                -->
@@ -183,10 +185,15 @@
 <!-- ===================================================================== -->
 <!-- 3. SECTION B : ENCOURS RESTAURATION & BAR (DÉGRADÉ AMBRE / ORANGE)    -->
 <!-- ===================================================================== -->
+<!-- ===================================================================== -->
+<!-- 3. SECTION B : ENCOURS RESTAURATION, PRESSING & LAVAGE AUTO           -->
+<!-- ===================================================================== -->
 <div class="card shadow border-0 rounded-4 overflow-hidden">
     <div class="card-header text-white fw-bold py-3 px-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%);">
-        <span><i class="bi bi-egg-fried me-2 fs-5"></i>Commandes Restaurant & Bar Piscine non soldées</span>
-        <span class="badge bg-white text-warning-emphasis rounded-pill px-3 py-1 fw-bold">{{ $pendingOrders->count() }} commande(s)</span>
+        <span><i class="bi bi-egg-fried me-2 fs-5"></i>Prestations Annexes & Restaurant non soldés</span>
+        <span class="badge bg-white text-warning-emphasis rounded-pill px-3 py-1 fw-bold">
+            {{ $pendingOrders->count() + (isset($pendingExtraServices) ? $pendingExtraServices->count() : 0) }} prestation(s)
+        </span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -195,18 +202,19 @@
                     <tr>
                         <th class="ps-4 py-3">Date / Heure</th>
                         <th class="py-3">Origine / Service</th>
-                        <th class="py-3">Emplacement original</th>
+                        <th class="py-3">Détail / Emplacement</th>
                         <th class="py-3">Affectation de la Note</th>
                         <th class="text-end py-3">Montant Dû</th>
                         <th class="text-center pe-4 py-3">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($pendingOrders as $order)
+                    <!-- 1. COMMANDES RESTAURANT & BAR -->
+                    @foreach($pendingOrders as $order)
                         <tr>
                             <td class="ps-4 small text-muted">{{ $order->created_at->format('d/m/Y H:i') }}</td>
                             <td>
-                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-3 py-1 fw-bold">
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning rounded-pill px-3 py-1 fw-bold">
                                     🍽️ RESTAURANT / BAR
                                 </span>
                             </td>
@@ -233,18 +241,66 @@
                                 </form>
                             </td>
                         </tr>
-                    @empty
+                    @endforeach
+
+                    <!-- 2. PRESTATIONS PRESSING & LAVAGE AUTO (COULEURS DISTINCTES) -->
+                    @if(isset($pendingExtraServices))
+                        @foreach($pendingExtraServices as $srv)
+                            <tr style="background-color: {{ $srv->category === 'pressing' ? '#f0fdfa' : '#eff6ff' }};">
+                                <td class="ps-4 small text-muted">{{ $srv->created_at->format('d/m/Y H:i') }}</td>
+                                <td>
+                                    @if($srv->category === 'pressing')
+                                        <span class="badge text-white rounded-pill px-3 py-1 fw-bold shadow-sm" style="background-color: #0891b2;">
+                                            👔 PRESSING
+                                        </span>
+                                    @else
+                                        <span class="badge text-white rounded-pill px-3 py-1 fw-bold shadow-sm" style="background-color: #4f46e5;">
+                                            🚗 LAVAGE AUTO
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="fw-bold text-dark">
+                                    {{ $srv->service_name }} <span class="badge bg-secondary-subtle text-dark ms-1">× {{ $srv->quantity }}</span>
+                                </td>
+                                <td>
+                                    @if($srv->room)
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-bold">
+                                            <i class="bi bi-house-door-fill me-1"></i>Note Chambre ({{ $srv->room->number }})
+                                        </span>
+                                    @else
+                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-3 py-1 fw-bold">
+                                            <i class="bi bi-person-fill me-1"></i>Externe : {{ $srv->customer_name }}
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="text-end fw-bold text-dark fs-6">{{ number_format($srv->total_amount, 0, ',', ' ') }} F</td>
+                                <td class="text-center pe-4">
+                                    <form action="{{ route('services.pay', $srv->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <input type="hidden" name="payment_method" value="cash">
+                                        <button type="submit" class="btn btn-sm btn-success rounded-pill fw-bold px-3 shadow-sm">
+                                            <i class="bi bi-cash-coin me-1"></i> Encaisser Cash
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    @endif
+
+                    <!-- MESSAGE SI AUCUN ENCOURS -->
+                    @if($pendingOrders->isEmpty() && (!isset($pendingExtraServices) || $pendingExtraServices->isEmpty()))
                         <tr>
                             <td colspan="6" class="text-center py-4 text-muted small">
-                                <i class="bi bi-check-all text-success me-1"></i> Aucun encours de restauration en attente.
+                                <i class="bi bi-check-all text-success me-1"></i> Aucun encours de restauration, pressing ou lavage auto en attente.
                             </td>
                         </tr>
-                    @endforelse
+                    @endif
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
 <!-- Modale de prolongation à coller tout en bas de billing/index.blade.php avant  -->
 <div class="modal fade" id="extendStayModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">

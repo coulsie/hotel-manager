@@ -224,25 +224,79 @@
                                     </div>
 
                                     <!-- Détail des consommations restaurant liées -->
+                                    <!-- Détail complet des Extras liés (Resto, Pressing, Lavage Auto, Spectacles) -->
                                     <div class="col-md-5">
                                         <div class="p-3 bg-white rounded-4 border border-warning-subtle shadow-sm h-100">
                                             <h6 class="fw-bold small text-uppercase text-warning-emphasis mb-2">
-                                                <i class="bi bi-egg-fried text-warning me-1 fs-6"></i>Consommations Restaurant Liées
+                                                <i class="bi bi-stars text-warning me-1 fs-6"></i>Extras Liés (Resto, Pressing, Auto & Spectacles)
                                             </h6>
-                                            @if($account['orders']->count() > 0)
+
+                                            @php
+                                                $hasOrders   = isset($account['orders']) && $account['orders']->count() > 0;
+                                                $hasServices = isset($account['extra_services']) && $account['extra_services']->count() > 0;
+                                                $hasOthers   = isset($account['other_billings']) && $account['other_billings']->count() > 0;
+                                            @endphp
+
+                                            @if($hasOrders || $hasServices || $hasOthers)
                                                 <ul class="list-group list-group-flush">
-                                                    @foreach($account['orders'] as $ord)
-                                                        <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
-                                                            <span class="fw-semibold text-dark">Commande #{{ $ord->id }} <small class="text-muted">({{ $ord->created_at->format('d/m H:i') }})</small></span>
-                                                            <span class="fw-bold text-warning-emphasis">{{ number_format($ord->total_amount, 0, ',', ' ') }} F</span>
-                                                        </li>
-                                                    @endforeach
+                                                    <!-- 1. Commandes Restaurant -->
+                                                    @if($hasOrders)
+                                                        @foreach($account['orders'] as $ord)
+                                                            <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
+                                                                <div>
+                                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning me-1">🍽️ RESTO</span>
+                                                                    <span class="fw-semibold text-dark">Commande #{{ $ord->id }}</span>
+                                                                    <small class="text-muted">({{ $ord->created_at->format('d/m H:i') }})</small>
+                                                                </div>
+                                                                <span class="fw-bold text-warning-emphasis">{{ number_format($ord->total_amount, 0, ',', ' ') }} F</span>
+                                                            </li>
+                                                        @endforeach
+                                                    @endif
+
+                                                    <!-- 2. Prestations Pressing & Lavage Auto -->
+                                                    @if($hasServices)
+                                                        @foreach($account['extra_services'] as $srv)
+                                                            <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
+                                                                <div>
+                                                                    @if($srv->category === 'pressing')
+                                                                        <span class="badge text-white me-1" style="background-color: #0891b2;">👔 PRESSING</span>
+                                                                    @else
+                                                                        <span class="badge text-white me-1" style="background-color: #4f46e5;">🚗 AUTO</span>
+                                                                    @endif
+                                                                    <span class="fw-semibold text-dark">{{ $srv->service_name }} (×{{ $srv->quantity }})</span>
+                                                                </div>
+                                                                <span class="fw-bold text-primary">{{ number_format($srv->total_amount, 0, ',', ' ') }} F</span>
+                                                            </li>
+                                                        @endforeach
+                                                    @endif
+
+                                                    <!-- 3. Billets de Spectacles & Autres -->
+                                                    <!-- 3. Billets de Spectacles & Autres reçus liés à la chambre -->
+                                                        @if($hasOthers)
+                                                            @foreach($account['other_billings'] as $other)
+                                                                @if(!in_array($other->service_type, ['pressing', 'car_wash']))
+                                                                    <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
+                                                                        <div>
+                                                                            @if($other->service_type === 'show_ticket')
+                                                                                <span class="badge text-white me-1" style="background-color: #db2777;">🎟️ SPECTACLE</span>
+                                                                            @else
+                                                                                <span class="badge bg-secondary text-white me-1">✨ {{ strtoupper($other->service_type) }}</span>
+                                                                            @endif
+                                                                            <span class="fw-semibold text-dark">Reçu {{ $other->receipt_number }}</span>
+                                                                        </div>
+                                                                        <span class="fw-bold text-danger">{{ number_format($other->amount_paid, 0, ',', ' ') }} F</span>
+                                                                    </li>
+                                                                @endif
+                                                            @endforeach
+                                                        @endif
+
                                                 </ul>
                                             @else
-                                                <div class="text-muted small py-2">Aucune consommation restaurant imputée à cette chambre.</div>
+                                                <div class="text-muted small py-2">Aucun extra (restaurant, pressing, lavage ou spectacle) imputé à cette chambre.</div>
                                             @endif
                                         </div>
                                     </div>
+
                                 </div>
                             </td>
                         </tr>
@@ -275,11 +329,44 @@
 </div>
 
 <!-- ===================================================================== -->
-<!-- 4. BLOC 2 : VENTES DIRECTES HORS CHAMBRE (DÉGRADÉ ÉMERAUDE)            -->
+<!-- 4. BLOC 2 : VENTES DIRECTES REGROUPÉES PAR SERVICE                    -->
 <!-- ===================================================================== -->
+@php
+    $serviceGroups = [
+        'restaurant' => [
+            'label' => '🍽️ Restauration & Bar Piscine',
+            'badge' => 'bg-warning text-dark',
+            'bg'    => '#fffbeb',
+            'color' => '#92400e',
+        ],
+        'pressing' => [
+            'label' => '👔 Pressing & Blanchisserie',
+            'badge' => 'text-white',
+            'style' => 'background-color: #0891b2;',
+            'bg'    => '#ecfeff',
+            'color' => '#155e75',
+        ],
+        'car_wash' => [
+            'label' => '🚗 Lavage Auto',
+            'badge' => 'text-white',
+            'style' => 'background-color: #4f46e5;',
+            'bg'    => '#eef2ff',
+            'color' => '#3730a3',
+        ],
+        'show_ticket' => [
+            'label' => '🎟️ Billetterie & Spectacles',
+            'badge' => 'text-white',
+            'style' => 'background-color: #db2777;',
+            'bg'    => '#fdf2f8',
+            'color' => '#9d174d',
+        ],
+    ];
+    $groupedDirect = $directTransactions->groupBy('service_type');
+@endphp
+
 <div class="card shadow border-0 rounded-4 overflow-hidden">
     <div class="card-header text-white fw-bold py-3 px-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #065f46 0%, #059669 100%);">
-        <span><i class="bi bi-wallet2 text-warning me-2 fs-5"></i>Encaissements Directs Comptoir (Restauration Passagers & Spectacles)</span>
+        <span><i class="bi bi-wallet2 text-warning me-2 fs-5"></i>Encaissements Directs Comptoir Regroupés par Service</span>
         <span class="badge bg-white text-success rounded-pill px-3 py-1 fw-bold">{{ $directTransactions->count() }} reçu(s)</span>
     </div>
     <div class="card-body p-0">
@@ -297,49 +384,68 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($directTransactions as $billing)
-                        <tr>
-                            <td class="ps-4 fw-bold text-primary">{{ $billing->receipt_number }}</td>
-                            <td class="small">{{ $billing->created_at ? $billing->created_at->format('d/m/Y H:i') : '---' }}</td>
-                            <td>
-                                @if($billing->service_type === 'restaurant')
+                    @forelse($serviceGroups as $typeKey => $meta)
+                        @php $items = $groupedDirect->get($typeKey, collect()); @endphp
+                        @if($items->count() > 0)
+                            <!-- En-tête de groupe par service -->
+                            <tr style="background-color: {{ $meta['bg'] }};">
+                                <td colspan="5" class="ps-4 py-2 fw-bold text-uppercase small" style="color: {{ $meta['color'] }};">
+                                    {{ $meta['label'] }} <span class="badge bg-white text-dark border ms-1">{{ $items->count() }} reçu(s)</span>
+                                </td>
+                                <td class="text-end fw-bold small" style="color: {{ $meta['color'] }};">
+                                    Sous-total : {{ number_format($items->sum('amount_paid'), 0, ',', ' ') }} F
+                                </td>
+                                <td></td>
+                            </tr>
 
-                                                                    <span class="badge bg-warning text-dark rounded-pill px-3">🍽️ RESTAURANT</span>
-                                @elseif($billing->service_type === 'show_ticket')
-                                    <span class="badge text-white rounded-pill px-3" style="background-color: #7c3aed;">🎟️ SPECTACLE</span>
-                                @else
-                                    <span class="badge bg-info text-dark rounded-pill px-3">{{ strtoupper($billing->service_type) }}</span>
-                                @endif
-                            </td>
-                            <td class="small fw-semibold">
-                                @if($billing->service_type === 'restaurant' && $billing->order)
-                                    Table n° {{ $billing->order->restaurantTable->number ?? 'Comptoir' }}
-                                @elseif($billing->service_type === 'show_ticket' && $billing->eventTicket && $billing->eventTicket->event)
-                                    {{ $billing->eventTicket->event->title }}
-                                @else
-                                    Client Comptoir
-                                @endif
-                            </td>
-                            <td><span class="badge bg-dark text-white rounded-pill px-2">{{ strtoupper($billing->payment_method) }}</span></td>
-                            <td class="text-end fw-bold text-success fs-6">{{ number_format($billing->amount_paid, 0, ',', ' ') }} F</td>
-                            <td class="text-center pe-4">
-                                <a href="{{ route('billing.print', $billing->id) }}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
-                                    <i class="bi bi-printer-fill me-1"></i> Imprimer
-                                </a>
-                                @role('Admin')
-                                <form action="{{ route('billing.payments.destroy', $billing->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Supprimer ce reçu ?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger rounded-pill shadow-sm"><i class="bi bi-trash-fill"></i></button>
-                                </form>
-                                @endrole
-                            </td>
-                        </tr>
+                            <!-- Lignes des reçus du service -->
+                            @foreach($items as $billing)
+                                <tr>
+                                    <td class="ps-4 fw-bold text-primary">{{ $billing->receipt_number }}</td>
+                                    <td class="small">{{ $billing->created_at ? $billing->created_at->format('d/m/Y H:i') : '---' }}</td>
+                                    <td>
+                                        <span class="badge {{ $meta['badge'] }} rounded-pill px-3" {!! isset($meta['style']) ? 'style="'.$meta['style'].'"' : '' !!}>
+                                            {{ strtoupper($typeKey === 'car_wash' ? 'LAVAGE AUTO' : ($typeKey === 'show_ticket' ? 'SPECTACLE' : $typeKey)) }}
+                                        </span>
+                                    </td>
+                                    <td class="small fw-semibold">
+                                        @if($billing->service_type === 'restaurant' && $billing->order)
+                                            Table n° {{ $billing->order->restaurantTable->number ?? 'Comptoir' }}
+                                        @elseif($billing->service_type === 'show_ticket' && $billing->eventTicket && $billing->eventTicket->event)
+                                            {{ $billing->eventTicket->event->title }}
+                                        @elseif($billing->service_type === 'pressing')
+                                            Client Pressing Externe
+                                        @elseif($billing->service_type === 'car_wash')
+                                            Client Lavage Auto Externe
+                                        @else
+                                            Client Comptoir
+                                        @endif
+                                    </td>
+                                    <td><span class="badge bg-dark text-white rounded-pill px-2">{{ strtoupper($billing->payment_method) }}</span></td>
+                                    <td class="text-end fw-bold text-success fs-6">{{ number_format($billing->amount_paid, 0, ',', ' ') }} F</td>
+                                    <td class="text-center pe-4">
+                                        <a href="{{ route('billing.print', $billing->id) }}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                                            <i class="bi bi-printer-fill me-1"></i> Imprimer
+                                        </a>
+                                        @role('Admin')
+                                        <form action="{{ route('billing.payments.destroy', $billing->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Supprimer ce reçu ?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-danger rounded-pill shadow-sm"><i class="bi bi-trash-fill"></i></button>
+                                        </form>
+                                        @endrole
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endif
                     @empty
+                    @endforelse
+
+                    @if($directTransactions->count() === 0)
                         <tr>
                             <td colspan="7" class="text-center py-4 text-muted small">Aucun encaissement direct hors chambre sur cette période.</td>
                         </tr>
-                    @endforelse
+                    @endif
                 </tbody>
 
                 <!-- PIED DE TABLEAU POUR LES VENTES DIRECTES -->

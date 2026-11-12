@@ -61,6 +61,7 @@ class ExtraServiceController extends Controller
 
         return redirect()->back()->with('success', "Tarif mis à jour pour « {$catalog->name} ».");
     }
+    
 
     public function destroyCatalog(ServiceCatalog $catalog)
     {
