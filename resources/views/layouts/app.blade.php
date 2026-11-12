@@ -6,7 +6,7 @@
     <title>@yield('title', 'Hotel Manager')</title>
     <!-- Chargement de Bootstrap & Chart.js via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
+  
     <style>
         body {
             font-size: .875rem;
