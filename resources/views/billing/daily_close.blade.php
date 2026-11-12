@@ -3,10 +3,12 @@
 @section('title', 'Clôture de Caisse (Rapport Z) - Hotel Manager')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-3 mb-4 border-bottom d-print-none">
+<div class="d-flex justify-content-between flex-wrap align-items-center pt-2 pb-3 mb-4 border-bottom d-print-none gap-3">
     <div>
-        <h1 class="h2 fw-bold text-dark mb-0"><i class="bi bi-safe2-fill text-success me-2"></i>Clôture de Caisse Journalière (Rapport Z)</h1>
-        <p class="text-muted small mb-0">Arrêté des recettes par mode d'encaissement et par pôle d'activité</p>
+        <h1 class="h2 fw-bold text-dark mb-0">
+            <i class="bi bi-safe2-fill text-success me-2"></i>Clôture de Caisse Journalière (Rapport Z)
+        </h1>
+        <p class="text-muted small mb-0 mt-1">Arrêté des recettes par mode d'encaissement et par pôle d'activité</p>
     </div>
     <div class="d-flex gap-2">
         <form method="GET" action="{{ route('billing.daily.close') }}" class="d-flex gap-2">
@@ -39,9 +41,11 @@
     </div>
 
     <div class="row g-4">
-        <!-- Ventilation par Mode de Paiement -->
+        <!-- 1. Ventilation par Mode de Paiement -->
         <div class="col-md-6">
-            <h6 class="fw-bold text-uppercase text-primary border-bottom pb-2 mb-3"><i class="bi bi-wallet2 me-2"></i>1. Détail par Mode d'Encaissement</h6>
+            <h6 class="fw-bold text-uppercase text-primary border-bottom pb-2 mb-3">
+                <i class="bi bi-wallet2 me-2"></i>1. Détail par Mode d'Encaissement
+            </h6>
             <table class="table table-bordered align-middle">
                 <tbody>
                     <tr class="table-success fw-bold">
@@ -68,13 +72,27 @@
                         <td>💳 Carte Bancaire / TPE</td>
                         <td class="text-end fw-bold">{{ number_format($byMethod['card'], 0, ',', ' ') }} F</td>
                     </tr>
+                    @if(($byMethod['other'] ?? 0) > 0)
+                        <tr>
+                            <td>✨ Autres Modes de Règlement</td>
+                            <td class="text-end fw-bold">{{ number_format($byMethod['other'], 0, ',', ' ') }} F</td>
+                        </tr>
+                    @endif
                 </tbody>
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td class="text-uppercase small text-primary">Total Encaissements :</td>
+                        <td class="text-end text-success fs-6">{{ number_format($grandTotal, 0, ',', ' ') }} F</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
 
-        <!-- Ventilation par Service -->
+        <!-- 2. Ventilation par Service (Tous pôles inclus) -->
         <div class="col-md-6">
-            <h6 class="fw-bold text-uppercase text-indigo border-bottom pb-2 mb-3"><i class="bi bi-pie-chart-fill me-2"></i>2. Détail par Pôle d'Activité</h6>
+            <h6 class="fw-bold text-uppercase text-indigo border-bottom pb-2 mb-3">
+                <i class="bi bi-pie-chart-fill me-2"></i>2. Détail par Pôle d'Activité
+            </h6>
             <table class="table table-bordered align-middle">
                 <tbody>
                     <tr>
@@ -86,10 +104,28 @@
                         <td class="text-end fw-bold">{{ number_format($byService['restaurant'], 0, ',', ' ') }} F</td>
                     </tr>
                     <tr>
+                        <td>👔 Pressing & Blanchisserie</td>
+                        <td class="text-end fw-bold text-info-emphasis">{{ number_format($byService['pressing'] ?? 0, 0, ',', ' ') }} F</td>
+                    </tr>
+                    <tr>
+                        <td>🚗 Lavage Auto</td>
+                        <td class="text-end fw-bold text-primary">{{ number_format($byService['car_wash'] ?? 0, 0, ',', ' ') }} F</td>
+                    </tr>
+                    <tr>
                         <td>🎟️ Billetterie & Spectacles</td>
-                        <td class="text-end fw-bold">{{ number_format($byService['show_ticket'], 0, ',', ' ') }} F</td>
+                        <td class="text-end fw-bold text-danger">{{ number_format($byService['show_ticket'], 0, ',', ' ') }} F</td>
+                    </tr>
+                    <tr>
+                        <td>✨ Autres Prestations / Suppléments</td>
+                        <td class="text-end fw-bold text-secondary">{{ number_format($byService['other'] ?? 0, 0, ',', ' ') }} F</td>
                     </tr>
                 </tbody>
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td class="text-uppercase small text-indigo">Total par Pôles :</td>
+                        <td class="text-end text-success fs-6">{{ number_format($grandTotal, 0, ',', ' ') }} F</td>
+                    </tr>
+                </tfoot>
             </table>
 
             <!-- Zone de signatures pour remise de caisse -->

@@ -499,7 +499,8 @@ public function dailyCloseReport(\Illuminate\Http\Request $request)
         ->whereDate('created_at', $date)
         ->get();
 
-    // Ventilation par mode de paiement
+    // 1. Ventilation par mode de paiement
+    $knownMethods = ['cash', 'wave', 'orange_money', 'mtn_momo', 'moov_money', 'card'];
     $byMethod = [
         'cash'         => $transactions->where('payment_method', 'cash')->sum('amount_paid'),
         'wave'         => $transactions->where('payment_method', 'wave')->sum('amount_paid'),
@@ -507,18 +508,24 @@ public function dailyCloseReport(\Illuminate\Http\Request $request)
         'mtn_momo'     => $transactions->where('payment_method', 'mtn_momo')->sum('amount_paid'),
         'moov_money'   => $transactions->where('payment_method', 'moov_money')->sum('amount_paid'),
         'card'         => $transactions->where('payment_method', 'card')->sum('amount_paid'),
+        'other'        => $transactions->whereNotIn('payment_method', $knownMethods)->sum('amount_paid'),
     ];
 
-    // Ventilation par pôle d'activité
+    // 2. Ventilation par pôle d'activité (Hébergement, Resto, Pressing, Lavage Auto, Spectacles & Autres)
+    $knownServices = ['room_booking', 'restaurant', 'pressing', 'car_wash', 'show_ticket'];
     $byService = [
         'room_booking' => $transactions->where('service_type', 'room_booking')->sum('amount_paid'),
         'restaurant'   => $transactions->where('service_type', 'restaurant')->sum('amount_paid'),
+        'pressing'     => $transactions->where('service_type', 'pressing')->sum('amount_paid'),
+        'car_wash'     => $transactions->where('service_type', 'car_wash')->sum('amount_paid'),
         'show_ticket'  => $transactions->where('service_type', 'show_ticket')->sum('amount_paid'),
+        'other'        => $transactions->whereNotIn('service_type', $knownServices)->sum('amount_paid'),
     ];
 
     $grandTotal = $transactions->sum('amount_paid');
 
     return view('billing.daily_close', compact('date', 'transactions', 'byMethod', 'byService', 'grandTotal'));
 }
+
 
 }
