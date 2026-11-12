@@ -111,10 +111,11 @@ class BillingController extends Controller
      * PAGE 2 : Grand Livre des Recettes (billing.payments)
      * URL : http://127.0.0
      */
-   public function paymentsHistory(\Illuminate\Http\Request $request)
+  public function paymentsHistory(\Illuminate\Http\Request $request)
 {
     // 1. Initialisation de la requête de base avec chargement des relations
-    $query = \App\Models\Billing::with(['room', 'order.restaurantTable', 'eventTicket.event']);
+    $query = \App\Models\Billing::with(['room', 'order.restaurantTable', 'eventTicket.event'])
+        ->where('status', 'completed');
 
     // 2. Filtrage Temporel (Journalier, Hebdomadaire, Mensuel)
     if ($request->filled('period')) {
@@ -135,55 +136,71 @@ class BillingController extends Controller
     // 3. Moteur de Recherche multicritère (N° Reçu, Mode, Numéro de Chambre)
     if ($request->filled('search')) {
         $search = $request->input('search');
-        $query->where(function($q) use ($search) {
+        $query->where(function ($q) use ($search) {
             $q->where('receipt_number', 'LIKE', "%{$search}%")
               ->orWhere('payment_method', 'LIKE', "%{$search}%")
-              ->orWhereHas('room', function($r) use ($search) {
+              ->orWhereHas('room', function ($r) use ($search) {
                   $r->where('number', 'LIKE', "%{$search}%");
               });
         });
     }
 
-    // 🌟 4. CALCUL DU TOTAL DES RECETTES DE LA PÉRIODE FILTRÉE (Avant pagination)
-    $periodTotal = $query->sum('amount_paid');
+    // 4. Récupération des transactions filtrées et calcul du total global
+    $allBillings = $query->latest()->get();
+    $periodTotal = $allBillings->sum('amount_paid');
 
-    // 5. Récupération des transactions avec pagination (15 par page pour stopper les lenteurs)
-    $billings = $query->latest()->paginate(15);
+    // 5. REGROUPEMENT PAR DOSSIER CHAMBRE (Hébergement + Resto lié à la chambre)
+    $roomAccounts = [];
+    $roomBillings = $allBillings->whereNotNull('room_id')->groupBy('room_id');
 
-    // 6. Conservation de votre logique de calcul des restes à payer
-   // 6. Calcul précis des restes à payer par séjour
-    foreach ($billings as $billing) {
-        $remaining = 0;
-
-        if ($billing->service_type === 'room_booking' && $billing->room) {
-            // Si la chambre est déjà libérée ('available'), le séjour est clôturé et soldé
-            if ($billing->room->status === 'available') {
-                $billing->remaining_to_pay = 0;
-            } else {
-                $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
-                    ->where('room_id', $billing->room_id)
-                    ->latest()
-                    ->first();
-
-                $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
-                $stayStartDate = $activeCard ? $activeCard->created_at : $billing->created_at->startOfDay();
-                $totalCost = $billing->room->price_per_night * $days;
-
-                $totalPaidForRoom = \App\Models\Billing::where('room_id', $billing->room_id)
-                    ->where('service_type', 'room_booking')
-                    ->where('created_at', '>=', $stayStartDate)
-                    ->sum('amount_paid');
-
-                $remaining = $totalCost - $totalPaidForRoom;
-                $billing->remaining_to_pay = $remaining > 0 ? $remaining : 0;
-            }
-        } else {
-            $billing->remaining_to_pay = 0;
+    foreach ($roomBillings as $roomId => $transactions) {
+        $room = $transactions->first()->room;
+        if (!$room) {
+            continue;
         }
+
+        // Récupération de la durée du séjour
+        $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
+            ->where('room_id', $roomId)
+            ->latest()
+            ->first();
+
+        $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
+        $roomBaseCost = $room->price_per_night * $days;
+
+        // Commandes restaurant imputées sur cette chambre
+        $roomOrders = \App\Models\Order::where('room_id', $roomId)
+            ->with('restaurantTable')
+            ->get();
+        $restoTotal = $roomOrders->sum('total_amount');
+
+        // Engagement global (Chambre + Extras restaurant)
+        $totalEngagement = $roomBaseCost + $restoTotal;
+
+        // Somme totale déjà encaissée pour cette chambre (acomptes, soldes, repas payés)
+        $totalPaid = $transactions->sum('amount_paid');
+
+        // Calcul du reste à payer (0 si la chambre est déjà libérée)
+        $remaining = ($room->status === 'available') ? 0 : max(0, $totalEngagement - $totalPaid);
+
+        $roomAccounts[] = [
+            'room'             => $room,
+            'days'             => $days,
+            'room_cost'        => $roomBaseCost,
+            'resto_cost'       => $restoTotal,
+            'orders'           => $roomOrders,
+            'total_engagement' => $totalEngagement,
+            'total_paid'       => $totalPaid,
+            'remaining'        => $remaining,
+            'transactions'     => $transactions, // Tous les reçus individuels de cette chambre
+        ];
     }
 
-    // 7. Envoi à la vue avec la variable du total global de la période
-    return view('billing.payments', compact('billings', 'periodTotal'));
+    // 6. VENTES DIRECTES HORS CHAMBRE (Clients de passage restaurant & billetterie)
+    $directTransactions = $allBillings->whereNull('room_id');
+
+    // 7. Envoi vers la vue avec les dossiers groupés
+    return view('billing.payments', compact('roomAccounts', 'directTransactions', 'periodTotal'));
 }
 
 
