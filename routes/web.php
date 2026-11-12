@@ -28,20 +28,26 @@ Route::middleware(['auth'])->group(function () {
     // 1. Accueil / Tableau de bord
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    // 2. Réception : Arrivées, Chambres & Entretien (Housekeeping)
+    // 2. Réception : Arrivées, Chambres, Entretien & IoT
     Route::controller(RoomController::class)->group(function () {
         // Check-in
-        Route::get('/checkin', 'showCheckinForm')->name('checkin.form');
-        Route::post('/checkin', 'processCheckin')->name('checkin.save');
+        Route::prefix('checkin')->name('checkin.')->group(function () {
+            Route::get('/', 'showCheckinForm')->name('form');
+            Route::post('/', 'processCheckin')->name('save');
+        });
 
         // Gestion des séjours & État des chambres
-        Route::get('/rooms/status', 'statusGrid')->name('rooms.status');
-        Route::post('/rooms/{room}/checkout', 'earlyCheckout')->name('rooms.checkout');
-        Route::post('/rooms/{room}/extend', 'extendStay')->name('rooms.extend');
+        Route::prefix('rooms')->name('rooms.')->group(function () {
+            Route::get('/status', 'statusGrid')->name('status');
+            Route::post('/{room}/checkout', 'earlyCheckout')->name('checkout');
+            Route::post('/{room}/extend', 'extendStay')->name('extend');
+        });
 
         // Entretien (Housekeeping)
-        Route::get('/housekeeping', 'housekeepingIndex')->name('housekeeping.index');
-        Route::post('/housekeeping/room/{room}/status', 'updateHousekeepingStatus')->name('housekeeping.update');
+        Route::prefix('housekeeping')->name('housekeeping.')->group(function () {
+            Route::get('/', 'housekeepingIndex')->name('index');
+            Route::post('/room/{room}/status', 'updateHousekeepingStatus')->name('update');
+        });
 
         // Journaux d'accès IoT
         Route::get('/iot/access-logs', 'accessLogsIndex')->name('iot.logs.index');
@@ -59,7 +65,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
 
-        // Gestion du catalogue tarifaire (placé avant les routes paramétrées)
+        // Gestion du catalogue tarifaire (avant les routes paramétrées)
         Route::prefix('catalog')->name('catalog.')->group(function () {
             Route::post('/', 'storeCatalog')->name('store');
             Route::put('/{catalog}', 'updateCatalog')->name('update');
@@ -92,7 +98,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/room/{room}', 'storeRoomPayment')->name('room.pay');
         Route::post('/restaurant/{order}', 'storeRestaurantPayment')->name('restaurant.pay');
 
-        // Impression de reçu (placé en dernier car paramétré à la racine)
+        // Impression de reçu (en dernier car paramétré à la racine)
         Route::get('/{id}/print', 'printReceipt')->name('print');
     });
 
@@ -133,7 +139,9 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->name('store');
             Route::put('/{id}', 'update')->name('update');
+            Route::post('/roles/{role}/permissions', 'updateRolePermissions')->name('roles.permissions');
         });
+
     });
 
 });

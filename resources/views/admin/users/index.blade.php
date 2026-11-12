@@ -103,6 +103,57 @@
         </div>
     </div>
 </div>
+<!-- ===================================================================== -->
+<!-- MATRICE INTERACTIVE DES DROITS PAR RÔLE (COCHER / DÉCOCHER LES VUES)  -->
+<!-- ===================================================================== -->
+<div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+    <div class="card-header text-white fw-bold py-3 px-4" style="background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);">
+        <i class="bi bi-ui-checks-grid text-warning me-2 fs-5"></i>Matrice des Menus & Vues Autorisés par Rôle
+    </div>
+    <div class="card-body p-4" style="background-color: #faf5ff;">
+        <div class="row g-3">
+            @foreach($roles as $role)
+                @php
+                    $roleBadge = match($role->name) {
+                        'admin'          => 'bg-danger',
+                        'receptionniste' => 'bg-primary',
+                        default          => 'bg-success',
+                    };
+                @endphp
+                <div class="col-md-4">
+                    <form action="{{ route('admin.users.roles.permissions', $role->id) }}" method="POST" class="card border-0 shadow-sm rounded-4 h-100">
+                        @csrf
+                        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                            <span class="badge {{ $roleBadge }} rounded-pill px-3 py-2 text-uppercase fw-bold">
+                                {{ $role->name }}
+                            </span>
+                            <small class="text-muted fw-bold">{{ $role->permissions->count() }} accès</small>
+                        </div>
+                        <div class="card-body p-3">
+                            @foreach($permissionLabels as $permName => $permLabel)
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox"
+                                           name="permissions[]"
+                                           value="{{ $permName }}"
+                                           id="role_{{ $role->id }}_{{ $permName }}"
+                                           {{ $role->hasPermissionTo($permName) ? 'checked' : '' }}>
+                                    <label class="form-check-label small fw-semibold text-dark" for="role_{{ $role->id }}_{{ $permName }}">
+                                        {{ $permLabel }}
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="card-footer bg-light border-0 p-3">
+                            <button type="submit" class="btn btn-sm btn-dark w-100 rounded-pill fw-bold">
+                                <i class="bi bi-save2 me-1 text-warning"></i> Enregistrer {{ strtoupper($role->name) }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            @endforeach
+        </div>
+    </div>
+</div>
 
 <!-- ===================================================================== -->
 <!-- 2. TABLEAU COLORÉ DU PERSONNEL & HABILITATIONS                        -->

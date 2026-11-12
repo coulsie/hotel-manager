@@ -6,7 +6,7 @@
     <title>@yield('title', 'Hotel Manager')</title>
     <!-- Chargement de Bootstrap & Chart.js via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-  
+
     <style>
         body {
             font-size: .875rem;
@@ -175,6 +175,7 @@
                 <div class="pt-1">
                     <ul class="nav flex-column mb-4 px-1">
                         <!-- Tableau de bord général -->
+
                         <li class="nav-item mb-2">
                             <a class="nav-link {{ Request::is('/') ? 'active' : '' }} fw-bold" href="{{ url('/') }}">
                                 <i class="bi bi-speedometer2 text-primary fs-5"></i>
@@ -186,12 +187,14 @@
                         <h6 class="sidebar-heading d-flex align-items-center bg-light-indigo">
                             <i class="bi bi-cpu-fill me-2"></i><span>Chambres & IoT</span>
                         </h6>
+
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('checkin.form') ? 'active' : '' }}" href="{{ route('checkin.form') }}">
                                 <i class="bi bi-person-plus-fill text-primary"></i>
                                 <span>Réservation / Check-in</span>
                             </a>
                         </li>
+
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('iot.logs.index') ? 'active' : '' }}" href="{{ route('iot.logs.index') }}">
                                 <i class="bi bi-broadcast-pin text-indigo"></i>
