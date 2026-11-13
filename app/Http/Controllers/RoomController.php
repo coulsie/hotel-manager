@@ -40,18 +40,46 @@ class RoomController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Room $room)
+
+        public function update(Request $request, Room $room)
     {
-        //
+        $validated = $request->validate([
+            'number'          => 'required|string|max:50|unique:rooms,number,' . $room->id,
+            'type'            => 'required|string|max:191',
+            'price_per_night' => 'required|numeric|min:0',
+            'status'          => 'required|string|in:available,occupied,dirty,maintenance',
+        ]);
+
+        $room->update($validated);
+
+        return redirect()->route('admin.rooms.create')
+            ->with('success', "La chambre {$room->number} a été mise à jour.");
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Room $room)
+
+        public function destroy(Room $room)
     {
-        //
+        if ($room->status === 'occupied') {
+            return redirect()->route('admin.rooms.create')
+                ->withErrors(['delete' => "Impossible de supprimer la chambre {$room->number} car elle est actuellement occupée."]);
+        }
+
+        $roomNumber = $room->number;
+        $room->delete();
+
+        return redirect()->route('admin.rooms.create')
+            ->with('success', "La chambre {$roomNumber} a été supprimée.");
     }
+
+    public function create()
+    {
+        $rooms = Room::orderBy('number')->get();
+        return view('admin.rooms.create', compact('rooms'));
+    }
+
+
+
+
     // Afficher le formulaire de Check-in
     public function showCheckinForm()
     {
@@ -156,10 +184,6 @@ class RoomController extends Controller
         return view('rooms.status', compact('rooms'));
     }
 
-    public function create()
-    {
-        return view('admin.rooms.create');
-    }
 
     public function store(Request $request)
     {

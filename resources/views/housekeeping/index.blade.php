@@ -1,189 +1,184 @@
 @extends('layouts.app')
 
-@section('title', 'Gestion de l\'Entretien - Hotel Manager')
-
 @section('content')
-<!-- En-tête de la page -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-3 mb-4 border-bottom">
-    <div>
-        <h1 class="h2 fw-bold text-dark mb-0">
-            <i class="bi bi-stars text-warning me-2"></i>Registre & Planification de l'Entretien
-        </h1>
-        <p class="text-muted small mb-0 mt-1">Suivi de la propreté des chambres et affectation des équipes de ménage</p>
+<div class="container-fluid py-3">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center pt-2 pb-3 mb-4 border-bottom">
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="bi bi-door-open-fill text-primary me-2"></i>Gestion des Chambres
+            </h3>
+            <p class="text-muted small mb-0">Ajoutez de nouvelles chambres et modifiez les tarifs ou statuts directement dans le tableau.</p>
+        </div>
+        <a href="{{ route('rooms.status') }}" class="btn btn-outline-primary rounded-pill px-3 fw-semibold">
+            <i class="bi bi-grid-3x3-gap me-1"></i> Plan des chambres
+        </a>
     </div>
-    <!-- Bouton pour lancer l'impression de la fiche de travail matérielle -->
-    <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm d-print-none" onclick="window.print()">
-        <i class="bi bi-printer-fill me-2"></i>Imprimer la Fiche de Ménage
-    </button>
-</div>
 
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4 mb-4 d-print-none" role="alert">
-        <i class="bi bi-check-circle-fill me-2 fs-5"></i><strong>{{ session('success') }}</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
+    <!-- Messages de notification -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
 
-@php
-    $countAvailable = $rooms->where('status', 'available')->count();
-    $countCleaning  = $rooms->where('status', 'cleaning')->count();
-    $countOccupied  = $rooms->where('status', 'occupied')->count();
-@endphp
+    @if($errors->any())
+        <div class="alert alert-danger rounded-3 shadow-sm">
+            <ul class="mb-0 small">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
-<!-- ===================================================================== -->
-<!-- 1. CARTES DE SYNTHÈSE DE L'ENTRETIEN (DÉGRADÉS ÉCLATANTS)             -->
-<!-- ===================================================================== -->
-<div class="row g-3 mb-4 d-print-none">
-    <!-- Carte 1 : Chambres à Nettoyer (Priorité Ménage) -->
-    <div class="col-md-4">
-        <div class="card border-0 shadow rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
-            <div class="card-body p-3 d-flex align-items-center justify-content-between">
-                <div>
-                    <span class="text-uppercase fw-bold small opacity-75 d-block">À Nettoyer / En cours</span>
-                    <h2 class="fw-bold mb-0">{{ $countCleaning }} <small class="fs-6 fw-normal">chambre(s)</small></h2>
+    <div class="row g-4">
+        <!-- Colonne gauche : Formulaire d'ajout -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-primary text-white py-3 px-4">
+                    <h5 class="card-title fw-bold mb-0"><i class="bi bi-plus-circle me-2"></i>Ajouter une Chambre</h5>
                 </div>
-                <div class="bg-white bg-opacity-25 rounded-circle p-3">
-                    <i class="bi bi-brush-fill fs-3 text-white"></i>
+                <div class="card-body p-4">
+                    <form action="{{ route('admin.rooms.store') }}" method="POST">
+                        @csrf
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Numéro de la chambre *</label>
+                            <input type="text" name="number" value="{{ old('number') }}" class="form-control fw-bold" placeholder="Ex: 101, 205, Suite A" maxlength="50" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Type / Standing *</label>
+                            <select name="type" class="form-select fw-semibold" required>
+                                <option value="Standard" {{ old('type') == 'Standard' ? 'selected' : '' }}>🛏️ Standard</option>
+                                <option value="Double" {{ old('type') == 'Double' ? 'selected' : '' }}>👥 Double / Twin</option>
+                                <option value="Deluxe" {{ old('type') == 'Deluxe' ? 'selected' : '' }}>✨ Deluxe</option>
+                                <option value="Suite Junior" {{ old('type') == 'Suite Junior' ? 'selected' : '' }}>👑 Suite Junior</option>
+                                <option value="Suite VIP" {{ old('type') == 'Suite VIP' ? 'selected' : '' }}>💎 Suite VIP</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Tarif par nuit (FCFA) *</label>
+                            <div class="input-group">
+                                <input type="number" name="price_per_night" value="{{ old('price_per_night') }}" class="form-control fw-bold text-success" placeholder="Ex: 35000" min="0" step="500" required>
+                                <span class="input-group-text fw-bold">FCFA</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm">
+                            <i class="bi bi-check-lg me-1"></i> Enregistrer la Chambre
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne droite : Tableau avec bouton Modifier et édition en ligne -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-uppercase text-muted">Chambres enregistrées ({{ isset($rooms) ? $rooms->count() : 0 }})</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small text-uppercase">
+                                <tr>
+                                    <th class="ps-4">N° Chambre</th>
+                                    <th>Type</th>
+                                    <th class="text-end">Tarif / Nuit</th>
+                                    <th class="text-center">Statut</th>
+                                    <th class="text-end pe-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($rooms ?? [] as $room)
+                                    <!-- 1. Ligne d'affichage -->
+                                    <tr id="room-view-{{ $room->id }}">
+                                        <td class="ps-4 fw-bold text-primary">{{ $room->number }}</td>
+                                        <td class="fw-semibold">{{ $room->type }}</td>
+                                        <td class="text-end fw-bold text-success text-nowrap">
+                                            {{ number_format($room->price_per_night, 0, ',', ' ') }} F
+                                        </td>
+                                        <td class="text-center">
+                                            @if($room->status === 'available')
+                                                <span class="badge bg-success-subtle text-success rounded-pill px-3">Disponible</span>
+                                            @elseif($room->status === 'occupied')
+                                                <span class="badge bg-danger-subtle text-danger rounded-pill px-3">Occupée</span>
+                                            @elseif($room->status === 'dirty')
+                                                <span class="badge bg-warning-subtle text-dark rounded-pill px-3">À nettoyer</span>
+                                            @else
+                                                <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">Maintenance</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <button type="button" onclick="toggleEditRoom({{ $room->id }})" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0" title="Modifier">
+                                                <i class="bi bi-pencil-square"></i> Modifier
+                                            </button>
+                                        </td>
+                                    </tr>
+
+                                    <!-- 2. Ligne d'édition en ligne (masquée par défaut) -->
+                                    <tr id="room-edit-{{ $room->id }}" class="d-none table-warning">
+                                        <td colspan="5" class="p-2 px-3">
+                                            <form action="{{ route('admin.rooms.update', $room->id) }}" method="POST" class="row g-2 align-items-center m-0">
+                                                @csrf
+                                                @method('PUT')
+                                                <div class="col-md-2">
+                                                    <input type="text" name="number" value="{{ $room->number }}" class="form-control form-control-sm fw-bold" required>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <select name="type" class="form-select form-select-sm fw-semibold" required>
+                                                        <option value="Standard" {{ $room->type === 'Standard' ? 'selected' : '' }}>Standard</option>
+                                                        <option value="Double" {{ $room->type === 'Double' ? 'selected' : '' }}>Double / Twin</option>
+                                                        <option value="Deluxe" {{ $room->type === 'Deluxe' ? 'selected' : '' }}>Deluxe</option>
+                                                        <option value="Suite Junior" {{ $room->type === 'Suite Junior' ? 'selected' : '' }}>Suite Junior</option>
+                                                        <option value="Suite VIP" {{ $room->type === 'Suite VIP' ? 'selected' : '' }}>Suite VIP</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <input type="number" name="price_per_night" value="{{ intval($room->price_per_night) }}" class="form-control form-control-sm fw-bold text-success text-end" min="0" step="500" required>
+                                                </div>
+                                                                                                       <option value="available" {{ $room->status === 'available' ? 'selected' : '' }}>Disponible</option>
+                                                        <option value="occupied" {{ $room->status === 'occupied' ? 'selected' : '' }}>Occupée</option>
+                                                        <option value="dirty" {{ $room->status === 'dirty' ? 'selected' : '' }}>À nettoyer</option>
+                                                        <option value="maintenance" {{ $room->status === 'maintenance' ? 'selected' : '' }}>Maintenance</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2 text-end text-nowrap">
+                                                    <button type="submit" class="btn btn-sm btn-success rounded-pill py-0 px-2 me-1" title="Enregistrer">
+                                                        <i class="bi bi-check-lg"></i>
+                                                    </button>
+                                                    <button type="button" onclick="toggleEditRoom({{ $room->id }})" class="btn btn-sm btn-secondary rounded-pill py-0 px-2" title="Annuler">
+                                                        <i class="bi bi-x-lg"></i>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted small">
+                                            Aucune chambre enregistrée pour le moment.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Carte 2 : Chambres Prêtes & Propres -->
-    <div class="col-md-4">
-        <div class="card border-0 shadow rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-            <div class="card-body p-3 d-flex align-items-center justify-content-between">
-                <div>
-                    <span class="text-uppercase fw-bold small opacity-75 d-block">Prêtes (Disponibles)</span>
-                    <h2 class="fw-bold mb-0">{{ $countAvailable }} <small class="fs-6 fw-normal">chambre(s)</small></h2>
-                </div>
-                <div class="bg-white bg-opacity-25 rounded-circle p-3">
-                    <i class="bi bi-check2-circle fs-3 text-white"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Carte 3 : Chambres Occupées -->
-    <div class="col-md-4">
-        <div class="card border-0 shadow rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
-            <div class="card-body p-3 d-flex align-items-center justify-content-between">
-                <div>
-                    <span class="text-uppercase fw-bold small opacity-75 d-block">Actuellement Occupées</span>
-                    <h2 class="fw-bold mb-0">{{ $countOccupied }} <small class="fs-6 fw-normal">chambre(s)</small></h2>
-                </div>
-                <div class="bg-white bg-opacity-25 rounded-circle p-3">
-                    <i class="bi bi-door-closed-fill fs-3 text-white"></i>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- ===================================================================== -->
-<!-- 2. TABLEAU D'AFFECTATION ET DE SUIVI DES CHAMBRES                     -->
-<!-- ===================================================================== -->
-<div class="card shadow border-0 rounded-4 overflow-hidden">
-    <div class="card-header text-white fw-bold py-3 px-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #312e81 0%, #4f46e5 100%);">
-        <h5 class="card-title mb-0 fw-bold">
-            <i class="bi bi-clipboard2-check text-warning me-2"></i>Rapport d'affectation des chambres
-        </h5>
-        <span class="badge bg-white text-primary rounded-pill px-3 py-1 fw-bold">{{ $rooms->count() }} chambres au total</span>
-    </div>
-
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" id="print-zone">
-                <thead class="small text-uppercase" style="background-color: #eef2ff; color: #3730a3;">
-                    <tr>
-                        <th class="ps-4 py-3">N° Chambre</th>
-                        <th class="py-3">Catégorie</th>
-                        <th class="py-3">État Actuel</th>
-                        <th class="text-center py-3 d-none d-print-table-cell">Visa / Contrôle Ménage</th>
-                        <th class="text-center pe-4 py-3 d-print-none">Changer le statut (Action)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($rooms as $room)
-                        @php
-                            $rowHighlight = '';
-                            $badgeStyle   = 'bg-success text-white';
-                            $statusIcon   = 'bi-check-circle-fill';
-                            $statusLabel  = 'Disponible';
-
-                            if ($room->status === 'occupied') {
-                                $badgeStyle  = 'bg-danger text-white';
-                                $statusIcon  = 'bi-door-closed-fill';
-                                $statusLabel = 'Occupée';
-                            } elseif ($room->status === 'cleaning') {
-                                $rowHighlight = 'style="background-color: #fffbeb;"';
-                                $badgeStyle   = 'bg-warning text-dark border border-warning';
-                                $statusIcon   = 'bi-brush-fill';
-                                $statusLabel  = 'En Nettoyage';
-                            }
-                        @endphp
-                        <tr {!! $rowHighlight !!}>
-                            <td class="ps-4">
-                                <span class="fw-bold text-primary fs-6">🚪 {{ $room->number }}</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary-subtle text-dark border border-secondary-subtle rounded-pill px-3 py-1 fw-semibold text-uppercase" style="font-size: 0.72rem;">
-                                    {{ $room->type }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge {{ $badgeStyle }} rounded-pill px-3 py-2 fw-bold text-uppercase shadow-sm" style="font-size: 0.75rem;">
-                                    <i class="bi {{ $statusIcon }} me-1"></i> {{ $statusLabel }}
-                                </span>
-                            </td>
-                            <!-- Colonne visible uniquement sur la feuille imprimée pour signer -->
-                            <td class="text-center d-none d-print-table-cell text-muted small">
-                                [ &nbsp;&nbsp; ] Fait &nbsp;&nbsp;&nbsp; Signature : __________
-                            </td>
-                            <td class="text-center pe-4 d-print-none">
-                                <!-- Formulaire rapide de changement de statut -->
-                                <form action="{{ route('housekeeping.update', $room->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    <div class="input-group input-group-sm justify-content-center">
-                                        <select name="status" class="form-select form-select-sm fw-semibold border-primary-subtle" style="max-width: 175px;" required>
-                                            <option value="available" {{ $room->status === 'available' ? 'selected' : '' }}>✅ Disponible (Propre)</option>
-                                            <option value="cleaning" {{ $room->status === 'cleaning' ? 'selected' : '' }}>🧹 En Nettoyage</option>
-                                            <option value="occupied" {{ $room->status === 'occupied' ? 'selected' : '' }}>🔴 Occupée</option>
-                                        </select>
-                                        <button type="submit" class="btn btn-primary fw-bold px-3" title="Mettre à jour le statut">
-                                            <i class="bi bi-check-lg"></i>
-                                        </button>
-                                    </div>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- Styles d'impression CSS pour masquer le menu et les formulaires sur le papier -->
-<style>
-    @media print {
-        #sidebarMenu, header, .navbar, .btn, .d-print-none, form {
-            display: none !important;
-        }
-        main, .col-md-9 {
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        table {
-            width: 100% !important;
-            border: 1px solid #000 !important;
-        }
-        .badge {
-            border: 1px solid #000 !important;
-            color: #000 !important;
-            background: transparent !important;
-        }
+<script>
+    function toggleEditRoom(id) {
+        document.getElementById('room-view-' + id).classList.toggle('d-none');
+        document.getElementById('room-edit-' + id).classList.toggle('d-none');
     }
-</style>
+</script>
 @endsection

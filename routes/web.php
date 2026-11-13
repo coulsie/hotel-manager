@@ -109,12 +109,16 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('rooms')->name('rooms.')->controller(RoomController::class)->group(function () {
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
+            Route::put('/{room}', 'update')->name('update'); // 👈 À ajouter
+            Route::delete('/{room}', 'destroy')->name('destroy'); // 👈 À ajouter
         });
 
         // Gestion de la Carte / Menu Restauration
         Route::prefix('menu')->name('menu.')->controller(OrderController::class)->group(function () {
             Route::get('/create', 'createMenuItem')->name('create');
             Route::post('/', 'storeMenuItem')->name('store');
+            Route::put('/{menuItem}', 'updateMenuItem')->name('update'); // 👈 À ajouter
+            Route::delete('/{menuItem}', 'destroyMenuItem')->name('destroy'); // 👈 À ajouter
         });
 
         // Infrastructures des Salles

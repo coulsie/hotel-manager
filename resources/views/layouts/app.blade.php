@@ -267,8 +267,28 @@
                         <!-- SECTION : Configurations Hôtelières (Administrateur uniquement) -->
                         @can('configurer_salles')
                         <h6 class="sidebar-heading d-flex align-items-center bg-light-slate">
-                            <i class="bi bi-gear-fill me-2"></i><span>Configuration</span>
+                            <i class="bi bi-gear-fill me-2"></i><span>Configuration &  Administration</span>
                         </h6>
+                        
+
+                        <!-- Lien vers l'ajout des chambres -->
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.rooms.create') ? 'active fw-bold text-primary' : '' }}"
+                            href="{{ route('admin.rooms.create') }}">
+                                <i class="bi bi-door-open me-2"></i> Gestion des Chambres
+                            </a>
+                        </li>
+
+                        <!-- Lien vers la carte et le menu restauration -->
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.menu.create') ? 'active fw-bold text-primary' : '' }}"
+                            href="{{ route('admin.menu.create') }}">
+                                <i class="bi bi-egg-fried me-2"></i> Carte & Menu Restau
+                            </a>
+                        </li>
+
+
+
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('admin.shows.index') ? 'active' : '' }}" href="{{ route('admin.shows.index') }}">
                                 <i class="bi bi-building-fill text-primary"></i>
