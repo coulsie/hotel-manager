@@ -22,6 +22,12 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 @endif
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-4 mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i><strong>{{ session('error') }}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
 
 
 @php
@@ -132,21 +138,30 @@
                                 {{ number_format($pRoom['extras_cost'], 0, ',', ' ') }} F
                             </td>
                             <td class="text-end fw-bold text-dark fs-6">{{ number_format($pRoom['total_cost'], 0, ',', ' ') }} F</td>
-                            <td class="text-end fw-bold text-success fs-6">{{ number_format($pRoom['amount_paid'], 0, ',', ' ') }} F</td>
+                            <td class="text-end">
+                                <div class="fw-bold text-success fs-6">{{ number_format($pRoom['amount_paid'], 0, ',', ' ') }} F</div>
+                                @if(!empty($pRoom['reservation_deposit']) && $pRoom['reservation_deposit'] > 0)
+                                    <div class="text-muted" style="font-size: 0.72rem;">
+                                        dont {{ number_format($pRoom['reservation_deposit'], 0, ',', ' ') }} F d'arrhes
+                                    </div>
+                                @endif
+                            </td>
                             <td class="text-end fw-bold fs-6 {{ $pRoom['remaining'] > 0 ? 'text-danger' : 'text-success' }}">
                                 {{ number_format($pRoom['remaining'], 0, ',', ' ') }} F
                             </td>
                             <td class="text-center pe-4">
                                 <div class="d-flex justify-content-center align-items-center gap-1 flex-wrap">
                                     @if($pRoom['remaining'] > 0)
+                                        <!-- Tant qu'il reste un solde à payer : uniquement le bouton Solder -->
                                         <a href="{{ route('billing.room', $pRoom['id']) }}" class="btn btn-sm btn-danger rounded-pill fw-bold px-3 shadow-sm">
                                             <i class="bi bi-receipt me-1"></i> Solder
                                         </a>
                                     @else
+                                        <!-- Dès que le solde est à 0 : bouton Facture + bouton Check-out -->
                                         <a href="{{ route('billing.room', $pRoom['id']) }}" class="btn btn-sm btn-outline-success rounded-pill fw-bold px-2" title="Voir la facture">
                                             <i class="bi bi-eye-fill"></i>
                                         </a>
-                                        <form action="{{ route('rooms.checkout', $pRoom['id']) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirmer le départ anticipé du client et désactiver le badge de la Chambre {{ $pRoom['room_number'] }} ?');">
+                                        <form action="{{ route('billing.room.checkout', $pRoom['id']) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirmer le départ du client, clôturer la réservation et désactiver le badge de la Chambre {{ $pRoom['room_number'] }} ?');">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-dark rounded-pill fw-bold px-3 shadow-sm" title="Libérer la chambre maintenant">
                                                 <i class="bi bi-door-open-fill text-warning me-1"></i> Check-out
@@ -164,10 +179,8 @@
                                         <i class="bi bi-calendar-plus-fill me-1"></i> +Nuit
                                     </button>
                                 </div>
+
                             </td>
-
-
-
                         </tr>
                     @empty
                         <tr>
@@ -177,6 +190,7 @@
                         </tr>
                     @endforelse
                 </tbody>
+
             </table>
         </div>
     </div>

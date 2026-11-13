@@ -83,7 +83,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', 'processShowBooking')->name('save');
     });
 
-    // 6. Comptabilité, Facturation & Grand Livre
+       // 6. Comptabilité, Facturation & Grand Livre
     Route::prefix('billing')->name('billing.')->controller(BillingController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/daily-close', 'dailyCloseReport')->name('daily.close');
@@ -96,11 +96,13 @@ Route::middleware(['auth'])->group(function () {
         // Facturation Chambres & Restauration
         Route::get('/room/{room}', 'showRoomInvoice')->name('room');
         Route::post('/room/{room}', 'storeRoomPayment')->name('room.pay');
+        Route::post('/room/{room}/checkout', 'checkoutRoom')->name('room.checkout');
         Route::post('/restaurant/{order}', 'storeRestaurantPayment')->name('restaurant.pay');
 
         // Impression de reçu (en dernier car paramétré à la racine)
         Route::get('/{id}/print', 'printReceipt')->name('print');
-    });
+         });
+
 
     // 7. Administration Centralisée
     Route::prefix('admin')->name('admin.')->group(function () {

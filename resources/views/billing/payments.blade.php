@@ -144,6 +144,7 @@
         <span><i class="bi bi-building-check text-warning me-2 fs-5"></i>Comptes Clients Hébergement (Engagements & Règlements Groupés)</span>
         <span class="badge bg-warning text-dark rounded-pill px-3 py-1 fw-bold">{{ count($roomAccounts) }} dossier(s)</span>
     </div>
+
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0 align-middle">
@@ -327,6 +328,108 @@
         </div>
     </div>
 </div>
+
+
+
+
+<!-- RUBRIQUE : RÉSERVATIONS & ARRHES -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-header text-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2" style="background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);">
+            <div>
+                <div class="fw-bold d-flex align-items-center">
+                    <i class="bi bi-building-check text-white me-2 fs-5"></i>
+                    <span>Réservations & Arrhes (Engagements Futurs)</span>
+                </div>
+                <div class="small text-white-50 mb-0">
+                    Suivi des acomptes encaissés d'avance et des soldes restants avant l'arrivée des clients.
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <span class="badge bg-white text-success px-3 py-2 rounded-pill shadow-sm">
+                    Total Arrhes : <strong>{{ number_format(collect($reservationAccounts)->sum('deposit_paid'), 0, ',', ' ') }} F</strong>
+                </span>
+                <span class="badge bg-white text-danger px-3 py-2 rounded-pill shadow-sm">
+                    Reste à encaisser : <strong>{{ number_format(collect($reservationAccounts)->sum('remaining'), 0, ',', ' ') }} F</strong>
+                </span>
+            </div>
+        </div>
+
+
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small text-uppercase text-muted">
+                    <tr>
+                        <th class="ps-4">Client</th>
+                        <th>Chambre & Période</th>
+                        <th class="text-end">Total Séjour</th>
+                        <th class="text-end">Arrhes Reçues</th>
+                        <th class="text-end">Reste à Payer</th>
+                        <th class="text-center">Statut</th>
+                        <th class="text-end pe-4">Reçu Officiel</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($reservationAccounts as $acc)
+                        @php
+                            $res = $acc['reservation'];
+                            $firstReceipt = $acc['billings']->first();
+                        @endphp
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">{{ $res->customer->full_name }}</div>
+                                <div class="small text-muted">{{ $res->customer->phone }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">Ch. {{ $res->room->number }}</span>
+                                <span class="small text-muted ms-1">({{ $res->nights }} nuit{{ $res->nights > 1 ? 's' : '' }})</span>
+                                <div class="small text-muted mt-1">
+                                    Du {{ $res->check_in_date->format('d/m/Y') }} au {{ $res->check_out_date->format('d/m/Y') }}
+                                </div>
+                            </td>
+                            <td class="text-end fw-semibold text-dark">
+                                {{ number_format($acc['total_amount'], 0, ',', ' ') }} F
+                            </td>
+                            <td class="text-end fw-bold text-success">
+                                {{ number_format($acc['deposit_paid'], 0, ',', ' ') }} F
+                            </td>
+                            <td class="text-end fw-bold {{ $acc['remaining'] > 0 ? 'text-danger' : 'text-muted' }}">
+                                {{ number_format($acc['remaining'], 0, ',', ' ') }} F
+                            </td>
+                            <td class="text-center">
+                                @if($acc['remaining'] == 0)
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-3">Soldée</span>
+                                @elseif($acc['deposit_paid'] > 0)
+                                    <span class="badge bg-info-subtle text-info rounded-pill px-3">Arrhes versées</span>
+                                @else
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">Sans acompte</span>
+                                @endif
+                            </td>
+                            <td class="text-end pe-4 text-nowrap">
+                                @if($firstReceipt)
+                                    <a href="{{ route('billing.print', $firstReceipt->id) }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3" title="Imprimer le reçu d'arrhes">
+                                        <i class="bi bi-printer me-1"></i> {{ $firstReceipt->receipt_number }}
+                                    </a>
+                                @else
+                                    <span class="text-muted small">Aucun versement</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted small">
+                                Aucune réservation en attente d'arrivée.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 
 <!-- ===================================================================== -->
 <!-- 4. BLOC 2 : VENTES DIRECTES REGROUPÉES PAR SERVICE                    -->

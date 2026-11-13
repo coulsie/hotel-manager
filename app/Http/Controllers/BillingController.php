@@ -8,7 +8,7 @@ use App\Models\Room;
 use App\Models\EventTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\Reservation;
 
 class BillingController extends Controller
 {
@@ -83,28 +83,42 @@ public function index()
         // Total cumulé (Chambre + Extras)
         $totalCost = $roomCost + $extrasCost;
 
-        // Somme déjà réglée pour ce séjour (avec une marge de sécurité de 5 secondes pour la création)
-        $amountPaid = \App\Models\Billing::where('room_id', $room->id)
+        // 2a. Somme déjà réglée sur place pendant ce séjour (Grand Livre : room_booking)
+        $stayPayments = \App\Models\Billing::where('room_id', $room->id)
             ->where('service_type', 'room_booking')
             ->where('status', 'completed')
             ->where('created_at', '>=', $stayStartDate->copy()->subSeconds(5))
             ->sum('amount_paid');
 
+        // 2b. Récupération de l'acompte éventuel d'une réservation convertie en check-in
+        // (Cet acompte a déjà été encaissé dans Billing sous 'reservation_deposit' et n'est pas recréé au check-in)
+        $checkedInReservation = \App\Models\Reservation::where('room_id', $room->id)
+            ->where('status', 'checked_in')
+            ->latest('updated_at')
+            ->first();
+
+        $reservationDeposit = $checkedInReservation ? (float) $checkedInReservation->deposit_paid : 0;
+
+        // Total cumulé déjà réglé (Acompte réservation + Règlements sur place)
+        $amountPaid = $stayPayments + $reservationDeposit;
+
+        // Reste réel à payer par le client
         $remainingToPay = max(0, $totalCost - $amountPaid);
 
         // Ajout de toutes les chambres occupées dans le tableau de suivi
         $pendingRooms[] = [
-            'id'            => $room->id,
-            'room_number'   => $room->number,
-            'room_type'     => $room->type,
-            'created_at'    => $stayStartDate,
-            'checkout_date' => $checkoutDate,
-            'days'          => $days,
-            'room_cost'     => $roomCost,
-            'extras_cost'   => $extrasCost,
-            'total_cost'    => $totalCost,
-            'amount_paid'   => $amountPaid,
-            'remaining'     => $remainingToPay
+            'id'                  => $room->id,
+            'room_number'         => $room->number,
+            'room_type'           => $room->type,
+            'created_at'          => $stayStartDate,
+            'checkout_date'       => $checkoutDate,
+            'days'                => $days,
+            'room_cost'           => $roomCost,
+            'extras_cost'         => $extrasCost,
+            'total_cost'          => $totalCost,
+            'reservation_deposit' => $reservationDeposit,
+            'amount_paid'         => $amountPaid,
+            'remaining'           => $remainingToPay,
         ];
     }
 
@@ -159,21 +173,33 @@ public function index()
         });
     }
 
-    // 4. Récupération des transactions filtrées et calcul du total global
+    // 4. Récupération des transactions filtrées et calcul du total global (inclut bien les arrhes !)
     $allBillings = $query->latest()->get();
     $periodTotal = $allBillings->sum('amount_paid');
 
-    // 5. REGROUPEMENT PAR DOSSIER CHAMBRE (Hébergement + Resto + Pressing + Auto + Spectacles)
+    // 5. REGROUPEMENT PAR DOSSIER CHAMBRE (Règlements sur place + Réservations en cours 'checked_in')
     $roomAccounts = [];
-    $roomBillings = $allBillings->whereNotNull('room_id')->groupBy('room_id');
 
-    foreach ($roomBillings as $roomId => $transactions) {
-        $room = $transactions->first()->room;
+    // On rassemble les IDs des chambres ayant des paiements directs ET celles ayant une réservation en cours (checked_in)
+    $billingRoomIds = $allBillings
+        ->whereNotNull('room_id')
+        ->where('service_type', '!=', 'reservation_deposit')
+        ->pluck('room_id');
+
+    $checkedInRoomIds = Reservation::where('status', 'checked_in')->pluck('room_id');
+    $allRelevantRoomIds = $billingRoomIds->merge($checkedInRoomIds)->unique();
+
+    foreach ($allRelevantRoomIds as $roomId) {
+        $room = \App\Models\Room::find($roomId);
         if (!$room) {
             continue;
         }
 
-        // Récupération de la durée du séjour
+        // Paiements sur place hors arrhes futures
+        $transactions = $allBillings
+            ->where('room_id', $roomId)
+            ->where('service_type', '!=', 'reservation_deposit');
+
         $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
             ->where('room_id', $roomId)
             ->latest()
@@ -182,53 +208,94 @@ public function index()
         $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
         $roomBaseCost = $room->price_per_night * $days;
 
-        // Commandes restaurant imputées sur cette chambre
         $roomOrders = \App\Models\Order::where('room_id', $roomId)
             ->with('restaurantTable')
             ->get();
 
-        // Prestations Pressing & Lavage Auto imputées sur cette chambre
         $roomExtraServices = \App\Models\ExtraService::where('room_id', $roomId)->get();
-
-        // Billets de spectacle ou autres reçus imputés directement à cette chambre
         $roomOtherBillings = $transactions->where('service_type', '!=', 'room_booking');
 
-        // Total combiné de tous les extras (Restaurant + Pressing + Lavage Auto + Spectacles/Autres)
         $extrasTotal = $roomOrders->sum('total_amount')
                      + $roomExtraServices->sum('total_amount')
                      + $roomOtherBillings->sum('amount_paid');
 
-        // Engagement global (Chambre + Tous les Extras)
+        // Engagement global (Chambre + Extras)
         $totalEngagement = $roomBaseCost + $extrasTotal;
 
-        // Somme totale déjà encaissée pour cette chambre
-        $totalPaid = $transactions->sum('amount_paid');
+        // Récupérer l'acompte de la réservation en cours (checked_in) pour cette chambre
+        $checkedInReservation = Reservation::where('room_id', $roomId)
+            ->where('status', 'checked_in')
+            ->latest('updated_at')
+            ->first();
 
-        // Calcul du reste à payer (0 si la chambre est déjà libérée)
+        $reservationDeposit = $checkedInReservation ? (float) $checkedInReservation->deposit_paid : 0;
+
+        // Total déjà payé (Règlements sur place + Acompte de la réservation)
+        $totalPaid = $transactions->sum('amount_paid') + $reservationDeposit;
+
+        // Reste à payer (0 si la chambre est déjà libérée)
         $remaining = ($room->status === 'available') ? 0 : max(0, $totalEngagement - $totalPaid);
 
+        // Joindre les reçus d'arrhes de cette chambre pour qu'ils restent consultables/imprimables dans le dossier
+        $depositBillings = \App\Models\Billing::where('room_id', $roomId)
+            ->where('service_type', 'reservation_deposit')
+            ->where('status', 'completed')
+            ->latest()
+            ->get();
+
         $roomAccounts[] = [
-            'room'             => $room,
-            'days'             => $days,
-            'room_cost'        => $roomBaseCost,
-            'resto_cost'       => $extrasTotal,
-            'orders'           => $roomOrders,
-            'extra_services'   => $roomExtraServices,
-            'other_billings'   => $roomOtherBillings,
-            'total_engagement' => $totalEngagement,
-            'total_paid'       => $totalPaid,
-            'remaining'        => $remaining,
-            'transactions'     => $transactions,
+            'room'                => $room,
+            'days'                => $days,
+            'room_cost'           => $roomBaseCost,
+            'resto_cost'          => $extrasTotal,
+            'orders'              => $roomOrders,
+            'extra_services'      => $roomExtraServices,
+            'other_billings'      => $roomOtherBillings,
+            'total_engagement'    => $totalEngagement,
+            'reservation_deposit' => $reservationDeposit,
+            'total_paid'          => $totalPaid,
+            'remaining'           => $remaining,
+            'transactions'        => $transactions->merge($depositBillings),
         ];
     }
 
-    // 6. VENTES DIRECTES HORS CHAMBRE (Clients de passage restaurant, pressing, auto & billetterie)
+    // 5 bis. RUBRIQUE RÉSERVATIONS & ARRHES (Séjours confirmés en attente d'arrivée)
+    $reservations = Reservation::with(['customer', 'room'])
+        ->where('status', 'confirmed')
+        ->orderBy('check_in_date', 'asc')
+        ->get();
+
+    $reservationAccounts = [];
+    foreach ($reservations as $res) {
+        // Récupérer les reçus d'arrhes liés à cette chambre/réservation
+        $depositBillings = \App\Models\Billing::where('room_id', $res->room_id)
+            ->where('service_type', 'reservation_deposit')
+            ->where('status', 'completed')
+            ->latest()
+            ->get();
+
+        $remainingRes = max(0, $res->total_amount - $res->deposit_paid);
+
+        $reservationAccounts[] = [
+            'reservation'  => $res,
+            'total_amount' => $res->total_amount,
+            'deposit_paid' => $res->deposit_paid,
+            'remaining'    => $remainingRes,
+            'billings'     => $depositBillings,
+        ];
+    }
+
+    // 6. VENTES DIRECTES HORS CHAMBRE
     $directTransactions = $allBillings->whereNull('room_id');
 
-    // 7. Envoi vers la vue avec les dossiers groupés
-    return view('billing.payments', compact('roomAccounts', 'directTransactions', 'periodTotal'));
+    // 7. Envoi vers la vue avec les dossiers groupés + les réservations
+    return view('billing.payments', compact(
+        'roomAccounts',
+        'reservationAccounts',
+        'directTransactions',
+        'periodTotal'
+    ));
 }
-
 
     /**
      * Valide le paiement d'une commande restaurant et génère le reçu dans le Grand Livre.
@@ -526,6 +593,90 @@ public function dailyCloseReport(\Illuminate\Http\Request $request)
 
     return view('billing.daily_close', compact('date', 'transactions', 'byMethod', 'byService', 'grandTotal'));
 }
+
+
+
+public function checkoutRoom(int $roomId)
+{
+    $room = Room::findOrFail($roomId);
+
+    if ($room->status !== 'occupied') {
+        return back()->with('error', "La Chambre {$room->number} n'est pas actuellement occupée.");
+    }
+
+    // 1. Calculer l'engagement total actuel du séjour
+    $activeCard = DB::table('magnetic_cards')
+        ->where('room_id', $room->id)
+        ->where('is_active', 1)
+        ->latest()
+        ->first();
+
+    $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
+    $stayStartDate = $activeCard ? \Carbon\Carbon::parse($activeCard->created_at) : now()->startOfDay();
+
+    $roomCost = $room->price_per_night * $days;
+
+    $restoCost = Order::where('room_id', $room->id)
+        ->where(function ($q) {
+            $q->whereNotIn('status', ['paid', 'completed'])
+              ->orWhereNull('status');
+        })
+        ->sum('total_amount');
+
+    $extraServicesCost = \App\Models\ExtraService::where('room_id', $room->id)
+        ->where('payment_status', 'unpaid')
+        ->sum('total_amount');
+
+    $totalCost = $roomCost + $restoCost + $extraServicesCost;
+
+    // 2. Calculer tout ce qui a été réglé (sur place + arrhes de réservation)
+    $stayPayments = Billing::where('room_id', $room->id)
+        ->where('service_type', 'room_booking')
+        ->where('status', 'completed')
+        ->where('created_at', '>=', $stayStartDate->copy()->subSeconds(5))
+        ->sum('amount_paid');
+
+    $checkedInReservation = Reservation::where('room_id', $room->id)
+        ->where('status', 'checked_in')
+        ->latest('updated_at')
+        ->first();
+
+    $reservationDeposit = $checkedInReservation ? (float) $checkedInReservation->deposit_paid : 0;
+    $totalPaid = $stayPayments + $reservationDeposit;
+
+    $remaining = max(0, $totalCost - $totalPaid);
+
+    // 3. Verrouillage de sécurité : Interdire le Check-out s'il reste un impayé
+    if ($remaining > 0) {
+        $resteFormate = number_format($remaining, 0, ',', ' ');
+        return back()->with('error', "Check-out bloqué : il reste un solde impayé de {$resteFormate} F sur la Chambre {$room->number}. Veuillez d'abord encaisser le règlement.");
+    }
+
+    // 4. Exécution atomique de la libération
+    DB::transaction(function () use ($room, $checkedInReservation) {
+        // Désactiver la carte magnétique
+        DB::table('magnetic_cards')
+            ->where('room_id', $room->id)
+            ->where('is_active', 1)
+            ->update([
+                'is_active'  => 0,
+                'updated_at' => now(),
+            ]);
+
+        // Clôturer la réservation associée si elle existe
+        if ($checkedInReservation) {
+            $checkedInReservation->update(['status' => 'completed']);
+        }
+
+        // Libérer la chambre (ou la passer en 'cleaning' si vous activez le ménage)
+        $room->update(['status' => 'available']);
+    });
+
+    return redirect()->route('billing.index')
+        ->with('success', "Check-out effectué avec succès : la Chambre {$room->number} est désormais libre et sa carte magnétique a été désactivée.");
+}
+
+
 
 
 }

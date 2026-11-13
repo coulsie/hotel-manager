@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Reservation;
 use App\Models\Customer;
 use App\Models\Room;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Billing;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+
+use Carbon\Carbon;
 
 
 class ReservationController extends Controller
@@ -156,7 +159,7 @@ class ReservationController extends Controller
 
         $billing = null;
 
-        // 4. Création de la réservation et enregistrement de l'acompte dans le Grand Livre
+        // 4. Création de la réservation et enregistrement des arrhes dans le Grand Livre
         DB::transaction(function () use ($validated, $customer, $room, $nights, $totalAmount, $depositPaid, &$billing) {
             Reservation::create([
                 'customer_id'      => $customer->id,
@@ -176,7 +179,7 @@ class ReservationController extends Controller
                 $billing = Billing::create([
                     'receipt_number' => Billing::generateReceiptNumber(),
                     'room_id'        => $room->id,
-                    'service_type'   => 'room_booking',
+                    'service_type'   => 'reservation_deposit',
                     'amount_paid'    => $depositPaid,
                     'payment_method' => $validated['payment_method'] ?? 'Espèces',
                     'status'         => 'completed',
@@ -187,7 +190,7 @@ class ReservationController extends Controller
         // 5. Si un acompte a été encaissé, redirection vers le Grand Livre avec impression du reçu
         if ($billing) {
             return redirect()->route('billing.payments')
-                ->with('success', "Réservation confirmée pour {$customer->full_name} et acompte encaissé (Reçu n° {$billing->receipt_number}).")
+                ->with('success', "Réservation confirmée pour {$customer->full_name} et arrhes encaissées (Reçu n° {$billing->receipt_number}).")
                 ->with('print_billing_id', $billing->id);
         }
 
@@ -298,5 +301,65 @@ class ReservationController extends Controller
         return "La chambre {$room->number} n'est pas disponible du {$inFormatted} au {$outFormatted}. Veuillez changer de chambre. Chambres libres sur ces dates : {$suggestions}.";
     }
 
+
+
+public function checkin(Reservation $reservation)
+{
+    if ($reservation->status !== 'confirmed') {
+        return back()->with('error', 'Cette réservation a déjà été traitée ou annulée.');
+    }
+
+    $room = $reservation->room;
+
+    if ($room->status !== 'available') {
+        return back()->with('error', "Impossible d'effectuer le check-in : la Chambre {$room->number} est actuellement indisponible.");
+    }
+
+    // Calcul exact des nuitées (ex: 7 nuits) et de la date de départ (ex: 20/11/2026)
+    $checkInDate  = Carbon::parse($reservation->check_in_date)->startOfDay();
+    $checkOutDate = Carbon::parse($reservation->check_out_date)->startOfDay();
+    $nights       = max(1, $checkInDate->diffInDays($checkOutDate));
+    $totalAmount  = $nights * $room->price_per_night;
+    $resteAPayer  = max(0, $totalAmount - $reservation->deposit_paid);
+
+    DB::transaction(function () use ($reservation, $room, $nights, $totalAmount, $checkOutDate) {
+        // 1. Désactiver toute ancienne carte active sur cette chambre
+        DB::table('magnetic_cards')
+            ->where('room_id', $room->id)
+            ->where('is_active', 1)
+            ->update([
+                'is_active'  => 0,
+                'updated_at' => now(),
+            ]);
+
+        // 2. Créer la carte magnétique pour ce séjour (indispensable pour BillingController)
+        DB::table('magnetic_cards')->insert([
+            'card_uid'       => 'RFID_' . strtoupper(Str::random(6)),
+            'security_token' => Str::random(32),
+            'room_id'        => $room->id,
+            'duration_days'  => $nights,
+            'expires_at'     => $checkOutDate->copy()->setTime(12, 0, 0),
+            'is_active'      => 1,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
+
+        // 3. Passer la chambre en "occupied"
+        $room->update(['status' => 'occupied']);
+
+        // 4. Mettre à jour la réservation en "checked_in" (sans recréer de paiement dans Billing)
+        $reservation->update([
+            'nights'       => $nights,
+            'total_amount' => $totalAmount,
+            'status'       => 'checked_in',
+        ]);
+    });
+
+    $acompteFormate = number_format($reservation->deposit_paid, 0, ',', ' ');
+    $resteFormate   = number_format($resteAPayer, 0, ',', ' ');
+
+    return redirect()->route('billing.index')
+        ->with('success', "Check-in validé pour {$reservation->customer->full_name} (Ch. {$room->number} - {$nights} nuits). Acompte déjà encaissé : {$acompteFormate} F. Reste à payer : {$resteFormate} F.");
+}
 
 }

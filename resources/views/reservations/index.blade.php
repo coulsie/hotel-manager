@@ -214,7 +214,7 @@
                                                 <form action="{{ route('reservations.checkin', $res->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirmer l\'arrivée du client et occuper la chambre ?');">
                                                     @csrf
                                                     <button type="submit" class="btn btn-sm btn-success rounded-pill px-2 py-0 me-1" title="Convertir en Check-in">
-                                                        <i class="bi bi-box-arrow-in-right"></i> Arrivée
+                                                        <i class="bi bi-box-arrow-in-right"></i> Arrivée (Check-in)
                                                     </button>
                                                 </form>
 
