@@ -224,12 +224,13 @@
                                 <span>État des Chambres</span>
                             </a>
                         </li>
-                        <li class="nav-item mb-2">
-                            <a class="nav-link {{ Request::routeIs('housekeeping.index') ? 'active' : '' }}" href="{{ route('housekeeping.index') }}">
-                                <i class="bi bi-stars text-purple"></i>
-                                <span>Planification Ménage</span>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('housekeeping.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('housekeeping.index') }}">
+                                <i class="bi bi-stars me-2"></i>
+                                <span>Gouvernance / Ménage</span>
                             </a>
                         </li>
+
 
                         <!-- SECTION : Restauration -->
                         <h6 class="sidebar-heading d-flex align-items-center bg-light-amber">

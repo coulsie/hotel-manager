@@ -11,6 +11,8 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\HousekeepingController;
+
 // ==========================================================================
 // 0. AUTHENTIFICATION (Accès public)
 // ==========================================================================
@@ -161,6 +163,21 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{reservation}/cancel', 'cancel')->name('cancel');
         Route::get('/{reservation}/police-form', 'policeForm')->name('police');
     });
+
+
+    Route::prefix('housekeeping')->name('housekeeping.')->controller(HousekeepingController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/report', 'report')->name('report'); // <-- Nouveau : Rapport d'audit sur période
+        Route::post('/agents', 'storeAgent')->name('agents.store');
+        Route::post('/assign', 'assignRoom')->name('assign');
+        Route::post('/assign-week', 'assignWeek')->name('assign.week');
+        Route::post('/{room}/clean', 'markAsClean')->name('clean');
+        Route::post('/{room}/daily-clean', 'markDailyClean')->name('daily.clean');
+        Route::post('/{room}/undo-daily-clean', 'undoDailyClean')->name('undo.daily.clean');
+        Route::post('/{room}/incident', 'reportIncident')->name('incident');
+        Route::post('/{room}/resolve-maintenance', 'resolveMaintenance')->name('resolve.maintenance');
+    });
+
 
 
 });

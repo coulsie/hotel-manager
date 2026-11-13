@@ -652,7 +652,7 @@ public function checkoutRoom(int $roomId)
         return back()->with('error', "Check-out bloqué : il reste un solde impayé de {$resteFormate} F sur la Chambre {$room->number}. Veuillez d'abord encaisser le règlement.");
     }
 
-    // 4. Exécution atomique de la libération
+    // 4. Exécution atomique de la libération et envoi en Gouvernance / Ménage
     DB::transaction(function () use ($room, $checkedInReservation) {
         // Désactiver la carte magnétique
         DB::table('magnetic_cards')
@@ -668,12 +668,12 @@ public function checkoutRoom(int $roomId)
             $checkedInReservation->update(['status' => 'completed']);
         }
 
-        // Libérer la chambre (ou la passer en 'cleaning' si vous activez le ménage)
-        $room->update(['status' => 'available']);
+        // Passer la chambre en 'cleaning' (À nettoyer) pour le service d'étage
+        $room->update(['status' => 'cleaning']);
     });
 
     return redirect()->route('billing.index')
-        ->with('success', "Check-out effectué avec succès : la Chambre {$room->number} est désormais libre et sa carte magnétique a été désactivée.");
+        ->with('success', "Check-out validé : la Chambre {$room->number} est passée en 'À nettoyer' (Gouvernance) et sa carte magnétique a été désactivée.");
 }
 
 

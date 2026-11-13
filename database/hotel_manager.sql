@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : ven. 13 nov. 2026 à 14:07
+-- Généré le : ven. 13 nov. 2026 à 15:04
 -- Version du serveur : 11.4.9-MariaDB
 -- Version de PHP : 8.3.28
 
@@ -275,6 +275,93 @@ CREATE TABLE IF NOT EXISTS `failed_jobs` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `housekeepers`
+--
+
+DROP TABLE IF EXISTS `housekeepers`;
+CREATE TABLE IF NOT EXISTS `housekeepers` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `full_name` varchar(255) NOT NULL,
+  `phone` varchar(255) DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `housekeepers`
+--
+
+INSERT INTO `housekeepers` (`id`, `full_name`, `phone`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Koné Mariam', '047581233', 1, '2026-11-13 14:32:25', '2026-11-13 14:32:25'),
+(2, 'Assetou Sawadogo', '0124536966', 1, '2026-11-13 14:32:58', '2026-11-13 14:32:58'),
+(3, 'Agnero gertrude', '012345678', 1, '2026-11-13 14:33:16', '2026-11-13 14:33:16');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `housekeeping_logs`
+--
+
+DROP TABLE IF EXISTS `housekeeping_logs`;
+CREATE TABLE IF NOT EXISTS `housekeeping_logs` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `room_id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `housekeeper_name` varchar(255) DEFAULT NULL,
+  `action_type` varchar(255) NOT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `housekeeping_logs_room_id_foreign` (`room_id`),
+  KEY `housekeeping_logs_user_id_foreign` (`user_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `housekeeping_logs`
+--
+
+INSERT INTO `housekeeping_logs` (`id`, `room_id`, `user_id`, `housekeeper_name`, `action_type`, `notes`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 'Agnero gertrude', 'daily_stay_clean', 'Recouche quotidienne effectuée (Agent : Agnero gertrude).', '2026-11-13 14:34:03', '2026-11-13 14:34:03'),
+(2, 2, 1, 'Non assigné', 'daily_stay_clean', 'Recouche quotidienne effectuée (Agent : Non assigné).', '2026-11-13 14:34:20', '2026-11-13 14:34:20'),
+(3, 5, 1, 'Non assigné', 'daily_stay_clean', 'Recouche quotidienne effectuée (Agent : Non assigné).', '2026-11-13 14:38:07', '2026-11-13 14:38:07'),
+(4, 11, 1, 'Non assigné', 'daily_stay_clean', 'Recouche quotidienne effectuée (Agent : Non assigné).', '2026-11-13 14:38:09', '2026-11-13 14:38:09');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `housekeeping_schedules`
+--
+
+DROP TABLE IF EXISTS `housekeeping_schedules`;
+CREATE TABLE IF NOT EXISTS `housekeeping_schedules` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `work_date` date NOT NULL,
+  `room_id` bigint(20) UNSIGNED NOT NULL,
+  `housekeeper_id` bigint(20) UNSIGNED NOT NULL,
+  `task_type` varchar(255) NOT NULL DEFAULT 'daily',
+  `status` varchar(255) NOT NULL DEFAULT 'pending',
+  `completed_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `housekeeping_schedules_work_date_room_id_unique` (`work_date`,`room_id`),
+  KEY `housekeeping_schedules_room_id_foreign` (`room_id`),
+  KEY `housekeeping_schedules_housekeeper_id_foreign` (`housekeeper_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `housekeeping_schedules`
+--
+
+INSERT INTO `housekeeping_schedules` (`id`, `work_date`, `room_id`, `housekeeper_id`, `task_type`, `status`, `completed_at`, `created_at`, `updated_at`) VALUES
+(1, '2026-11-13', 1, 3, 'daily', 'done', '2026-11-13 14:34:03', '2026-11-13 14:33:51', '2026-11-13 14:34:03');
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `jobs`
 --
 
@@ -389,7 +476,7 @@ CREATE TABLE IF NOT EXISTS `migrations` (
   `migration` varchar(191) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `migrations`
@@ -422,7 +509,9 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (24, '2026_11_12_115657_create_service_catalogs_table', 9),
 (25, '2026_11_12_115658_create_extra_services_table', 9),
 (26, '2026_11_13_102611_add_police_fields_to_customers_table', 10),
-(27, '2026_11_13_102612_create_reservations_table', 10);
+(27, '2026_11_13_102612_create_reservations_table', 10),
+(28, '2026_11_13_141936_create_housekeeping_logs_table', 11),
+(29, '2026_11_13_142436_create_housekeeping_planning_tables', 12);
 
 -- --------------------------------------------------------
 
@@ -866,7 +955,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('kMbaghFDdTyGmgpONgZmSROtfTEcRK6n762XfA9o', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJmdDVnMEdKSHFOeVllTFZPSmVheEFVQmlBSDkwc2h3WFBQRUxRWjhBIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9yZXNlcnZhdGlvbnM/Y2hlY2tfaW5fZGF0ZT0yMDI2LTExLTIyJnJvb21faWQ9MiIsInJvdXRlIjoicmVzZXJ2YXRpb25zLmluZGV4In0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfSwibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiOjEsInBhc3N3b3JkX2hhc2hfd2ViIjoiNmFjZjU5MmNiNjU4OTUwNmRlN2E4YzhiYzA0MThkMDM1MmExZTk1ODg2NjA3ZDVhOTc4OTYwMjdlNDllNDdlZSJ9', 1794578686),
+('kMbaghFDdTyGmgpONgZmSROtfTEcRK6n762XfA9o', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJmdDVnMEdKSHFOeVllTFZPSmVheEFVQmlBSDkwc2h3WFBQRUxRWjhBIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9ob3VzZWtlZXBpbmdcL3JlcG9ydCIsInJvdXRlIjoiaG91c2VrZWVwaW5nLnJlcG9ydCJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794582205),
 ('VcI6oFF51RqHnJuvihmbADUC9BYFdPIEt1RhNAHm', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJSaDJPcEpHOGRiVVFCVzRlc0ZVVnBvUW03RVY1eUcxMElzTnI5VXZCIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578547),
 ('8DC1yKVCKy1USPNs7NtNGruHbvoWWbV8sMFhMfti', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJ5UE4weFphbWZGY1VEV05WdDFOWTZXWWkzdGgweWtvNTlWMnJTalRNIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578547),
 ('5OlE2QsiSQO1qmdtoE00Qu0wl2JHZxCxtEl2xhON', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJPS1lBUXA3TlhqT0E5dm1kTWNzWExGSVl6QWd5NFB3VFdEbXBnS1F3IiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578547),
