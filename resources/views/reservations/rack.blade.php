@@ -113,7 +113,7 @@
                         @endforeach
                     </tr>
                 </thead>
-                <tbody>
+                                <tbody>
                     @foreach($rackMatrix as $item)
                         @php $room = $item['room']; @endphp
                         <tr>
@@ -134,23 +134,25 @@
                                 @endphp
 
                                 @if($cell['state'] === 'checked_in' || $cell['state'] === 'confirmed')
-                                        @php
-                                            $res = $cell['reservation'] ?? null;
-                                            $tooltip = $res
-                                                ? $cell['client'] . ' (Du ' . $res->check_in_date->format('d/m') . ' au ' . $res->check_out_date->format('d/m') . ')'
-                                                : $cell['client'] . ' (Séjour en cours)';
-                                        @endphp
-                                        <td class="p-0" title="{{ $tooltip }}">
-                                            <div class="rack-bar-{{ $cell['state'] }} h-100 d-flex align-items-center justify-content-center px-1 small fw-semibold text-truncate"
-                                                style="font-size: 0.7rem; {{ !empty($cell['is_start']) ? 'border-top-left-radius: 8px; border-bottom-left-radius: 8px; margin-left: 3px;' : '' }}">
-                                                @if(!empty($cell['is_start']) || $day->day === 1)
-                                                    {{ \Illuminate\Support\Str::limit($cell['client'], 10) }}
-                                                @else
-                                                    •
-                                                @endif
-                                            </div>
-                                        </td>
-
+                                    @php
+                                        $res = $cell['reservation'] ?? null;
+                                        $tooltip = $res
+                                            ? $cell['client'] . ' (Du ' . $res->check_in_date->format('d/m') . ' au ' . $res->check_out_date->format('d/m') . ')'
+                                            : $cell['client'] . ' (Séjour en cours)';
+                                        $targetUrl = ($cell['state'] === 'checked_in')
+                                            ? route('billing.room', $room->id)
+                                            : route('reservations.index');
+                                    @endphp
+                                    <td class="p-0" style="cursor: pointer;" onclick="window.location.href='{{ $targetUrl }}'" title="{{ $tooltip }} - Cliquer pour ouvrir">
+                                        <div class="rack-bar-{{ $cell['state'] }} h-100 d-flex align-items-center justify-content-center px-1 small fw-semibold text-truncate"
+                                            style="font-size: 0.7rem; {{ !empty($cell['is_start']) ? 'border-top-left-radius: 8px; border-bottom-left-radius: 8px; margin-left: 3px;' : '' }}">
+                                            @if(!empty($cell['is_start']) || $day->day === 1)
+                                                {{ \Illuminate\Support\Str::limit($cell['client'], 10) }}
+                                            @else
+                                                •
+                                            @endif
+                                        </div>
+                                    </td>
                                 @elseif($cell['state'] === 'maintenance')
                                     <td class="rack-bar-maintenance small" title="Maintenance">
                                         <i class="bi bi-tools"></i>
@@ -165,6 +167,7 @@
                         </tr>
                     @endforeach
                 </tbody>
+
             </table>
         </div>
     </div>

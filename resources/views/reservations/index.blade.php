@@ -106,25 +106,33 @@
                         <!-- Chambre et Dates -->
                         <div class="mb-3">
                             <label class="form-label fw-bold small text-uppercase text-muted">Chambre souhaitée *</label>
-                            <select name="room_id" class="form-select fw-bold" required>
+                            <<select name="room_id" class="form-select fw-bold" required>
                                 @foreach($rooms as $room)
-                                    <option value="{{ $room->id }}">
+                                    <option value="{{ $room->id }}" {{ old('room_id', request('room_id')) == $room->id ? 'selected' : '' }}>
                                         Ch. {{ $room->number }} - {{ $room->type }} ({{ number_format($room->price_per_night, 0, ',', ' ') }} F/nuit)
                                     </option>
                                 @endforeach
                             </select>
+
                         </div>
+                        @php
+                            $defaultCheckIn = old('check_in_date', request('check_in_date', date('Y-m-d')));
+                            $defaultCheckOut = old('check_out_date', date('Y-m-d', strtotime($defaultCheckIn . ' +1 day')));
+                        @endphp
 
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label fw-bold small">Arrivée *</label>
-                                <input type="date" name="check_in_date" value="{{ old('check_in_date', date('Y-m-d')) }}" min="{{ date('Y-m-d') }}" class="form-control form-control-sm" required>
+                                <input type="date" name="check_in_date" value="{{ $defaultCheckIn }}" min="{{ date('Y-m-d') }}" class="form-control form-control-sm" required>
                             </div>
                             <div class="col-6">
                                 <label class="form-label fw-bold small">Départ *</label>
-                                <input type="date" name="check_out_date" value="{{ old('check_out_date', date('Y-m-d', strtotime('+1 day'))) }}" class="form-control form-control-sm" required>
+                                <input type="date" name="check_out_date" value="{{ $defaultCheckOut }}" class="form-control form-control-sm" required>
                             </div>
                         </div>
+
+
+
 
                         <div class="row g-2 mb-3">
                             <div class="col-6">
