@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : jeu. 12 nov. 2026 à 16:15
+-- Généré le : ven. 13 nov. 2026 à 09:35
 -- Version du serveur : 11.4.9-MariaDB
 -- Version de PHP : 8.3.28
 
@@ -354,7 +354,7 @@ CREATE TABLE IF NOT EXISTS `menu_items` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `menu_items`
@@ -362,7 +362,11 @@ CREATE TABLE IF NOT EXISTS `menu_items` (
 
 INSERT INTO `menu_items` (`id`, `name`, `description`, `price`, `location_type`, `is_available`, `created_at`, `updated_at`) VALUES
 (1, 'Garba de Luxe au Thon', 'Attiéké local avec darne de thon frit, piments et oignons frais.', 3500.00, 'restaurant', 1, '2026-10-31 09:07:47', '2026-10-31 09:07:47'),
-(2, 'Cocktail l\'Abidjanaise', 'Mélange rafraîchissant à base de fruits exotiques et de liqueur locale.', 5000.00, 'bar_piscine', 1, '2026-10-31 09:07:47', '2026-10-31 09:07:47');
+(2, 'Cocktail l\'Abidjanaise', 'Mélange rafraîchissant à base de fruits exotiques et de liqueur locale.', 6000.00, 'bar_piscine', 1, '2026-10-31 09:07:47', '2026-11-13 09:17:01'),
+(3, 'Poulet Braisé', 'Attiéké ou du Riz', 7500.00, 'restaurant', 1, '2026-11-13 09:00:47', '2026-11-13 09:00:47'),
+(4, 'Vin Valpierre', NULL, 5000.00, 'restaurant', 1, '2026-11-13 09:01:19', '2026-11-13 09:01:19'),
+(5, 'Poisson Braisé', 'Attiéké', 5000.00, 'restaurant', 1, '2026-11-13 09:21:13', '2026-11-13 09:21:13'),
+(6, 'Coca Cola 33cl', NULL, 1500.00, 'restaurant', 1, '2026-11-13 09:23:17', '2026-11-13 09:23:17');
 
 -- --------------------------------------------------------
 
@@ -714,7 +718,7 @@ CREATE TABLE IF NOT EXISTS `rooms` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `rooms_number_unique` (`number`)
-) ENGINE=MyISAM AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `rooms`
@@ -730,7 +734,12 @@ INSERT INTO `rooms` (`id`, `number`, `type`, `status`, `price_per_night`, `creat
 (7, 'Chambre 107', 'Standard', 'available', 45000.00, '2026-10-31 09:07:47', '2026-11-11 14:18:52'),
 (8, 'Chambre 108', 'Luxe', 'available', 75000.00, '2026-10-31 09:07:47', '2026-11-12 16:14:41'),
 (9, 'Chambre 109', 'Standard', 'available', 45000.00, '2026-10-31 09:07:47', '2026-11-11 14:18:52'),
-(10, 'Chambre 110', 'Luxe', 'available', 75000.00, '2026-10-31 09:07:47', '2026-11-11 14:18:52');
+(10, 'Chambre 110', 'Luxe', 'available', 75000.00, '2026-10-31 09:07:47', '2026-11-11 14:18:52'),
+(11, 'Chambre 111', 'Suite Junior', 'available', 25000.00, '2026-11-13 08:56:51', '2026-11-13 08:56:51'),
+(12, 'Chambre 112', 'Standard', 'available', 45000.00, '2026-11-13 08:57:16', '2026-11-13 08:57:16'),
+(13, 'Chambre 113', 'Standard', 'available', 50000.00, '2026-11-13 09:16:41', '2026-11-13 09:18:54'),
+(14, 'Chambre 114', 'Double', 'available', 55000.00, '2026-11-13 09:19:18', '2026-11-13 09:19:33'),
+(15, 'Chambre 115', 'Suite VIP', 'available', 100000.00, '2026-11-13 09:19:53', '2026-11-13 09:19:53');
 
 -- --------------------------------------------------------
 
@@ -811,7 +820,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('SPdtLbPVUqgwdlNAsqNb3cGQLVKOHY5iEBb1yVII', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJZNFV2SHN2UlViRE1oVXFrYzRBUk41MGxGdDF3VG9uM2JDWk13YXpyIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9ob3VzZWtlZXBpbmciLCJyb3V0ZSI6ImhvdXNla2VlcGluZy5pbmRleCJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794500081);
+('kMbaghFDdTyGmgpONgZmSROtfTEcRK6n762XfA9o', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJmdDVnMEdKSHFOeVllTFZPSmVheEFVQmlBSDkwc2h3WFBQRUxRWjhBIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9hZG1pblwvbWVudVwvY3JlYXRlIiwicm91dGUiOiJhZG1pbi5tZW51LmNyZWF0ZSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794562350);
 
 -- --------------------------------------------------------
 
