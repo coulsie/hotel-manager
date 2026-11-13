@@ -187,6 +187,13 @@
                         <h6 class="sidebar-heading d-flex align-items-center bg-light-indigo">
                             <i class="bi bi-cpu-fill me-2"></i><span>Chambres & IoT</span>
                         </h6>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::routeIs('reservations.index') ? 'active' : '' }}" href="{{ route('reservations.index') }}">
+                                <i class="bi bi-calendar2-check-fill text-primary"></i>
+                                <span>Réservations Futures</span>
+                            </a>
+                        </li>
 
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('checkin.form') ? 'active' : '' }}" href="{{ route('checkin.form') }}">
@@ -269,7 +276,7 @@
                         <h6 class="sidebar-heading d-flex align-items-center bg-light-slate">
                             <i class="bi bi-gear-fill me-2"></i><span>Configuration &  Administration</span>
                         </h6>
-                        
+
 
                         <!-- Lien vers l'ajout des chambres -->
                         <li class="nav-item">

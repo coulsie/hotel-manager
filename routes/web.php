@@ -10,7 +10,7 @@ use App\Http\Controllers\ShowController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\Admin\UserController;
-
+use App\Http\Controllers\ReservationController;
 // ==========================================================================
 // 0. AUTHENTIFICATION (Accès public)
 // ==========================================================================
@@ -147,5 +147,17 @@ Route::middleware(['auth'])->group(function () {
         });
 
     });
+
+    // Réservations Futures & Fichier Clients
+    Route::prefix('reservations')->name('reservations.')->controller(ReservationController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{reservation}', 'update')->name('update');       // 👈 Modifier
+        Route::delete('/{reservation}', 'destroy')->name('destroy'); // 👈 Supprimer
+        Route::post('/{reservation}/checkin', 'convertToCheckin')->name('checkin');
+        Route::post('/{reservation}/cancel', 'cancel')->name('cancel');
+        Route::get('/{reservation}/police-form', 'policeForm')->name('police');
+    });
+
 
 });

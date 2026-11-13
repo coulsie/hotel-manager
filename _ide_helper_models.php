@@ -50,16 +50,28 @@ namespace App\Models{
  * @property int $id
  * @property string $full_name
  * @property string|null $phone
+ * @property string|null $email
+ * @property string $nationality
+ * @property string $id_type
  * @property string|null $id_card_number
+ * @property string|null $address
+ * @property string|null $notes
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Reservation> $reservations
+ * @property-read int|null $reservations_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereAddress($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereEmail($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereFullName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereIdCardNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereIdType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereNationality($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereNotes($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer wherePhone($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereUpdatedAt($value)
  */
@@ -122,10 +134,34 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $id
+ * @property string $category
+ * @property string $service_name
+ * @property int $quantity
+ * @property numeric $unit_price
+ * @property numeric $total_amount
+ * @property int|null $room_id
+ * @property string|null $customer_name
+ * @property string $work_status
+ * @property string $payment_status
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Room|null $room
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService whereCategory($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService whereCustomerName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService wherePaymentStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService whereQuantity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService whereRoomId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService whereServiceName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService whereTotalAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService whereUnitPrice($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExtraService whereWorkStatus($value)
  */
 	class ExtraService extends \Eloquent {}
 }
@@ -233,6 +269,43 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $id
+ * @property int $customer_id
+ * @property int $room_id
+ * @property string $check_in_date
+ * @property string $check_out_date
+ * @property int $nights
+ * @property numeric $total_amount
+ * @property numeric $deposit_paid
+ * @property string $status
+ * @property string|null $provenance
+ * @property string|null $destination
+ * @property string|null $special_requests
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereCheckInDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereCheckOutDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereCustomerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereDepositPaid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereDestination($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereNights($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereProvenance($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereRoomId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereSpecialRequests($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereTotalAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation whereUpdatedAt($value)
+ */
+	class Reservation extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $id
  * @property string $number
  * @property string $location_type
  * @property string $status
@@ -303,9 +376,23 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * @property int $id
+ * @property string $category
+ * @property string $name
+ * @property numeric $price
+ * @property int $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog whereCategory($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog wherePrice($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ServiceCatalog whereUpdatedAt($value)
  */
 	class ServiceCatalog extends \Eloquent {}
 }

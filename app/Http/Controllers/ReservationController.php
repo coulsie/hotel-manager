@@ -1,0 +1,302 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Reservation;
+use App\Models\Customer;
+use App\Models\Room;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use App\Models\Billing;
+use Illuminate\Support\Facades\DB;
+
+
+class ReservationController extends Controller
+{
+    /**
+     * Affiche le planning des réservations futures, le formulaire de création et le fichier clients.
+     */
+    public function index(Request $request)
+    {
+        $reservations = Reservation::with(['customer', 'room'])
+            ->latest('check_in_date')
+            ->paginate(15);
+
+        $rooms = Room::orderBy('number')->get();
+        $customers = Customer::orderBy('full_name')->get();
+
+        // Statistiques rapides
+        $stats = [
+            'arrivals_today' => Reservation::where('status', 'confirmed')
+                ->whereDate('check_in_date', today())
+                ->count(),
+            'upcoming_count' => Reservation::where('status', 'confirmed')
+                ->whereDate('check_in_date', '>=', today())
+                ->count(),
+            'deposits_total' => Reservation::where('status', 'confirmed')
+                ->sum('deposit_paid'),
+        ];
+
+        return view('reservations.index', compact('reservations', 'rooms', 'customers', 'stats'));
+    }
+
+
+
+    /**
+     * Supprime définitivement une réservation.
+     */
+    public function destroy(Reservation $reservation)
+    {
+        if ($reservation->status === 'checked_in') {
+            return back()->withErrors(['delete' => 'Impossible de supprimer une réservation dont le client est déjà en séjour.']);
+        }
+
+        $reservation->delete();
+
+        return redirect()->route('reservations.index')
+            ->with('success', 'La réservation a été supprimée.');
+    }
+
+
+
+    /**
+     * Convertit une réservation confirmée en arrivée effective (Check-in).
+     */
+    public function convertToCheckin(Reservation $reservation)
+    {
+        if ($reservation->room->status === 'occupied') {
+            return back()->withErrors(['checkin' => "La chambre {$reservation->room->number} est encore occupée. Veuillez libérer la chambre avant d'effectuer le check-in."]);
+        }
+
+        $reservation->update(['status' => 'checked_in']);
+        $reservation->room->update(['status' => 'occupied']);
+
+        return redirect()->route('reservations.index')
+            ->with('success', "Check-in validé pour {$reservation->customer->full_name} dans la chambre {$reservation->room->number}.");
+    }
+
+    /**
+     * Annule une réservation future.
+     */
+    public function cancel(Reservation $reservation)
+    {
+        $reservation->update(['status' => 'cancelled']);
+
+        return redirect()->route('reservations.index')
+            ->with('success', 'La réservation a été annulée.');
+    }
+
+    /**
+     * Affiche la fiche de police imprimable du client.
+     */
+    public function policeForm(Reservation $reservation)
+    {
+        $reservation->load(['customer', 'room']);
+        return view('reservations.police_form', compact('reservation'));
+    }
+
+
+    /**
+     * Enregistre une nouvelle réservation future avec double contrôle de dates et disponibilité.
+     */
+       public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_id'      => 'nullable|exists:customers,id',
+            'full_name'        => 'required_without:customer_id|nullable|string|max:191',
+            'phone'            => 'required_without:customer_id|nullable|string|max:191',
+            'nationality'      => 'nullable|string|max:100',
+            'id_type'          => 'nullable|string|max:50',
+            'id_card_number'   => 'nullable|string|max:191',
+            'address'          => 'nullable|string|max:255',
+            'room_id'          => 'required|exists:rooms,id',
+            'check_in_date'    => 'required|date|after_or_equal:today',
+            'check_out_date'   => 'required|date|after:check_in_date',
+            'deposit_paid'     => 'nullable|numeric|min:0',
+            'payment_method'   => 'nullable|string|max:50',
+            'provenance'       => 'nullable|string|max:191',
+            'destination'      => 'nullable|string|max:191',
+            'special_requests' => 'nullable|string',
+        ], [
+            'check_out_date.after' => 'La date de départ doit être strictement supérieure à la date d\'arrivée (minimum 1 nuit).',
+        ]);
+
+        // 1. Vérification complète de disponibilité sur les dates précises
+        $availabilityError = $this->checkRoomAvailability(
+            $validated['room_id'],
+            $validated['check_in_date'],
+            $validated['check_out_date']
+        );
+
+        if ($availabilityError) {
+            return back()->withErrors(['room_id' => $availabilityError])->withInput();
+        }
+
+        // 2. Récupération ou création de la fiche client
+        if (!empty($validated['customer_id'])) {
+            $customer = Customer::findOrFail($validated['customer_id']);
+        } else {
+            $customer = Customer::updateOrCreate(
+                ['phone' => $validated['phone']],
+                [
+                    'full_name'      => $validated['full_name'],
+                    'nationality'    => $validated['nationality'] ?? 'Ivoirienne',
+                    'id_type'        => $validated['id_type'] ?? 'CNI',
+                    'id_card_number' => $validated['id_card_number'] ?? null,
+                    'address'        => $validated['address'] ?? null,
+                ]
+            );
+        }
+
+        // 3. Calcul des nuitées et du total
+        $room = Room::findOrFail($validated['room_id']);
+        $nights = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
+        $totalAmount = $nights * $room->price_per_night;
+        $depositPaid = $validated['deposit_paid'] ?? 0;
+
+        $billing = null;
+
+        // 4. Création de la réservation et enregistrement de l'acompte dans le Grand Livre
+        DB::transaction(function () use ($validated, $customer, $room, $nights, $totalAmount, $depositPaid, &$billing) {
+            Reservation::create([
+                'customer_id'      => $customer->id,
+                'room_id'          => $room->id,
+                'check_in_date'    => $validated['check_in_date'],
+                'check_out_date'   => $validated['check_out_date'],
+                'nights'           => $nights,
+                'total_amount'     => $totalAmount,
+                'deposit_paid'     => $depositPaid,
+                'status'           => 'confirmed',
+                'provenance'       => $validated['provenance'] ?? null,
+                'destination'      => $validated['destination'] ?? null,
+                'special_requests' => $validated['special_requests'] ?? null,
+            ]);
+
+            if ($depositPaid > 0) {
+                $billing = Billing::create([
+                    'receipt_number' => Billing::generateReceiptNumber(),
+                    'room_id'        => $room->id,
+                    'service_type'   => 'room_booking',
+                    'amount_paid'    => $depositPaid,
+                    'payment_method' => $validated['payment_method'] ?? 'Espèces',
+                    'status'         => 'completed',
+                ]);
+            }
+        });
+
+        // 5. Si un acompte a été encaissé, redirection vers le Grand Livre avec impression du reçu
+        if ($billing) {
+            return redirect()->route('billing.payments')
+                ->with('success', "Réservation confirmée pour {$customer->full_name} et acompte encaissé (Reçu n° {$billing->receipt_number}).")
+                ->with('print_billing_id', $billing->id);
+        }
+
+        return redirect()->route('reservations.index')
+            ->with('success', "Réservation confirmée pour {$customer->full_name} (Chambre {$room->number} - {$nights} nuit(s)).");
+    }
+
+
+    /**
+     * Met à jour une réservation existante avec contrôle des dates et des conflits.
+     */
+    public function update(Request $request, Reservation $reservation)
+    {
+        $validated = $request->validate([
+            'room_id'        => 'required|exists:rooms,id',
+            'check_in_date'  => 'required|date',
+            'check_out_date' => 'required|date|after:check_in_date',
+            'deposit_paid'   => 'nullable|numeric|min:0',
+        ], [
+            'check_out_date.after' => 'La date de départ doit être strictement supérieure à la date d\'arrivée.',
+        ]);
+
+        // Vérification de disponibilité en excluant cette réservation
+        $availabilityError = $this->checkRoomAvailability(
+            $validated['room_id'],
+            $validated['check_in_date'],
+            $validated['check_out_date'],
+            $reservation->id
+        );
+
+        if ($availabilityError) {
+            return back()->withErrors(['room_id' => $availabilityError]);
+        }
+
+        $room = Room::findOrFail($validated['room_id']);
+        $nights = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
+        $totalAmount = $nights * $room->price_per_night;
+
+        $reservation->update([
+            'room_id'        => $room->id,
+            'check_in_date'  => $validated['check_in_date'],
+            'check_out_date' => $validated['check_out_date'],
+            'nights'         => $nights,
+            'total_amount'   => $totalAmount,
+            'deposit_paid'   => $validated['deposit_paid'] ?? 0,
+        ]);
+
+        return redirect()->route('reservations.index')
+            ->with('success', 'La réservation a été mise à jour avec succès.');
+    }
+
+    /**
+     * Vérifie si la chambre demandée est libre et propose des alternatives ou signale l'hôtel complet.
+     */
+       /**
+     * Vérifie si la chambre demandée est libre et propose des alternatives ou signale l'hôtel complet.
+     */
+    private function checkRoomAvailability(int $roomId, string $checkIn, string $checkOut, ?int $ignoreReservationId = null): ?string
+    {
+        $room = Room::findOrFail($roomId);
+        $inFormatted = Carbon::parse($checkIn)->format('d/m/Y');
+        $outFormatted = Carbon::parse($checkOut)->format('d/m/Y');
+
+        // 1. Vérifier si la chambre est en maintenance ou déjà occupée aujourd'hui pour une arrivée immédiate
+        $isUnavailable = ($room->status === 'maintenance')
+            || ($room->status === 'occupied' && Carbon::parse($checkIn)->isToday());
+
+        // 2. Vérifier les chevauchements dans la table 'reservations'
+        if (!$isUnavailable) {
+            $isUnavailable = Reservation::where('room_id', $roomId)
+                ->where('id', '!=', $ignoreReservationId)
+                ->whereIn('status', ['confirmed', 'checked_in'])
+                ->where('check_in_date', '<', $checkOut)
+                ->where('check_out_date', '>', $checkIn)
+                ->exists();
+        }
+
+        // Si la chambre est libre, aucune erreur
+        if (!$isUnavailable) {
+            return null;
+        }
+
+        // 3. La chambre est indisponible : chercher toutes les autres chambres libres sur ce créneau
+        $busyRoomIds = Reservation::where('id', '!=', $ignoreReservationId)
+            ->whereIn('status', ['confirmed', 'checked_in'])
+            ->where('check_in_date', '<', $checkOut)
+            ->where('check_out_date', '>', $checkIn)
+            ->pluck('room_id')
+            ->toArray();
+
+        $freeRoomsQuery = Room::where('status', '!=', 'maintenance')
+            ->whereNotIn('id', $busyRoomIds);
+
+        // Exclure également les chambres actuellement occupées si l'arrivée est aujourd'hui
+        if (Carbon::parse($checkIn)->isToday()) {
+            $freeRoomsQuery->where('status', '!=', 'occupied');
+        }
+
+        $freeRooms = $freeRoomsQuery->orderBy('number')->get();
+
+        // Cas A : Aucune chambre disponible dans tout l'hôtel
+        if ($freeRooms->isEmpty()) {
+            return "INDISPONIBILITÉ HÔTEL : La chambre {$room->number} est occupée et aucune autre chambre n'est disponible dans l'hôtel du {$inFormatted} au {$outFormatted}.";
+        }
+
+        // Cas B : D'autres chambres sont libres, on affiche la liste pour changer immédiatement
+        $suggestions = $freeRooms->map(fn($r) => "Ch. {$r->number} ({$r->type})")->implode(', ');
+        return "La chambre {$room->number} n'est pas disponible du {$inFormatted} au {$outFormatted}. Veuillez changer de chambre. Chambres libres sur ces dates : {$suggestions}.";
+    }
+
+
+}
