@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : ven. 13 nov. 2026 à 15:04
+-- Généré le : ven. 13 nov. 2026 à 15:19
 -- Version du serveur : 11.4.9-MariaDB
 -- Version de PHP : 8.3.28
 
@@ -287,7 +287,7 @@ CREATE TABLE IF NOT EXISTS `housekeepers` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `housekeepers`
@@ -296,7 +296,12 @@ CREATE TABLE IF NOT EXISTS `housekeepers` (
 INSERT INTO `housekeepers` (`id`, `full_name`, `phone`, `is_active`, `created_at`, `updated_at`) VALUES
 (1, 'Koné Mariam', '047581233', 1, '2026-11-13 14:32:25', '2026-11-13 14:32:25'),
 (2, 'Assetou Sawadogo', '0124536966', 1, '2026-11-13 14:32:58', '2026-11-13 14:32:58'),
-(3, 'Agnero gertrude', '012345678', 1, '2026-11-13 14:33:16', '2026-11-13 14:33:16');
+(3, 'Agnero gertrude', '012345678', 1, '2026-11-13 14:33:16', '2026-11-13 14:33:16'),
+(4, 'Kouassi Aya Brigitte', '07 08 11 22 33', 1, '2026-11-13 15:16:58', '2026-11-13 15:16:58'),
+(5, 'Traoré Aminata', '05 44 55 66 77', 1, '2026-11-13 15:16:58', '2026-11-13 15:16:58'),
+(6, 'Yao Adjoua Clarisse', '01 02 03 04 05', 1, '2026-11-13 15:16:58', '2026-11-13 15:16:58'),
+(7, 'Diabaté Fatoumata', '07 58 96 32 14', 1, '2026-11-13 15:16:58', '2026-11-13 15:16:58'),
+(8, 'Bamba Souleymane', '05 88 77 66 55', 1, '2026-11-13 15:16:58', '2026-11-13 15:16:58');
 
 -- --------------------------------------------------------
 
@@ -955,7 +960,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('kMbaghFDdTyGmgpONgZmSROtfTEcRK6n762XfA9o', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJmdDVnMEdKSHFOeVllTFZPSmVheEFVQmlBSDkwc2h3WFBQRUxRWjhBIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9ob3VzZWtlZXBpbmdcL3JlcG9ydCIsInJvdXRlIjoiaG91c2VrZWVwaW5nLnJlcG9ydCJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794582205),
+('kMbaghFDdTyGmgpONgZmSROtfTEcRK6n762XfA9o', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJmdDVnMEdKSHFOeVllTFZPSmVheEFVQmlBSDkwc2h3WFBQRUxRWjhBIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9ob3VzZWtlZXBpbmdcL3JlcG9ydCIsInJvdXRlIjoiaG91c2VrZWVwaW5nLnJlcG9ydCJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794583110),
 ('VcI6oFF51RqHnJuvihmbADUC9BYFdPIEt1RhNAHm', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJSaDJPcEpHOGRiVVFCVzRlc0ZVVnBvUW03RVY1eUcxMElzTnI5VXZCIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578547),
 ('8DC1yKVCKy1USPNs7NtNGruHbvoWWbV8sMFhMfti', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJ5UE4weFphbWZGY1VEV05WdDFOWTZXWWkzdGgweWtvNTlWMnJTalRNIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578547),
 ('5OlE2QsiSQO1qmdtoE00Qu0wl2JHZxCxtEl2xhON', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJPS1lBUXA3TlhqT0E5dm1kTWNzWExGSVl6QWd5NFB3VFdEbXBnS1F3IiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578547),
