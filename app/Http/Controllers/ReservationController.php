@@ -362,4 +362,107 @@ public function checkin(Reservation $reservation)
         ->with('success', "Check-in validé pour {$reservation->customer->full_name} (Ch. {$room->number} - {$nights} nuits). Acompte déjà encaissé : {$acompteFormate} F. Reste à payer : {$resteFormate} F.");
 }
 
+public function rack(Request $request)
+{
+    // 1. Déterminer le mois affiché (par défaut le mois en cours, ex: 2026-11)
+    $monthParam = $request->input('month', now()->format('Y-m'));
+    try {
+        $startOfMonth = Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth();
+    } catch (\Exception $e) {
+        $startOfMonth = now()->startOfMonth();
+    }
+
+    $endOfMonth = $startOfMonth->copy()->endOfMonth();
+    $prevMonth  = $startOfMonth->copy()->subMonth()->format('Y-m');
+    $nextMonth  = $startOfMonth->copy()->addMonth()->format('Y-m');
+
+    // 2. Générer la liste de tous les jours du mois
+    $days = [];
+    for ($d = 1; $d <= $startOfMonth->daysInMonth; $d++) {
+        $days[] = $startOfMonth->copy()->day($d);
+    }
+
+    // 3. Charger toutes les chambres triées par numéro
+    $rooms = Room::orderBy('number')->get();
+
+    // 4a. Charger les réservations (confirmées ou en cours) qui chevauchent ce mois
+    $reservations = Reservation::with('customer')
+        ->whereIn('status', ['confirmed', 'checked_in'])
+        ->whereDate('check_in_date', '<=', $endOfMonth->toDateString())
+        ->whereDate('check_out_date', '>', $startOfMonth->toDateString())
+        ->get();
+
+    // 4b. Charger les séjours directs actifs (cartes magnétiques actives sans réservation liée)
+    $activeCards = DB::table('magnetic_cards')
+        ->where('is_active', 1)
+        ->get();
+
+    // 5. Construire la matrice du Rack (Chambre x Jour)
+    $rackMatrix = [];
+
+    foreach ($rooms as $room) {
+        $row = [];
+
+        // Chercher une éventuelle carte active pour cette chambre (cas d'un check-in direct sans réservation)
+        $roomCard = $activeCards->firstWhere('room_id', $room->id);
+        $cardIn   = $roomCard ? Carbon::parse($roomCard->created_at)->toDateString() : null;
+        $cardOut  = ($roomCard && $roomCard->expires_at)
+            ? Carbon::parse($roomCard->expires_at)->toDateString()
+            : ($roomCard ? Carbon::parse($roomCard->created_at)->addDays($roomCard->duration_days ?? 1)->toDateString() : null);
+
+        foreach ($days as $day) {
+            $dateStr = $day->toDateString();
+
+            // Priorité 1 : Vérifier dans la table des réservations (confirmed ou checked_in)
+            $booking = $reservations->first(function ($res) use ($room, $dateStr) {
+                $in  = Carbon::parse($res->check_in_date)->toDateString();
+                $out = Carbon::parse($res->check_out_date)->toDateString();
+                return $res->room_id == $room->id && $dateStr >= $in && $dateStr < $out;
+            });
+
+            if ($booking) {
+                $isFirstDay = (Carbon::parse($booking->check_in_date)->toDateString() === $dateStr);
+                $row[$dateStr] = [
+                    'state'     => $booking->status, // 'checked_in' (vert) ou 'confirmed' (orange)
+                    'client'    => $booking->customer->full_name ?? 'Client',
+                    'dates_txt' => 'Du ' . Carbon::parse($booking->check_in_date)->format('d/m') . ' au ' . Carbon::parse($booking->check_out_date)->format('d/m'),
+                    'is_start'  => $isFirstDay,
+                ];
+            }
+            // Priorité 2 : Vérifier si la chambre est occupée via un check-in direct (carte RFID active)
+            elseif ($room->status === 'occupied' && $roomCard && $dateStr >= $cardIn && $dateStr < $cardOut) {
+                $isFirstDay = ($cardIn === $dateStr);
+                $row[$dateStr] = [
+                    'state'     => 'checked_in', // Affiché en vert comme séjour en cours
+                    'client'    => 'Client sur place',
+                    'dates_txt' => 'Du ' . Carbon::parse($cardIn)->format('d/m') . ' au ' . Carbon::parse($cardOut)->format('d/m'),
+                    'is_start'  => $isFirstDay,
+                ];
+            }
+            // Priorité 3 : Chambre en maintenance ou libre
+            else {
+                $row[$dateStr] = [
+                    'state' => ($room->status === 'maintenance') ? 'maintenance' : 'free',
+                ];
+            }
+        }
+
+        $rackMatrix[] = [
+            'room'  => $room,
+            'cells' => $row,
+        ];
+    }
+
+    return view('reservations.rack', compact(
+        'startOfMonth',
+        'prevMonth',
+        'nextMonth',
+        'days',
+        'rackMatrix'
+    ));
+}
+
+
+
+
 }

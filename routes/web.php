@@ -150,9 +150,10 @@ Route::middleware(['auth'])->group(function () {
 
     });
 
-    // Réservations Futures & Fichier Clients
+       // Réservations Futures & Fichier Clients
     Route::prefix('reservations')->name('reservations.')->controller(ReservationController::class)->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('/rack', 'rack')->name('rack'); // 👈 Placé avant /{reservation} et sans double préfixe
         Route::post('/', 'store')->name('store');
         Route::put('/{reservation}', 'update')->name('update');       // 👈 Modifier
         Route::delete('/{reservation}', 'destroy')->name('destroy'); // 👈 Supprimer

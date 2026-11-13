@@ -187,13 +187,23 @@
                         <h6 class="sidebar-heading d-flex align-items-center bg-light-indigo">
                             <i class="bi bi-cpu-fill me-2"></i><span>Chambres & IoT</span>
                         </h6>
-                        
+
+                        <!-- Lien vers le Rack Hôtelier (Planning Graphique) -->
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('reservations.rack') ? 'active fw-bold text-primary' : '' }}" href="{{ route('reservations.rack') }}">
+                                <i class="bi bi-grid-3x3-gap-fill me-2"></i>
+                                <span>Rack Hôtelier</span>
+                            </a>
+                        </li>
+
+
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('reservations.index') ? 'active' : '' }}" href="{{ route('reservations.index') }}">
                                 <i class="bi bi-calendar2-check-fill text-primary"></i>
                                 <span>Réservations Futures</span>
                             </a>
                         </li>
+
 
                         <li class="nav-item">
                             <a class="nav-link {{ Request::routeIs('checkin.form') ? 'active' : '' }}" href="{{ route('checkin.form') }}">
