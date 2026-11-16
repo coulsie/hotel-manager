@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : lun. 16 nov. 2026 à 10:30
+-- Généré le : lun. 16 nov. 2026 à 16:12
 -- Version du serveur : 11.4.9-MariaDB
 -- Version de PHP : 8.3.28
 
@@ -43,7 +43,14 @@ CREATE TABLE IF NOT EXISTS `activity_bookings` (
   PRIMARY KEY (`id`),
   KEY `activity_bookings_hotel_activity_id_foreign` (`hotel_activity_id`),
   KEY `activity_bookings_room_id_foreign` (`room_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `activity_bookings`
+--
+
+INSERT INTO `activity_bookings` (`id`, `hotel_activity_id`, `room_id`, `client_name`, `quantity`, `unit_price`, `total_amount`, `payment_status`, `notes`, `created_at`, `updated_at`) VALUES
+(1, 3, NULL, 'Groupe ESA', 30, 5000.00, 150000.00, 'paid', NULL, '2026-11-16 15:57:51', '2026-11-16 15:57:51');
 
 -- --------------------------------------------------------
 
@@ -69,7 +76,7 @@ CREATE TABLE IF NOT EXISTS `billings` (
   KEY `billings_order_id_foreign` (`order_id`),
   KEY `billings_event_ticket_id_foreign` (`event_ticket_id`),
   KEY `room_id` (`room_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `billings`
@@ -94,7 +101,8 @@ INSERT INTO `billings` (`id`, `receipt_number`, `room_id`, `order_id`, `event_ti
 (16, 'REC-20261112-0007', 2, NULL, NULL, 'pressing', 3000.00, 'cash', 'completed', '2026-11-12 13:21:46', '2026-11-12 13:21:46'),
 (17, 'REC-20261112-0008', 6, NULL, NULL, 'room_booking', 52000.00, 'cash', 'completed', '2026-11-12 14:32:48', '2026-11-12 14:32:48'),
 (18, 'REC-20261113-0001', 5, NULL, NULL, 'room_booking', 65000.00, 'Espèces', 'completed', '2026-11-13 11:26:12', '2026-11-13 11:26:12'),
-(19, 'REC-20261113-0002', 11, NULL, NULL, 'reservation_deposit', 25000.00, 'Espèces', 'completed', '2026-11-13 12:27:17', '2026-11-13 12:27:17');
+(19, 'REC-20261113-0002', 11, NULL, NULL, 'reservation_deposit', 25000.00, 'Espèces', 'completed', '2026-11-13 12:27:17', '2026-11-13 12:27:17'),
+(20, 'REC-20261116-0001', NULL, NULL, NULL, 'coworking', 150000.00, 'Espèces', 'completed', '2026-11-16 15:57:51', '2026-11-16 15:57:51');
 
 -- --------------------------------------------------------
 
@@ -1156,7 +1164,8 @@ INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, 
 ('8AD389QRDaCcfQ9WKbr5hVphsDukmScMeSUBZeXY', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJFS3BSbXhKTWdGVlVtRkR3MjBlSnRTa2Q1VHBJSktRN1J2ZlpxaVNUIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578567),
 ('XozklQRorSPgdToOD8O9nGuqG2fAUyxV16Y09Xt3', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJaNHEzN0ZOTmRsdmRqTmdKYVJZU3A0OWhBNGxsekFKR0MySG0xQWJnIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578567),
 ('xxwcXpzyEB7gvcK64tVRJhAvAUFhjPx4WahkwVni', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJTZlFEdmozV2xiZmpWckxJbFpvUmhJMkV4MWlmeXhMM2xuUEtaYWswIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578567),
-('VO6Dv77wQDfpNXhgOLpByAby8w9Cp9LRzhieHMCj', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJsMUZRbXdMcE5wblBnZElYUnBBdmYxZlFZR0tXWG5OOUY1NTN2TEdUIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9iaWxsaW5nXC9wYXltZW50cyIsInJvdXRlIjoiYmlsbGluZy5wYXltZW50cyJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794824635);
+('VO6Dv77wQDfpNXhgOLpByAby8w9Cp9LRzhieHMCj', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJsMUZRbXdMcE5wblBnZElYUnBBdmYxZlFZR0tXWG5OOUY1NTN2TEdUIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9ob3VzZWtlZXBpbmciLCJyb3V0ZSI6ImhvdXNla2VlcGluZy5pbmRleCJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794827016),
+('24kQSdnafoiXQ5g4s7XlVlcwenyX5OUG1rAKmEXe', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJicFdhajVBd2VFd2UzZUJpMnJQQzladVc4ZFQwSWtjc1RNZk5RemxFIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9iaWxsaW5nXC9wYXltZW50cyIsInJvdXRlIjoiYmlsbGluZy5wYXltZW50cyJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794845465);
 
 -- --------------------------------------------------------
 
