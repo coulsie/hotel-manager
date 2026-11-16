@@ -435,6 +435,8 @@
 <!-- 4. BLOC 2 : VENTES DIRECTES REGROUPÉES PAR SERVICE                    -->
 <!-- ===================================================================== -->
 @php
+    $groupedDirect = $directTransactions->groupBy('service_type');
+
     $serviceGroups = [
         'restaurant' => [
             'label' => '🍽️ Restauration & Bar Piscine',
@@ -451,21 +453,58 @@
         ],
         'car_wash' => [
             'label' => '🚗 Lavage Auto',
-            'badge' => 'text-white',
-            'style' => 'background-color: #4f46e5;',
-            'bg'    => '#eef2ff',
-            'color' => '#3730a3',
+            'badge' => 'bg-primary text-white',
+            'bg'    => '#eff6ff',
+            'color' => '#1e40af',
         ],
         'show_ticket' => [
             'label' => '🎟️ Billetterie & Spectacles',
+            'badge' => 'bg-danger text-white',
+            'bg'    => '#fef2f2',
+            'color' => '#991b1b',
+        ],
+        // --- NOUVELLES ACTIVITÉS & SERVICES ANNEXES ---
+        'piscine' => [
+            'label' => '🏊 Pass Piscine & Transats',
+            'badge' => 'bg-info text-dark',
+            'bg'    => '#f0f9ff',
+            'color' => '#0369a1',
+        ],
+        'spa' => [
+            'label' => '💆 Spa & Bien-être',
             'badge' => 'text-white',
-            'style' => 'background-color: #db2777;',
-            'bg'    => '#fdf2f8',
-            'color' => '#9d174d',
+            'style' => 'background-color: #7c3aed;',
+            'bg'    => '#f5f3ff',
+            'color' => '#5b21b6',
+        ],
+        'coworking' => [
+            'label' => '💻 Coworking & Day-Use',
+            'badge' => 'bg-success text-white',
+            'bg'    => '#ecfdf5',
+            'color' => '#065f46',
+        ],
+        'seminaire' => [
+            'label' => '🏢 Salles de Séminaire',
+            'badge' => 'bg-dark text-white',
+            'bg'    => '#f8fafc',
+            'color' => '#1e293b',
+        ],
+        'navette' => [
+            'label' => '🚐 Navettes & Location Véhicules',
+            'badge' => 'text-white',
+            'style' => 'background-color: #ea580c;',
+            'bg'    => '#fff7ed',
+            'color' => '#9a3412',
+        ],
+        'boutique' => [
+            'label' => '🛍️ Boutique & Divers',
+            'badge' => 'bg-secondary text-white',
+            'bg'    => '#f1f5f9',
+            'color' => '#334155',
         ],
     ];
-    $groupedDirect = $directTransactions->groupBy('service_type');
 @endphp
+
 
 <div class="card shadow border-0 rounded-4 overflow-hidden">
     <div class="card-header text-white fw-bold py-3 px-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #065f46 0%, #059669 100%);">
