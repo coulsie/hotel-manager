@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : lun. 16 nov. 2026 à 09:23
+-- Généré le : lun. 16 nov. 2026 à 10:30
 -- Version du serveur : 11.4.9-MariaDB
 -- Version de PHP : 8.3.28
 
@@ -20,6 +20,30 @@ SET time_zone = "+00:00";
 --
 -- Base de données : `hotel_manager`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `activity_bookings`
+--
+
+DROP TABLE IF EXISTS `activity_bookings`;
+CREATE TABLE IF NOT EXISTS `activity_bookings` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `hotel_activity_id` bigint(20) UNSIGNED NOT NULL,
+  `room_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `client_name` varchar(255) DEFAULT NULL,
+  `quantity` int(11) NOT NULL DEFAULT 1,
+  `unit_price` decimal(10,2) NOT NULL,
+  `total_amount` decimal(10,2) NOT NULL,
+  `payment_status` varchar(255) NOT NULL DEFAULT 'unpaid',
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `activity_bookings_hotel_activity_id_foreign` (`hotel_activity_id`),
+  KEY `activity_bookings_room_id_foreign` (`room_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -218,6 +242,31 @@ INSERT INTO `event_tickets` (`id`, `event_id`, `ticket_type`, `total_capacity`, 
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `expenses`
+--
+
+DROP TABLE IF EXISTS `expenses`;
+CREATE TABLE IF NOT EXISTS `expenses` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `voucher_number` varchar(255) NOT NULL,
+  `category` varchar(255) NOT NULL,
+  `description` varchar(255) NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `payment_method` varchar(255) NOT NULL DEFAULT 'Espèces',
+  `beneficiary` varchar(255) DEFAULT NULL,
+  `reference` varchar(255) DEFAULT NULL,
+  `user_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `expense_date` date NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `expenses_voucher_number_unique` (`voucher_number`) USING HASH,
+  KEY `expenses_user_id_foreign` (`user_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `extra_services`
 --
 
@@ -271,6 +320,36 @@ CREATE TABLE IF NOT EXISTS `failed_jobs` (
   UNIQUE KEY `failed_jobs_uuid_unique` (`uuid`),
   KEY `failed_jobs_failed_at_index` (`failed_at`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `hotel_activities`
+--
+
+DROP TABLE IF EXISTS `hotel_activities`;
+CREATE TABLE IF NOT EXISTS `hotel_activities` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `category` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  `unit` varchar(255) NOT NULL DEFAULT 'forfait',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `hotel_activities`
+--
+
+INSERT INTO `hotel_activities` (`id`, `category`, `name`, `price`, `unit`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'piscine', 'Pass Piscine Journée + Transat', 10000.00, 'personne', 1, '2026-11-16 09:55:11', '2026-11-16 09:55:11'),
+(2, 'spa', 'Massage Relaxant (1h)', 25000.00, 'séance', 1, '2026-11-16 09:55:11', '2026-11-16 09:55:11'),
+(3, 'coworking', 'Espace Coworking + Wi-Fi + Café', 5000.00, 'journée', 1, '2026-11-16 09:55:11', '2026-11-16 09:55:11'),
+(4, 'seminaire', 'Location Salle de Séminaire Équipée', 150000.00, 'journée', 1, '2026-11-16 09:55:11', '2026-11-16 09:55:11'),
+(5, 'navette', 'Navette Aéroport Félix Houphouët-Boigny', 15000.00, 'trajet', 1, '2026-11-16 09:55:11', '2026-11-16 09:55:11');
 
 -- --------------------------------------------------------
 
@@ -481,7 +560,7 @@ CREATE TABLE IF NOT EXISTS `migrations` (
   `migration` varchar(191) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `migrations`
@@ -516,7 +595,9 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (26, '2026_11_13_102611_add_police_fields_to_customers_table', 10),
 (27, '2026_11_13_102612_create_reservations_table', 10),
 (28, '2026_11_13_141936_create_housekeeping_logs_table', 11),
-(29, '2026_11_13_142436_create_housekeeping_planning_tables', 12);
+(29, '2026_11_13_142436_create_housekeeping_planning_tables', 12),
+(30, '2026_11_16_095138_create_hotel_activities_tables', 13),
+(31, '2026_11_16_101739_create_expenses_table', 14);
 
 -- --------------------------------------------------------
 
@@ -1075,7 +1156,7 @@ INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, 
 ('8AD389QRDaCcfQ9WKbr5hVphsDukmScMeSUBZeXY', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJFS3BSbXhKTWdGVlVtRkR3MjBlSnRTa2Q1VHBJSktRN1J2ZlpxaVNUIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578567),
 ('XozklQRorSPgdToOD8O9nGuqG2fAUyxV16Y09Xt3', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJaNHEzN0ZOTmRsdmRqTmdKYVJZU3A0OWhBNGxsekFKR0MySG0xQWJnIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578567),
 ('xxwcXpzyEB7gvcK64tVRJhAvAUFhjPx4WahkwVni', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJTZlFEdmozV2xiZmpWckxJbFpvUmhJMkV4MWlmeXhMM2xuUEtaYWswIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1794578567),
-('VO6Dv77wQDfpNXhgOLpByAby8w9Cp9LRzhieHMCj', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJsMUZRbXdMcE5wblBnZElYUnBBdmYxZlFZR0tXWG5OOUY1NTN2TEdUIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9vcmRlcnNcL2NyZWF0ZSIsInJvdXRlIjoib3JkZXJzLmNyZWF0ZSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794819496);
+('VO6Dv77wQDfpNXhgOLpByAby8w9Cp9LRzhieHMCj', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJsMUZRbXdMcE5wblBnZElYUnBBdmYxZlFZR0tXWG5OOUY1NTN2TEdUIiwidXJsIjpbXSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9iaWxsaW5nXC9wYXltZW50cyIsInJvdXRlIjoiYmlsbGluZy5wYXltZW50cyJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1794824635);
 
 -- --------------------------------------------------------
 
