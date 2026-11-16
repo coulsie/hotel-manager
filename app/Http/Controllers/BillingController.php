@@ -77,8 +77,15 @@ public function index()
             ->where('payment_status', 'unpaid')
             ->sum('total_amount');
 
-        // Total combiné des extras (Restaurant + Pressing + Lavage Auto)
-        $extrasCost = $restoCost + $pressingAutoCost;
+
+        // Cumul des activités annexes (Piscine, Spa, Navette, Coworking...) non soldées sur cette chambre
+        $activitiesCost = \Illuminate\Support\Facades\DB::table('activity_bookings')
+            ->where('room_id', $room->id)
+            ->where('payment_status', 'unpaid')
+            ->sum('total_amount');
+
+        // Total combiné de tous les extras
+        $extrasCost = $restoCost + $pressingAutoCost + $activitiesCost;
 
         // Total cumulé (Chambre + Extras)
         $totalCost = $roomCost + $extrasCost;
@@ -409,34 +416,45 @@ public function storeRoomPayment(Request $request, $roomId)
         'payment_method' => 'required|string'
     ]);
 
-    // 1. Enregistrement du règlement dans le Grand Livre avec numéro de reçu
-    $billing = Billing::create([
-        'receipt_number' => Billing::generateReceiptNumber(),
-        'room_id'        => $room->id,
-        'service_type'   => 'room_booking',
-        'amount_paid'    => $request->input('amount_paid'),
-        'payment_method' => $request->input('payment_method'),
-        'status'         => 'completed'
-    ]);
+    $billing = DB::transaction(function () use ($request, $room) {
+        // 1. Enregistrement du règlement dans le Grand Livre avec numéro de reçu
+        $billing = Billing::create([
+            'receipt_number' => Billing::generateReceiptNumber(),
+            'room_id'        => $room->id,
+            'service_type'   => 'room_booking',
+            'amount_paid'    => $request->input('amount_paid'),
+            'payment_method' => $request->input('payment_method'),
+            'status'         => 'completed'
+        ]);
 
-    // 2. Clôturer les commandes restaurant non payées de cette chambre
-    \App\Models\Order::where('room_id', $room->id)
-        ->where('status', '!=', 'paid')
-        ->update(['status' => 'paid']);
+        // 2. Clôturer les commandes restaurant non payées de cette chambre
+        \App\Models\Order::where('room_id', $room->id)
+            ->where('status', '!=', 'paid')
+            ->update(['status' => 'paid']);
 
-    // 3. Clôturer les prestations Pressing & Lavage Auto non payées de cette chambre
-    \App\Models\ExtraService::where('room_id', $room->id)
-        ->where('payment_status', 'unpaid')
-        ->update(['payment_status' => 'paid']);
+        // 3. Clôturer les prestations Pressing & Lavage Auto non payées de cette chambre
+        \App\Models\ExtraService::where('room_id', $room->id)
+            ->where('payment_status', 'unpaid')
+            ->update(['payment_status' => 'paid']);
 
-    // La désactivation du badge et la libération de la chambre se font automatiquement à 12h00
-    // ou manuellement via le bouton Check-out anticipé.
+        // 4. Clôturer les nouvelles Activités (Piscine, Spa, Navette, Coworking...) non payées de cette chambre
+        DB::table('activity_bookings')
+            ->where('room_id', $room->id)
+            ->where('payment_status', 'unpaid')
+            ->update([
+                'payment_status' => 'paid',
+                'updated_at'     => now(),
+            ]);
 
-    // 4. Redirection vers le Grand Livre (payments.blade.php) avec impression du reçu
+        return $billing;
+    });
+
+    // 5. Redirection vers le Grand Livre (payments.blade.php) avec impression du reçu
     return redirect()->route('billing.payments')
         ->with('success', "Encaissement Hébergement validé (Reçu n° {$billing->receipt_number}). La chambre reste attribuée jusqu'à la fin du séjour.")
         ->with('print_billing_id', $billing->id);
 }
+
 
 
     /**
@@ -627,7 +645,13 @@ public function checkoutRoom(int $roomId)
         ->where('payment_status', 'unpaid')
         ->sum('total_amount');
 
-    $totalCost = $roomCost + $restoCost + $extraServicesCost;
+    // Cumul des nouvelles Activités Annexes (Piscine, Spa, Navette, Coworking...) non soldées
+    $activitiesCost = DB::table('activity_bookings')
+        ->where('room_id', $room->id)
+        ->where('payment_status', 'unpaid')
+        ->sum('total_amount');
+
+    $totalCost = $roomCost + $restoCost + $extraServicesCost + $activitiesCost;
 
     // 2. Calculer tout ce qui a été réglé (sur place + arrhes de réservation)
     $stayPayments = Billing::where('room_id', $room->id)

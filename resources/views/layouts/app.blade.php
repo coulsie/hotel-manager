@@ -232,6 +232,15 @@
                         </li>
 
 
+                        <!-- Lien vers Activités & Services Annexes -->
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('activities.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('activities.index') }}">
+                                <i class="bi bi-water me-2"></i>
+                                <span>Activités & Services</span>
+                            </a>
+                        </li>
+
+
                         <!-- SECTION : Restauration -->
                         <h6 class="sidebar-heading d-flex align-items-center bg-light-amber">
                             <i class="bi bi-cup-hot-fill me-2"></i><span>Restauration</span>
@@ -264,6 +273,14 @@
                                 <span>Grand Livre des recettes</span>
                             </a>
                         </li>
+                                                <!-- Lien vers Dépenses & Petite Caisse -->
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('expenses.*') ? 'active fw-bold text-danger' : '' }}" href="{{ route('expenses.index') }}">
+                                <i class="bi bi-wallet2 me-2"></i>
+                                <span>Dépenses & Petite Caisse</span>
+                            </a>
+                        </li>
+
                         <li class="nav-item mb-2">
                             <a class="nav-link {{ Request::routeIs('billing.daily.close') ? 'active' : '' }}" href="{{ route('billing.daily.close') }}">
                                 <i class="bi bi-safe2-fill text-teal"></i>

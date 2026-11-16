@@ -12,6 +12,8 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\HousekeepingController;
+use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\ExpenseController;
 
 // ==========================================================================
 // 0. AUTHENTIFICATION (Accès public)
@@ -180,4 +182,18 @@ Route::middleware(['auth'])->group(function () {
 
 
 
+    Route::prefix('activities')->name('activities.')->controller(ActivityController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/catalog', 'storeCatalog')->name('catalog.store');
+        Route::post('/book', 'storeBooking')->name('book');
+        Route::post('/{id}/pay', 'markAsPaid')->name('pay');
+    });
+
+
+
+    Route::prefix('expenses')->name('expenses.')->controller(ExpenseController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+    });
 });
