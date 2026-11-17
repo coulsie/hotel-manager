@@ -20,8 +20,7 @@ class UserController extends Controller
         $roles       = Role::with('permissions')->get();
         $permissions = Permission::all();
 
-        // Libellés lisibles en français pour chaque permission
-                // Libellés lisibles en français pour chaque permission
+            // Libellés lisibles en français pour chaque permission
         $permissionLabels = [
             'voir_dashboard'     => '📊 Tableau de bord général',
             'gerer_checkin'      => '🛎️ Réservation / Check-in',
@@ -29,16 +28,20 @@ class UserController extends Controller
             'voir_iot'           => '📡 Suivi des Cartes RFID (IoT)',
             'voir_chambres'      => '🚪 État des Chambres',
             'gerer_menage'       => '🧹 Planification & Audit Ménage',
+            'gerer_crm'          => '⭐ Fichier Clients VIP & Entreprises',
             'gerer_restauration' => '🍽️ Prise de Commande (Resto/Bar)',
             'gerer_services'     => '👔 Pressing & Lavage Auto',
             'gerer_activites'    => '🏊 Activités Annexes (Piscine/Spa/Navette)',
+            'gerer_stock'        => '📦 Gestion des Stocks & Économat',
             'gerer_encours'      => '🧾 Encours & Factures',
             'voir_grand_livre'   => '💰 Grand Livre des recettes',
             'gerer_depenses'     => '💸 Dépenses & Petite Caisse',
             'voir_rapport_z'     => '🔐 Clôture Caisse (Rapport Z)',
             'gerer_billetterie'  => '🎟️ Émettre un Billet (Spectacles)',
+            'gerer_rh'           => '👥 Planning RH, Pointage & Avances',
             'configurer_salles'  => '⚙️ Configuration (Salles, Concerts, Utilisateurs)',
         ];
+
 
 
         return view('admin.users.index', compact('employees', 'roles', 'permissions', 'permissionLabels'));

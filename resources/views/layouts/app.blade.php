@@ -171,225 +171,270 @@
         <div class="container-fluid">
         <div class="row">
             <!-- Menu latéral -->
-                        <!-- Menu latéral sécurisé par permissions -->
+            <!-- Menu latéral sécurisé par permissions -->
             <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-white sidebar collapse border-end">
-                <div class="pt-1">
-                    <ul class="nav flex-column mb-4 px-1">
-                        <!-- Tableau de bord général -->
-                        @can('voir_dashboard')
-                        <li class="nav-item mb-2">
-                            <a class="nav-link {{ Request::is('/') ? 'active' : '' }} fw-bold" href="{{ url('/') }}">
-                                <i class="bi bi-speedometer2 text-primary fs-5"></i>
-                                <span>Tableau de bord</span>
-                            </a>
-                        </li>
-                        @endcan
+                    <div class="pt-2">
+                        <ul class="nav flex-column mb-4 px-2">
 
-                        <!-- SECTION : Chambres, Gouvernance & IoT -->
-                        @canany(['voir_rack', 'gerer_checkin', 'voir_iot', 'voir_chambres', 'gerer_menage', 'gerer_activites'])
-                        <h6 class="sidebar-heading d-flex align-items-center bg-light-indigo">
-                            <i class="bi bi-cpu-fill me-2"></i><span>Chambres & Services</span>
-                        </h6>
+                            <!-- 1. PILOTAGE -->
+                            @can('voir_dashboard')
+                            <li class="nav-item mb-2">
+                                <a class="nav-link {{ Request::is('/') ? 'active fw-bold text-primary' : '' }}" href="{{ url('/') }}">
+                                    <i class="bi bi-speedometer2 text-primary fs-5 me-2"></i>
+                                    <span>Tableau de bord</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        @can('voir_rack')
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('reservations.rack') ? 'active fw-bold text-primary' : '' }}" href="{{ route('reservations.rack') }}">
-                                <i class="bi bi-grid-3x3-gap-fill me-2"></i>
-                                <span>Rack Hôtelier</span>
-                            </a>
-                        </li>
-                        @endcan
+                            <!-- 2. RÉCEPTION & CLIENTS (FRONT-OFFICE) -->
+                            @canany(['voir_rack', 'gerer_checkin', 'gerer_crm', 'voir_iot'])
+                            <h6 class="sidebar-heading d-flex align-items-center bg-light-indigo mt-2">
+                                <i class="bi bi-concierge-bell me-2"></i><span>Réception & Clients</span>
+                            </h6>
 
-                        @can('gerer_checkin')
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::routeIs('reservations.index') ? 'active' : '' }}" href="{{ route('reservations.index') }}">
-                                <i class="bi bi-calendar2-check-fill text-primary"></i>
-                                <span>Réservations Futures</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::routeIs('checkin.form') ? 'active' : '' }}" href="{{ route('checkin.form') }}">
-                                <i class="bi bi-person-plus-fill text-primary"></i>
-                                <span>Réservation / Check-in</span>
-                            </a>
-                        </li>
-                        @endcan
+                            @can('voir_rack')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('reservations.rack') ? 'active fw-bold text-primary' : '' }}" href="{{ route('reservations.rack') }}">
+                                    <i class="bi bi-grid-3x3-gap-fill text-indigo me-2"></i>
+                                    <span>Rack Hôtelier</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        @can('voir_iot')
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::routeIs('iot.logs.index') ? 'active' : '' }}" href="{{ route('iot.logs.index') }}">
-                                <i class="bi bi-broadcast-pin text-indigo"></i>
-                                <span>Suivi des Cartes RFID</span>
-                            </a>
-                        </li>
-                        @endcan
+                            @can('gerer_checkin')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('checkin.form') ? 'active fw-bold text-primary' : '' }}" href="{{ route('checkin.form') }}">
+                                    <i class="bi bi-person-plus-fill text-primary me-2"></i>
+                                    <span>Réservation / Check-in</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('reservations.index') ? 'active fw-bold text-primary' : '' }}" href="{{ route('reservations.index') }}">
+                                    <i class="bi bi-calendar2-check-fill text-primary me-2"></i>
+                                    <span>Réservations Futures</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        @can('voir_chambres')
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::routeIs('rooms.status') ? 'active' : '' }}" href="{{ route('rooms.status') }}">
-                                <i class="bi bi-door-closed-fill text-teal"></i>
-                                <span>État des Chambres</span>
-                            </a>
-                        </li>
-                        @endcan
+                            @can('gerer_crm')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('crm.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('crm.index') }}">
+                                    <i class="bi bi-person-lines-fill text-primary me-2"></i>
+                                    <span>Fichier Clients & VIP</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        @can('gerer_menage')
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('housekeeping.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('housekeeping.index') }}">
-                                <i class="bi bi-stars me-2"></i>
-                                <span>Gouvernance / Ménage</span>
-                            </a>
-                        </li>
-                        @endcan
+                            @can('voir_iot')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('iot.logs.index') ? 'active fw-bold text-primary' : '' }}" href="{{ route('iot.logs.index') }}">
+                                    <i class="bi bi-broadcast-pin text-indigo me-2"></i>
+                                    <span>Suivi des Cartes RFID</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @endcanany
 
-                        @can('gerer_activites')
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('activities.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('activities.index') }}">
-                                <i class="bi bi-water me-2"></i>
-                                <span>Activités & Services</span>
-                            </a>
-                        </li>
-                        @endcan
-                        @endcanany
+                            <!-- 3. HÉBERGEMENT & GOUVERNANCE -->
+                            @canany(['voir_chambres', 'gerer_menage'])
+                            <h6 class="sidebar-heading d-flex align-items-center bg-light-indigo mt-3">
+                                <i class="bi bi-building me-2"></i><span>Hébergement & Ménage</span>
+                            </h6>
 
-                        <!-- SECTION : Restauration & Pressing -->
-                        @canany(['gerer_restauration', 'gerer_services'])
-                        <h6 class="sidebar-heading d-flex align-items-center bg-light-amber">
-                            <i class="bi bi-cup-hot-fill me-2"></i><span>Restauration & Extras</span>
-                        </h6>
+                            @can('voir_chambres')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('rooms.status') ? 'active fw-bold text-primary' : '' }}" href="{{ route('rooms.status') }}">
+                                    <i class="bi bi-door-closed-fill text-teal me-2"></i>
+                                    <span>État des Chambres</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        @can('gerer_restauration')
-                        <li class="nav-item mb-2">
-                            <a class="nav-link {{ Request::routeIs('orders.create') ? 'active' : '' }}" href="{{ route('orders.create') }}">
-                                <i class="bi bi-egg-fried text-warning"></i>
-                                <span>Prise de Commande</span>
-                            </a>
-                        </li>
-                        @endcan
+                            @can('gerer_menage')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('housekeeping.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('housekeeping.index') }}">
+                                    <i class="bi bi-stars text-primary me-2"></i>
+                                    <span>Gouvernance / Ménage</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        @can('gerer_services')
-                        <li class="nav-item mb-2">
-                            <a class="nav-link {{ Request::routeIs('services.index') ? 'active' : '' }}" href="{{ route('services.index') }}">
-                                <i class="bi bi-droplet-half text-info"></i>
-                                <span>Pressing & Lavage Auto</span>
-                            </a>
-                        </li>
-                        @endcan
-                        @endcanany
+                            @can('voir_chambres')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('room.directory.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('room.directory.qrcodes') }}">
+                                    <i class="bi bi-qr-code-scan text-primary me-2"></i>
+                                    <span>QR Codes & Room Service</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @endcanany
 
-                        <!-- SECTION : Comptabilité -->
-                        @canany(['gerer_encours', 'voir_grand_livre', 'gerer_depenses', 'voir_rapport_z'])
-                        <h6 class="sidebar-heading d-flex align-items-center bg-light-emerald">
-                            <i class="bi bi-cash-stack me-2"></i><span>Comptabilité</span>
-                        </h6>
+                            <!-- 4. RESTAURATION, SERVICES & STOCKS -->
+                            @canany(['gerer_restauration', 'gerer_services', 'gerer_activites', 'gerer_stock'])
+                            <h6 class="sidebar-heading d-flex align-items-center bg-light-amber mt-3">
+                                <i class="bi bi-cup-hot-fill me-2"></i><span>Restauration & Extras</span>
+                            </h6>
 
-                        @can('gerer_encours')
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::routeIs('billing.index') ? 'active' : '' }}" href="{{ route('billing.index') }}">
-                                <i class="bi bi-calculator-fill text-success"></i>
-                                <span>Encours & Factures</span>
-                            </a>
-                        </li>
-                        @endcan
+                            @can('gerer_restauration')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('orders.create') ? 'active fw-bold text-primary' : '' }}" href="{{ route('orders.create') }}">
+                                    <i class="bi bi-egg-fried text-warning me-2"></i>
+                                    <span>Prise de Commande</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        @can('voir_grand_livre')
-                        <li class="nav-item mb-2">
-                            <a class="nav-link {{ Request::routeIs('billing.payments') ? 'active' : '' }}" href="{{ route('billing.payments') }}">
-                                <i class="bi bi-cash-coin text-emerald"></i>
-                                <span>Grand Livre des recettes</span>
-                            </a>
-                        </li>
-                        @endcan
+                            @can('gerer_services')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('services.index') ? 'active fw-bold text-primary' : '' }}" href="{{ route('services.index') }}">
+                                    <i class="bi bi-droplet-half text-info me-2"></i>
+                                    <span>Pressing & Lavage Auto</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        @can('gerer_depenses')
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('expenses.*') ? 'active fw-bold text-danger' : '' }}" href="{{ route('expenses.index') }}">
-                                <i class="bi bi-wallet2 me-2"></i>
-                                <span>Dépenses & Petite Caisse</span>
-                            </a>
-                        </li>
-                        @endcan
+                            @can('gerer_activites')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('activities.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('activities.index') }}">
+                                    <i class="bi bi-water text-primary me-2"></i>
+                                    <span>Activités & Loisirs</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        @can('voir_rapport_z')
-                        <li class="nav-item mb-2">
-                            <a class="nav-link {{ Request::routeIs('billing.daily.close') ? 'active' : '' }}" href="{{ route('billing.daily.close') }}">
-                                <i class="bi bi-safe2-fill text-teal"></i>
-                                <span>Clôture Caisse (Rapport Z)</span>
-                            </a>
-                        </li>
-                        @endcan
-                        @endcanany
+                            @can('gerer_stock')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('stock.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('stock.index') }}">
+                                    <i class="bi bi-box-seam-fill text-primary me-2"></i>
+                                    <span>Stocks & Économat</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @endcanany
 
-                        <!-- SECTION : Culture & Événements -->
-                        @can('gerer_billetterie')
-                        <h6 class="sidebar-heading d-flex align-items-center bg-light-pink">
-                            <i class="bi bi-music-note-beamed me-2"></i><span>Culture & Billetterie</span>
-                        </h6>
-                        <li class="nav-item mb-2">
-                            <a class="nav-link {{ Request::routeIs('bookings.shows.form') ? 'active' : '' }}" href="{{ route('bookings.shows.form') }}">
-                                <i class="bi bi-ticket-perforated-fill text-danger"></i>
-                                <span>Émettre un Billet</span>
-                            </a>
-                        </li>
-                        @endcan
+                            <!-- 5. CULTURE & BILLETTERIE -->
+                            @can('gerer_billetterie')
+                            <h6 class="sidebar-heading d-flex align-items-center bg-light-pink mt-3">
+                                <i class="bi bi-music-note-beamed me-2"></i><span>Culture & Billetterie</span>
+                            </h6>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('bookings.shows.form') ? 'active fw-bold text-primary' : '' }}" href="{{ route('bookings.shows.form') }}">
+                                    <i class="bi bi-ticket-perforated-fill text-danger me-2"></i>
+                                    <span>Émettre un Billet</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        <!-- SECTION : Configurations Hôtelières (Administrateur uniquement) -->
-                        @can('configurer_salles')
-                        <h6 class="sidebar-heading d-flex align-items-center bg-light-slate">
-                            <i class="bi bi-gear-fill me-2"></i><span>Configuration & Administration</span>
-                        </h6>
+                            <!-- 6. FINANCE & COMPTABILITÉ -->
+                            @canany(['gerer_encours', 'voir_grand_livre', 'gerer_depenses', 'voir_rapport_z'])
+                            <h6 class="sidebar-heading d-flex align-items-center bg-light-emerald mt-3">
+                                <i class="bi bi-cash-stack me-2"></i><span>Finance & Comptabilité</span>
+                            </h6>
 
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('admin.rooms.create') ? 'active fw-bold text-primary' : '' }}"
-                            href="{{ route('admin.rooms.create') }}">
-                                <i class="bi bi-door-open me-2"></i> Gestion des Chambres
-                            </a>
-                        </li>
+                            @can('gerer_encours')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('billing.index') ? 'active fw-bold text-primary' : '' }}" href="{{ route('billing.index') }}">
+                                    <i class="bi bi-calculator-fill text-success me-2"></i>
+                                    <span>Encours & Factures</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        <li class="nav-item">
->
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('admin.menu.create') ? 'active fw-bold text-primary' : '' }}"
-                            href="{{ route('admin.menu.create') }}">
-                                <i class="bi bi-egg-fried me-2"></i> Carte & Menu Restau
-                            </a>
-                        </li>
+                            @can('voir_grand_livre')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('billing.payments') ? 'active fw-bold text-primary' : '' }}" href="{{ route('billing.payments') }}">
+                                    <i class="bi bi-cash-coin text-emerald me-2"></i>
+                                    <span>Grand Livre des Recettes</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::routeIs('admin.shows.index') ? 'active' : '' }}" href="{{ route('admin.shows.index') }}">
-                                <i class="bi bi-building-fill text-primary"></i>
-                                <span>Salles de Spectacle</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::routeIs('admin.events.index') ? 'active' : '' }}" href="{{ route('admin.events.index') }}">
-                                <i class="bi bi-calendar-event-fill text-orange"></i>
-                                <span>Grilles & Concerts</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::routeIs('admin.users.index') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
-                                <i class="bi bi-shield-lock-fill text-indigo"></i>
-                                <span>Gestion des Utilisateurs</span>
-                            </a>
-                        </li>
-                        @endcan
+                            @can('gerer_depenses')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('expenses.*') ? 'active fw-bold text-danger' : '' }}" href="{{ route('expenses.index') }}">
+                                    <i class="bi bi-wallet2 text-danger me-2"></i>
+                                    <span>Dépenses & Petite Caisse</span>
+                                </a>
+                            </li>
+                            @endcan
 
-                        <!-- Déconnexion sécurisée -->
-                        <li class="nav-item mt-4 border-top pt-3 px-2">
-                            <form action="{{ route('logout') }}" method="POST" id="logout-form" class="d-none">
-                                @csrf
-                            </form>
-                            <a class="nav-link fw-bold rounded-3 bg-light-danger justify-content-center" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                <i class="bi bi-box-arrow-left fs-5"></i>
-                                <span>Déconnexion</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
+                            @can('voir_rapport_z')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('billing.daily.close') ? 'active fw-bold text-primary' : '' }}" href="{{ route('billing.daily.close') }}">
+                                    <i class="bi bi-safe2-fill text-teal me-2"></i>
+                                    <span>Clôture Caisse (Rapport Z)</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @endcanany
 
+                            <!-- 7. RESSOURCES HUMAINES & ADMINISTRATION -->
+                            @canany(['gerer_rh', 'configurer_salles'])
+                            <h6 class="sidebar-heading d-flex align-items-center bg-light-slate mt-3">
+                                <i class="bi bi-gear-fill me-2"></i><span>Administration & RH</span>
+                            </h6>
 
+                            @can('gerer_rh')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('hr.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('hr.index') }}">
+                                    <i class="bi bi-people-fill text-primary me-2"></i>
+                                    <span>Planning RH & Pointage</span>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('configurer_salles')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('admin.rooms.create') ? 'active fw-bold text-primary' : '' }}" href="{{ route('admin.rooms.create') }}">
+                                    <i class="bi bi-door-open text-primary me-2"></i>
+                                    <span>Paramétrage Chambres</span>
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('admin.menu.create') ? 'active fw-bold text-primary' : '' }}" href="{{ route('admin.menu.create') }}">
+                                    <i class="bi bi-journal-text text-primary me-2"></i>
+                                    <span>Carte & Menu Restau</span>
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('admin.shows.index') ? 'active fw-bold text-primary' : '' }}" href="{{ route('admin.shows.index') }}">
+                                    <i class="bi bi-building-fill text-primary me-2"></i>
+                                    <span>Salles de Spectacle</span>
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('admin.events.index') ? 'active fw-bold text-primary' : '' }}" href="{{ route('admin.events.index') }}">
+                                    <i class="bi bi-calendar-event-fill text-orange me-2"></i>
+                                    <span>Grilles & Concerts</span>
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('admin.users.index') ? 'active fw-bold text-primary' : '' }}" href="{{ route('admin.users.index') }}">
+                                    <i class="bi bi-shield-lock-fill text-indigo me-2"></i>
+                                    <span>Utilisateurs & Rôles</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @endcanany
+
+                            <!-- Déconnexion sécurisée -->
+                            <li class="nav-item mt-4 border-top pt-3 px-1">
+                                <form action="{{ route('logout') }}" method="POST" id="logout-form" class="d-none">
+                                    @csrf
+                                </form>
+                                <a class="nav-link fw-bold rounded-3 bg-light-danger text-danger d-flex align-items-center justify-content-center" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                    <i class="bi bi-box-arrow-left fs-5 me-2"></i>
+                                    <span>Déconnexion</span>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </div>
+                </nav>
 
             <!-- ZONE PRINCIPALE : Injection dynamique des vues de l'application -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">

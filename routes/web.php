@@ -14,7 +14,10 @@ use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\HousekeepingController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ExpenseController;
-
+use App\Http\Controllers\StockController;
+use App\Http\Controllers\GuestPortalController;
+use App\Http\Controllers\CrmController;
+use App\Http\Controllers\HrController;
 // ==========================================================================
 // 0. AUTHENTIFICATION (Accès public)
 // ==========================================================================
@@ -199,4 +202,52 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', 'store')->name('store');
         Route::delete('/{id}', 'destroy')->name('destroy');
     });
+
+
+
+    // 12. Gestion des Stocks & Économat
+    Route::middleware('permission:gerer_stock')->prefix('stock')->name('stock.')->controller(StockController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/items', 'storeItem')->name('items.store');
+        Route::post('/movements', 'storeMovement')->name('movements.store');
+    });
+
+
+    // PORTAIL CLIENT EN CHAMBRE (Accès via QR Code sans mot de passe staff)
+    // Gestion des QR Codes & Demandes Clients en Chambre
+    Route::middleware('permission:voir_chambres')->prefix('room-directory')->name('room.directory.')->controller(GuestPortalController::class)->group(function () {
+        Route::get('/qrcodes', 'qrCodesIndex')->name('qrcodes');
+        Route::post('/requests/{id}/complete', 'completeRequest')->name('complete');
+    });
+
+   
+
+    // 13. Fichier Clients CRM, Fidélité VIP & Comptes Entreprises
+    Route::middleware('permission:gerer_crm')->prefix('crm')->name('crm.')->controller(CrmController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/companies', 'storeCompany')->name('companies.store');
+        Route::put('/customers/{id}', 'updateCustomer')->name('customers.update');
+        Route::get('/companies/{id}/statement', 'companyStatement')->name('companies.statement');
+    });
+
+
+
+    // 14. Ressources Humaines : Planning des Quarts, Pointage & Avances
+    Route::middleware('permission:gerer_rh')->prefix('hr')->name('hr.')->controller(HrController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/shifts', 'storeShift')->name('shifts.store');
+        Route::post('/attendance', 'storeAttendance')->name('attendance.store');
+        Route::post('/advances', 'storeAdvance')->name('advances.store');
+    });
+
+
+
+});
+// ==========================================================================
+// 0 BIS. PORTAIL CLIENT EN CHAMBRE (Accès public via QR Code)
+// ==========================================================================
+Route::prefix('room-service')->name('guest.')->controller(GuestPortalController::class)->group(function () {
+    Route::get('/chambre/{room}', 'showRoomPortal')->name('portal');
+    Route::post('/chambre/{room}/order', 'storeRoomOrder')->name('order');
+    Route::post('/chambre/{room}/request', 'storeRoomRequest')->name('request');
 });
