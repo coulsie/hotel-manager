@@ -32,40 +32,34 @@ Route::middleware(['auth'])->group(function () {
     // 1. Accueil / Tableau de bord
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    // 2. Réception : Arrivées, Chambres, Entretien & IoT
+    // 2. Réception : Arrivées, Chambres & IoT
     Route::controller(RoomController::class)->group(function () {
         // Check-in
-        Route::prefix('checkin')->name('checkin.')->group(function () {
+        Route::middleware('permission:gerer_checkin')->prefix('checkin')->name('checkin.')->group(function () {
             Route::get('/', 'showCheckinForm')->name('form');
             Route::post('/', 'processCheckin')->name('save');
         });
 
         // Gestion des séjours & État des chambres
-        Route::prefix('rooms')->name('rooms.')->group(function () {
+        Route::middleware('permission:voir_chambres')->prefix('rooms')->name('rooms.')->group(function () {
             Route::get('/status', 'statusGrid')->name('status');
             Route::post('/{room}/checkout', 'earlyCheckout')->name('checkout');
             Route::post('/{room}/extend', 'extendStay')->name('extend');
         });
 
-        // Entretien (Housekeeping)
-        Route::prefix('housekeeping')->name('housekeeping.')->group(function () {
-            Route::get('/', 'housekeepingIndex')->name('index');
-            Route::post('/room/{room}/status', 'updateHousekeepingStatus')->name('update');
-        });
-
         // Journaux d'accès IoT
-        Route::get('/iot/access-logs', 'accessLogsIndex')->name('iot.logs.index');
+        Route::middleware('permission:voir_iot')->get('/iot/access-logs', 'accessLogsIndex')->name('iot.logs.index');
     });
 
     // 3. Restauration & Commandes
-    Route::prefix('orders')->name('orders.')->controller(OrderController::class)->group(function () {
+    Route::middleware('permission:gerer_restauration')->prefix('orders')->name('orders.')->controller(OrderController::class)->group(function () {
         Route::get('/create', 'create')->name('create');
         Route::post('/', 'store')->name('store');
         Route::get('/{order}/receipt', 'showReceipt')->name('receipt');
     });
 
     // 4. Services Annexes : Pressing & Lavage Auto
-    Route::prefix('services')->name('services.')->controller(ExtraServiceController::class)->group(function () {
+    Route::middleware('permission:gerer_services')->prefix('services')->name('services.')->controller(ExtraServiceController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
 
@@ -82,49 +76,55 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // 5. Billetterie Comptoir (Front-Desk)
-    Route::prefix('bookings/shows')->name('bookings.shows.')->controller(ShowController::class)->group(function () {
+    Route::middleware('permission:gerer_billetterie')->prefix('bookings/shows')->name('bookings.shows.')->controller(ShowController::class)->group(function () {
         Route::get('/', 'showBookingForm')->name('form');
         Route::post('/', 'processShowBooking')->name('save');
     });
 
-       // 6. Comptabilité, Facturation & Grand Livre
+    // 6. Comptabilité, Facturation & Grand Livre
     Route::prefix('billing')->name('billing.')->controller(BillingController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/daily-close', 'dailyCloseReport')->name('daily.close');
+        // Encours & règlements
+        Route::middleware('permission:gerer_encours')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/room/{room}', 'showRoomInvoice')->name('room');
+            Route::post('/room/{room}', 'storeRoomPayment')->name('room.pay');
+            Route::post('/room/{room}/checkout', 'checkoutRoom')->name('room.checkout');
+            Route::post('/restaurant/{order}', 'storeRestaurantPayment')->name('restaurant.pay');
+        });
 
-        // Historique et export des paiements
-        Route::get('/payments', 'paymentsHistory')->name('payments');
-        Route::get('/payments/export', 'exportPaymentsCsv')->name('payments.export');
-        Route::delete('/payments/{id}', 'destroyPayment')->name('payments.destroy');
+        // Grand Livre & Export
+        Route::middleware('permission:voir_grand_livre')->group(function () {
+            Route::get('/payments', 'paymentsHistory')->name('payments');
+            Route::get('/payments/export', 'exportPaymentsCsv')->name('payments.export');
+        });
 
-        // Facturation Chambres & Restauration
-        Route::get('/room/{room}', 'showRoomInvoice')->name('room');
-        Route::post('/room/{room}', 'storeRoomPayment')->name('room.pay');
-        Route::post('/room/{room}/checkout', 'checkoutRoom')->name('room.checkout');
-        Route::post('/restaurant/{order}', 'storeRestaurantPayment')->name('restaurant.pay');
+        // Suppression de reçu réservée à l'administrateur
+        Route::middleware('role:admin')->delete('/payments/{id}', 'destroyPayment')->name('payments.destroy');
 
-        // Impression de reçu (en dernier car paramétré à la racine)
+        // Rapport Z (Clôture de caisse)
+        Route::middleware('permission:voir_rapport_z')->get('/daily-close', 'dailyCloseReport')->name('daily.close');
+
+        // Impression de reçu (accessible à tout agent habilité à encaisser)
         Route::get('/{id}/print', 'printReceipt')->name('print');
-         });
+    });
 
-
-    // 7. Administration Centralisée
-    Route::prefix('admin')->name('admin.')->group(function () {
+    // 7. Administration Centralisée (Sécurisée par permission configurer_salles)
+    Route::middleware('permission:configurer_salles')->prefix('admin')->name('admin.')->group(function () {
 
         // Gestion des Chambres
         Route::prefix('rooms')->name('rooms.')->controller(RoomController::class)->group(function () {
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
-            Route::put('/{room}', 'update')->name('update'); // 👈 À ajouter
-            Route::delete('/{room}', 'destroy')->name('destroy'); // 👈 À ajouter
+            Route::put('/{room}', 'update')->name('update');
+            Route::delete('/{room}', 'destroy')->name('destroy');
         });
 
         // Gestion de la Carte / Menu Restauration
         Route::prefix('menu')->name('menu.')->controller(OrderController::class)->group(function () {
             Route::get('/create', 'createMenuItem')->name('create');
             Route::post('/', 'storeMenuItem')->name('store');
-            Route::put('/{menuItem}', 'updateMenuItem')->name('update'); // 👈 À ajouter
-            Route::delete('/{menuItem}', 'destroyMenuItem')->name('destroy'); // 👈 À ajouter
+            Route::put('/{menuItem}', 'updateMenuItem')->name('update');
+            Route::delete('/{menuItem}', 'destroyMenuItem')->name('destroy');
         });
 
         // Infrastructures des Salles
@@ -145,31 +145,36 @@ Route::middleware(['auth'])->group(function () {
         });
 
         // Gestion des Utilisateurs & Habilitations
+                // Gestion des Utilisateurs & Habilitations
         Route::prefix('users')->name('users.')->controller(UserController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->name('store');
             Route::put('/{id}', 'update')->name('update');
+            Route::post('/{id}/reset-password', 'resetPassword')->name('reset.password'); // <-- À ajouter ici
             Route::post('/roles/{role}/permissions', 'updateRolePermissions')->name('roles.permissions');
         });
 
     });
 
-       // Réservations Futures & Fichier Clients
+    // 8. Réservations Futures, Rack Hôtelier & Fichier Clients
     Route::prefix('reservations')->name('reservations.')->controller(ReservationController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/rack', 'rack')->name('rack'); // 👈 Placé avant /{reservation} et sans double préfixe
-        Route::post('/', 'store')->name('store');
-        Route::put('/{reservation}', 'update')->name('update');       // 👈 Modifier
-        Route::delete('/{reservation}', 'destroy')->name('destroy'); // 👈 Supprimer
-        Route::post('/{reservation}/checkin', 'convertToCheckin')->name('checkin');
-        Route::post('/{reservation}/cancel', 'cancel')->name('cancel');
-        Route::get('/{reservation}/police-form', 'policeForm')->name('police');
+        Route::middleware('permission:voir_rack')->get('/rack', 'rack')->name('rack');
+
+        Route::middleware('permission:gerer_checkin')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::put('/{reservation}', 'update')->name('update');
+            Route::delete('/{reservation}', 'destroy')->name('destroy');
+            Route::post('/{reservation}/checkin', 'convertToCheckin')->name('checkin');
+            Route::post('/{reservation}/cancel', 'cancel')->name('cancel');
+            Route::get('/{reservation}/police-form', 'policeForm')->name('police');
+        });
     });
 
-
-    Route::prefix('housekeeping')->name('housekeeping.')->controller(HousekeepingController::class)->group(function () {
+    // 9. Gouvernance, Planning Hebdomadaire & Audit Ménage
+    Route::middleware('permission:gerer_menage')->prefix('housekeeping')->name('housekeeping.')->controller(HousekeepingController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::get('/report', 'report')->name('report'); // <-- Nouveau : Rapport d'audit sur période
+        Route::get('/report', 'report')->name('report');
         Route::post('/agents', 'storeAgent')->name('agents.store');
         Route::post('/assign', 'assignRoom')->name('assign');
         Route::post('/assign-week', 'assignWeek')->name('assign.week');
@@ -180,18 +185,16 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{room}/resolve-maintenance', 'resolveMaintenance')->name('resolve.maintenance');
     });
 
-
-
-    Route::prefix('activities')->name('activities.')->controller(ActivityController::class)->group(function () {
+    // 10. Activités & Services Annexes (Piscine, Spa, Coworking, Séminaire, Navette)
+    Route::middleware('permission:gerer_activites')->prefix('activities')->name('activities.')->controller(ActivityController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/catalog', 'storeCatalog')->name('catalog.store');
         Route::post('/book', 'storeBooking')->name('book');
         Route::post('/{id}/pay', 'markAsPaid')->name('pay');
     });
 
-
-
-    Route::prefix('expenses')->name('expenses.')->controller(ExpenseController::class)->group(function () {
+    // 11. Dépenses & Petite Caisse (Sorties de fonds)
+    Route::middleware('permission:gerer_depenses')->prefix('expenses')->name('expenses.')->controller(ExpenseController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
         Route::delete('/{id}', 'destroy')->name('destroy');

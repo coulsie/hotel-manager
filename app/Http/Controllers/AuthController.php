@@ -12,10 +12,11 @@ class AuthController extends Controller
      */
     public function showLoginForm()
     {
-        // Si l'utilisateur est déjà connecté, on le redirige vers le tableau de bord
+        // Si l'utilisateur est déjà connecté, on le redirige selon son rôle
         if (Auth::check()) {
-            return redirect('/');
+            return $this->redirectByRole(Auth::user());
         }
+
         return view('auth.login');
     }
 
@@ -30,21 +31,44 @@ class AuthController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
-        // 2. Tentative de connexion (Auth::attempt gère la vérification et le hash du mot de passe)
+        // 2. Tentative de connexion
         $remember = $request->has('remember');
 
         if (Auth::attempt($credentials, $remember)) {
-            // Régénère la session pour éviter les attaques par fixation de session
             $request->session()->regenerate();
 
-            return redirect()->intended('/')
-                ->with('success', 'Bienvenue sur Hotel Manager, ' . Auth::user()->name . ' !');
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+
+            return $this->redirectByRole($user)
+                ->with('success', 'Bienvenue sur Hotel Manager, ' . $user->name . ' !');
         }
 
-        // 3. Échec de connexion : on retourne au formulaire avec une erreur
+        // 3. Échec de connexion
         return back()->withErrors([
             'email' => 'Les identifiants fournis ne correspondent pas à nos enregistrements.',
         ])->onlyInput('email');
+    }
+
+    /**
+     * Déterminer la page d'accueil selon le rôle de l'employé.
+     */
+    protected function redirectByRole($user)
+    {
+        if ($user->hasRole('gouvernante')) {
+            return redirect()->route('housekeeping.index');
+        }
+
+        if ($user->hasRole('restauration')) {
+            return redirect()->route('orders.create');
+        }
+
+        if ($user->hasRole('receptionniste')) {
+            return redirect()->route('reservations.rack');
+        }
+
+        // Par défaut (admin / direction) : Tableau de bord KPIs
+        return redirect()->route('dashboard');
     }
 
     /**

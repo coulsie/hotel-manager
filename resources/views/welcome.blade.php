@@ -7,13 +7,16 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-3 mb-4 border-bottom">
     <div>
         <h1 class="h2 fw-bold text-dark mb-0">
-            <i class="bi bi-speedometer2 text-primary me-2"></i>Tableau de Bord Statistique
+            <i class="bi bi-speedometer2 text-primary me-2"></i>Tableau de Bord Direction & KPIs
         </h1>
         <p class="text-muted small mb-0 mt-1">
             Activité de l'établissement en temps réel — {{ \Carbon\Carbon::now()->translatedFormat('l d F Y') }}
         </p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ route('reservations.rack') }}" class="btn btn-outline-primary rounded-pill px-3 fw-bold shadow-sm">
+            <i class="bi bi-grid-3x3-gap-fill me-1"></i> Rack Hôtelier
+        </a>
         <a href="{{ route('checkin.form') }}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
             <i class="bi bi-person-plus-fill me-1"></i> Nouveau Check-in
         </a>
@@ -26,74 +29,74 @@
 <!-- ===================================================================== -->
 <!-- 1. CARTES INDICATEURS CLÉS (KPI)                                      -->
 <!-- ===================================================================== -->
-<div class="row g-4 mb-4">
+<div class="row g-3 mb-4">
     <!-- Carte 1 : Occupation des Chambres -->
     <div class="col-md-6 col-xl-3">
         <div class="card border-0 shadow-sm rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-uppercase fw-bold small opacity-75">Occupation Hôtel</span>
                     <div class="bg-white bg-opacity-25 rounded-circle p-2">
-                        <i class="bi bi-door-closed-fill fs-4 text-white"></i>
+                        <i class="bi bi-door-closed-fill fs-5 text-white"></i>
                     </div>
                 </div>
                 <h2 class="fw-black mb-1">{{ $roomsStats }}</h2>
                 <div class="small opacity-90">
-                    Taux actuel : <strong>{{ $occupancyRate }}%</strong> ({{ $availableRooms }} libres)
+                    Taux réel : <strong>{{ $occupancyRate }}%</strong> ({{ $availableRooms }} libres)
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Carte 2 : Recettes du Jour -->
+    <!-- Carte 2 : Recettes du Jour & Mois -->
     <div class="col-md-6 col-xl-3">
         <div class="card border-0 shadow-sm rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="text-uppercase fw-bold small opacity-75">Recettes du Jour</span>
                     <div class="bg-white bg-opacity-25 rounded-circle p-2">
-                        <i class="bi bi-cash-coin fs-4 text-white"></i>
+                        <i class="bi bi-cash-coin fs-5 text-white"></i>
                     </div>
                 </div>
                 <h3 class="fw-black mb-1">{{ $revenueStats }}</h3>
                 <div class="small opacity-90">
-                    Resto : {{ number_format($restaurantRevenue, 0, ',', ' ') }} F | Billets : {{ number_format($ticketRevenue, 0, ',', ' ') }} F
+                    Cumul mois : <strong>{{ number_format($monthTotalRevenue ?? 0, 0, ',', ' ') }} F</strong>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Carte 3 : Prochain Spectacle -->
+    <!-- Carte 3 : RevPAR & Prix Moyen Chambre (ADR) -->
     <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-uppercase fw-bold small opacity-75">Prochain Spectacle</span>
+        <div class="card border-0 shadow-sm rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-uppercase fw-bold small opacity-75">RevPAR / Prix Moyen</span>
                     <div class="bg-white bg-opacity-25 rounded-circle p-2">
-                        <i class="bi bi-music-note-beamed fs-4 text-white"></i>
+                        <i class="bi bi-award-fill fs-5 text-white"></i>
                     </div>
                 </div>
-                <h2 class="fw-black mb-1">{{ $showStats }}</h2>
+                <h3 class="fw-black mb-1">{{ number_format($revPar ?? 0, 0, ',', ' ') }} F</h3>
                 <div class="small opacity-90">
-                    Remplissage de la salle programmée
+                    Prix moyen loué (ADR) : <strong>{{ number_format($adr ?? 0, 0, ',', ' ') }} F</strong>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Carte 4 : Sécurité & Scans IoT -->
+    <!-- Carte 4 : Solde Net Tiroir Espèces (Après Dépenses) -->
     <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-uppercase fw-bold small opacity-75">Activité IoT (24h)</span>
+        <div class="card border-0 shadow-sm rounded-4 h-100 text-white" style="background: linear-gradient(135deg, #ea580c 0%, #d97706 100%);">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-uppercase fw-bold small opacity-75">Caisse Espèces Nette</span>
                     <div class="bg-white bg-opacity-25 rounded-circle p-2">
-                        <i class="bi bi-rfid fs-4 text-white"></i>
+                        <i class="bi bi-wallet2 fs-5 text-white"></i>
                     </div>
                 </div>
-                <h2 class="fw-black mb-1">{{ $iotStats }}</h2>
+                <h3 class="fw-black mb-1">{{ number_format($netCashToday ?? 0, 0, ',', ' ') }} F</h3>
                 <div class="small opacity-90">
-                    Passages sur serrures magnétiques
+                    Dépenses jour : <strong>- {{ number_format($todayExpenses ?? 0, 0, ',', ' ') }} F</strong>
                 </div>
             </div>
         </div>
@@ -107,17 +110,17 @@
     <!-- Courbe d'évolution des recettes (Chart.js) -->
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm rounded-4 h-100">
-            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h6 class="card-title mb-0 fw-bold text-dark">
                     <i class="bi bi-graph-up-arrow text-success me-2"></i>Évolution des Recettes sur 7 Jours (F CFA)
                 </h6>
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 fw-bold">
-                    Hébergement • Resto • Pressing • Auto • Spectacles
+                    Chambres • Resto • Activités • Pressing • Auto • Spectacles
                 </span>
             </div>
 
             <div class="card-body p-4">
-                <div style="height: 280px;">
+                <div style="height: 290px;">
                     <canvas id="revenueChart"></canvas>
                 </div>
             </div>
@@ -134,30 +137,32 @@
             </div>
             <div class="card-body p-4 d-flex flex-column justify-content-between">
                 @php
-                    $pctOccupied  = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) : 0;
-                    $pctAvailable = $totalRooms > 0 ? round(($availableRooms / $totalRooms) * 100) : 0;
-                    $pctCleaning  = $totalRooms > 0 ? round(($cleaningRooms / $totalRooms) * 100) : 0;
+                    $maintCount     = $maintenanceRooms ?? 0;
+                    $pctOccupied    = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) : 0;
+                    $pctAvailable   = $totalRooms > 0 ? round(($availableRooms / $totalRooms) * 100) : 0;
+                    $pctCleaning    = $totalRooms > 0 ? round(($cleaningRooms / $totalRooms) * 100) : 0;
+                    $pctMaintenance = $totalRooms > 0 ? round(($maintCount / $totalRooms) * 100) : 0;
                 @endphp
 
                 <div>
                     <!-- Occupées -->
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <div class="d-flex justify-content-between small fw-bold mb-1">
                             <span class="text-primary"><i class="bi bi-circle-fill me-1 small"></i> Occupées ({{ $occupiedRooms }})</span>
                             <span>{{ $pctOccupied }}%</span>
                         </div>
-                        <div class="progress rounded-pill" style="height: 10px;">
+                        <div class="progress rounded-pill" style="height: 9px;">
                             <div class="progress-bar bg-primary" style="width: {{ $pctOccupied }}%"></div>
                         </div>
                     </div>
 
                     <!-- Libres -->
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <div class="d-flex justify-content-between small fw-bold mb-1">
                             <span class="text-success"><i class="bi bi-circle-fill me-1 small"></i> Disponibles ({{ $availableRooms }})</span>
                             <span>{{ $pctAvailable }}%</span>
                         </div>
-                        <div class="progress rounded-pill" style="height: 10px;">
+                        <div class="progress rounded-pill" style="height: 9px;">
                             <div class="progress-bar bg-success" style="width: {{ $pctAvailable }}%"></div>
                         </div>
                     </div>
@@ -165,20 +170,89 @@
                     <!-- Ménage -->
                     <div class="mb-3">
                         <div class="d-flex justify-content-between small fw-bold mb-1">
-                            <span class="text-warning"><i class="bi bi-circle-fill me-1 small"></i> En Nettoyage ({{ $cleaningRooms }})</span>
+                            <span class="text-warning"><i class="bi bi-circle-fill me-1 small"></i> À Nettoyer ({{ $cleaningRooms }})</span>
                             <span>{{ $pctCleaning }}%</span>
                         </div>
-                        <div class="progress rounded-pill" style="height: 10px;">
+                        <div class="progress rounded-pill" style="height: 9px;">
                             <div class="progress-bar bg-warning" style="width: {{ $pctCleaning }}%"></div>
+                        </div>
+                    </div>
+
+                                      <!-- Maintenance -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small fw-bold mb-1">
+                            <span class="text-danger"><i class="bi bi-circle-fill me-1 small"></i> Maintenance ({{ $maintCount }})</span>
+                            <span>{{ $pctMaintenance }}%</span>
+                        </div>
+                        <div class="progress rounded-pill" style="height: 9px;">
+                            <div class="progress-bar bg-danger" style="width: {{ $pctMaintenance }}%"></div>
                         </div>
                     </div>
                 </div>
 
                 <div class="d-grid gap-2 pt-3 border-top">
+                    <a href="{{ route('housekeeping.index') }}" class="btn btn-outline-warning text-dark btn-sm rounded-pill fw-bold">
+                        <i class="bi bi-stars me-1"></i> Gouvernance & Ménage
+                    </a>
                     <a href="{{ route('rooms.status') }}" class="btn btn-outline-primary btn-sm rounded-pill fw-bold">
-                        <i class="bi bi-grid-3x3-gap-fill me-1"></i> Voir le plan des chambres
+                        <i class="bi bi-grid-3x3-gap-fill me-1"></i> Plan complet des chambres
                     </a>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- 2 BIS. MOUVEMENTS RÉCEPTION DU JOUR (ARRIVÉES & DÉPARTS PRÉVUS)       -->
+<!-- ===================================================================== -->
+<div class="row g-4 mb-4">
+    <!-- Arrivées attendues aujourd'hui -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+            <div class="card-header bg-success-subtle text-success border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0 fw-bold">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Arrivées Attendues Aujourd'hui
+                </h6>
+                <span class="badge bg-success rounded-pill px-3">{{ isset($arrivalsToday) ? $arrivalsToday->count() : 0 }}</span>
+            </div>
+            <div class="card-body p-3">
+                @forelse($arrivalsToday ?? [] as $arr)
+                    <div class="d-flex justify-content-between align-items-center p-2 border rounded-3 mb-2 bg-light small">
+                        <div>
+                            <span class="badge bg-primary me-1">Ch. {{ $arr->room->number ?? '?' }}</span>
+                            <strong>{{ $arr->customer->full_name ?? 'Client' }}</strong>
+                        </div>
+                        <a href="{{ route('reservations.index') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">Check-in</a>
+                    </div>
+                @empty
+                    <p class="text-muted small text-center my-2">Aucune arrivée réservée prévue aujourd'hui.</p>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
+    <!-- Départs prévus aujourd'hui -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+            <div class="card-header bg-danger-subtle text-danger border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0 fw-bold">
+                    <i class="bi bi-box-arrow-right me-2"></i>Départs Prévus Aujourd'hui (Check-out)
+                </h6>
+                <span class="badge bg-danger rounded-pill px-3">{{ isset($departuresToday) ? $departuresToday->count() : 0 }}</span>
+            </div>
+            <div class="card-body p-3">
+                @forelse($departuresToday ?? [] as $dep)
+                    <div class="d-flex justify-content-between align-items-center p-2 border rounded-3 mb-2 bg-light small">
+                        <div>
+                            <span class="badge bg-dark me-1">Ch. {{ $dep->room->number ?? '?' }}</span>
+                            <strong>{{ $dep->customer->full_name ?? 'Client' }}</strong>
+                        </div>
+                        <a href="{{ route('billing.index') }}" class="btn btn-sm btn-outline-danger rounded-pill px-3">Encours / Sortie</a>
+                    </div>
+                @empty
+                    <p class="text-muted small text-center my-2">Aucun départ prévu ce jour.</p>
+                @endforelse
             </div>
         </div>
     </div>
@@ -193,7 +267,7 @@
         <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
             <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                 <h6 class="card-title mb-0 fw-bold text-dark">
-                    <i class="bi bi-calendar-event-fill text-danger me-2"></i>Prochains Concerts Programmés
+                    <i class="bi bi-calendar-event-fill text-danger me-2"></i>Prochains Concerts Programmés ({{ $showStats }})
                 </h6>
                 <a href="{{ route('admin.events.index') }}" class="btn btn-sm btn-light border rounded-pill fw-bold">Gérer</a>
             </div>
@@ -248,7 +322,7 @@
         <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
             <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
                 <h6 class="card-title mb-0 fw-bold">
-                    <i class="bi bi-shield-lock-fill text-info me-2"></i>Derniers Passages RFID (IoT)
+                    <i class="bi bi-shield-lock-fill text-info me-2"></i>Derniers Passages RFID ({{ $iotStats }})
                 </h6>
                 <a href="{{ route('iot.logs.index') }}" class="btn btn-sm btn-outline-light rounded-pill px-3">Tout voir</a>
             </div>
@@ -262,7 +336,7 @@
                             <th class="text-end pe-4">Heure</th>
                         </tr>
                     </thead>
-                    <tbody>
+                                        <tbody>
                         @forelse($recentLogs as $log)
                             <tr>
                                 <td class="ps-4 fw-bold text-primary">🚪 {{ $log->room->number ?? $log->room_id }}</td>
@@ -291,7 +365,6 @@
 </div>
 
 <!-- SCRIPT DU GRAPHIQUE FINANCIER (CHART.JS) -->
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const ctx = document.getElementById('revenueChart');
@@ -300,6 +373,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const labels         = @json($chartLabels ?? []);
     const lodgingData    = @json($lodgingData ?? []);
     const restaurantData = @json($restaurantData ?? []);
+    const activitiesData = @json($activitiesData ?? []);
     const pressingData   = @json($pressingData ?? []);
     const carWashData    = @json($carWashData ?? []);
     const ticketsData    = @json($ticketsData ?? []);
@@ -310,35 +384,42 @@ document.addEventListener('DOMContentLoaded', function () {
             labels: labels,
             datasets: [
                 {
-                    label: '🏨 Hébergement (F CFA)',
+                    label: '🏨 Hébergement & Arrhes',
                     data: lodgingData,
                     backgroundColor: '#10b981',
                     borderRadius: 6,
                     barPercentage: 0.75
                 },
                 {
-                    label: '🍽️ Restauration & Bar (F CFA)',
+                    label: '🍽️ Restauration & Bar',
                     data: restaurantData,
                     backgroundColor: '#f59e0b',
                     borderRadius: 6,
                     barPercentage: 0.75
                 },
                 {
-                    label: '👔 Pressing (F CFA)',
+                    label: '🏊 Activités (Piscine/Spa/Navette)',
+                    data: activitiesData,
+                    backgroundColor: '#2563eb',
+                    borderRadius: 6,
+                    barPercentage: 0.75
+                },
+                {
+                    label: '👔 Pressing',
                     data: pressingData,
                     backgroundColor: '#06b6d4',
                     borderRadius: 6,
                     barPercentage: 0.75
                 },
                 {
-                    label: '🚗 Lavage Auto (F CFA)',
+                    label: '🚗 Lavage Auto',
                     data: carWashData,
                     backgroundColor: '#4f46e5',
                     borderRadius: 6,
                     barPercentage: 0.75
                 },
                 {
-                    label: '🎟️ Billetterie Spectacles (F CFA)',
+                    label: '🎟️ Billetterie Spectacles',
                     data: ticketsData,
                     backgroundColor: '#db2777',
                     borderRadius: 6,
@@ -392,5 +473,4 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-
 @endsection

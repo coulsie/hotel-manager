@@ -213,8 +213,8 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="text-end pe-4">
-                            <button type="button" class="btn btn-sm btn-warning text-dark rounded-pill px-4 fw-bold shadow-sm"
+                        <td class="text-end pe-4 text-nowrap">
+                            <button type="button" class="btn btn-sm btn-warning text-dark rounded-pill px-3 fw-bold shadow-sm"
                                     data-bs-toggle="modal"
                                     data-bs-target="#employeeModal"
                                     data-mode="edit"
@@ -223,7 +223,17 @@
                                 <i class="bi bi-gear-fill me-1"></i> Habilitations
                             </button>
 
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold ms-1"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#resetPasswordModal"
+                                    data-user-id="{{ $employee->id }}"
+                                    data-user-name="{{ $employee->name }}"
+                                    title="Réinitialiser le mot de passe">
+                                <i class="bi bi-key-fill me-1"></i> Mot de passe
+                            </button>
                         </td>
+
                     </tr>
                 @empty
                     <tr>
@@ -296,6 +306,55 @@
         </div>
     </div>
 </div>
+
+<!-- Modale de Réinitialisation de Mot de Passe -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form id="resetPasswordForm" method="POST" class="modal-content rounded-4 border-0 shadow">
+            @csrf
+            <div class="modal-header bg-warning text-dark rounded-top-4">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-key-fill me-2"></i>Réinitialiser le mot de passe
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="small text-muted mb-3">
+                    Définir un nouveau mot de passe pour : <strong id="resetUserName" class="text-dark"></strong>
+                </p>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Nouveau mot de passe (min. 6 caractères) *</label>
+                    <input type="password" name="new_password" class="form-control" autocomplete="new-password" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-bold small">Confirmer le mot de passe *</label>
+                    <input type="password" name="new_password_confirmation" class="form-control" autocomplete="new-password" required>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold">Enregistrer le mot de passe</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const resetModal = document.getElementById('resetPasswordModal');
+        if (resetModal) {
+            resetModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const userId = button.getAttribute('data-user-id');
+                const userName = button.getAttribute('data-user-name');
+
+                document.getElementById('resetUserName').textContent = userName;
+                document.getElementById('resetPasswordForm').action = `/admin/users/${userId}/reset-password`;
+            });
+        }
+    });
+</script>
+
 
 {{-- CONSERVEZ VOTRE BLOC <script> ... </script>@endsection EXISTANT CI-DESSOUS --}}
 

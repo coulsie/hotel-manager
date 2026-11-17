@@ -21,31 +21,49 @@ class UserController extends Controller
         $permissions = Permission::all();
 
         // Libellés lisibles en français pour chaque permission
+                // Libellés lisibles en français pour chaque permission
         $permissionLabels = [
             'voir_dashboard'     => '📊 Tableau de bord général',
             'gerer_checkin'      => '🛎️ Réservation / Check-in',
+            'voir_rack'          => '🗓️ Rack Hôtelier Graphique',
             'voir_iot'           => '📡 Suivi des Cartes RFID (IoT)',
             'voir_chambres'      => '🚪 État des Chambres',
-            'gerer_menage'       => '🧹 Planification Ménage',
+            'gerer_menage'       => '🧹 Planification & Audit Ménage',
             'gerer_restauration' => '🍽️ Prise de Commande (Resto/Bar)',
             'gerer_services'     => '👔 Pressing & Lavage Auto',
+            'gerer_activites'    => '🏊 Activités Annexes (Piscine/Spa/Navette)',
             'gerer_encours'      => '🧾 Encours & Factures',
             'voir_grand_livre'   => '💰 Grand Livre des recettes',
+            'gerer_depenses'     => '💸 Dépenses & Petite Caisse',
             'voir_rapport_z'     => '🔐 Clôture Caisse (Rapport Z)',
             'gerer_billetterie'  => '🎟️ Émettre un Billet (Spectacles)',
             'configurer_salles'  => '⚙️ Configuration (Salles, Concerts, Utilisateurs)',
         ];
 
+
         return view('admin.users.index', compact('employees', 'roles', 'permissions', 'permissionLabels'));
     }
 
-    public function store(Request $request)
+        public function store(Request $request)
     {
+        $request->merge([
+            'email' => trim(strtolower($request->input('email'))),
+        ]);
+
         $request->validate([
             'name'     => 'required|string|max:191',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'role'     => 'required|exists:roles,name',
+        ], [
+            'name.required'     => 'Le nom complet de l\'employé est obligatoire.',
+            'email.required'    => 'L\'adresse e-mail est obligatoire.',
+            'email.email'       => 'Veuillez saisir une adresse e-mail valide.',
+            'email.unique'      => 'Cette adresse e-mail est déjà utilisée par un autre compte.',
+            'password.required' => 'Le mot de passe est obligatoire.',
+            'password.min'      => 'Le mot de passe doit contenir au moins 6 caractères.',
+            'role.required'     => 'Veuillez sélectionner un rôle pour cet utilisateur.',
+            'role.exists'       => 'Le rôle choisi n\'existe pas.',
         ]);
 
         $user = User::create([
@@ -56,8 +74,9 @@ class UserController extends Controller
 
         $user->assignRole($request->role);
 
-        return redirect()->back()->with('success', "Compte créé pour {$user->name} avec le rôle {$request->role}.");
+        return redirect()->back()->with('success', "Compte créé pour {$user->name} avec le rôle " . strtoupper($request->role) . ".");
     }
+
     /**
      * Enregistrer un nouvel employé (POST)
      */
@@ -65,7 +84,7 @@ class UserController extends Controller
     /**
      * Mettre à jour un employé existant (PUT)
      */
-   
+
 
      public function update(Request $request, $id)
     {
@@ -101,4 +120,27 @@ class UserController extends Controller
 
         return redirect()->back()->with('success', "Matrice des accès mise à jour pour le rôle « " . strtoupper($role->name) . " ».");
     }
+
+        /**
+     * Réinitialiser rapidement le mot de passe d'un employé
+     */
+    public function resetPassword(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'new_password' => 'required|string|min:6|confirmed',
+        ], [
+            'new_password.required'  => 'Veuillez saisir le nouveau mot de passe.',
+            'new_password.min'       => 'Le mot de passe doit contenir au moins 6 caractères.',
+            'new_password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
+        ]);
+
+        $user->update([
+            'password' => Hash::make($request->new_password),
+        ]);
+
+        return redirect()->back()->with('success', "Le mot de passe de {$user->name} a été réinitialisé avec succès.");
+    }
+
 }
