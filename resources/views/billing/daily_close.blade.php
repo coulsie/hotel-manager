@@ -8,7 +8,7 @@
         <h1 class="h2 fw-bold text-dark mb-0">
             <i class="bi bi-safe2-fill text-success me-2"></i>Clôture de Caisse Journalière (Rapport Z)
         </h1>
-        <p class="text-muted small mb-0 mt-1">Arrêté des recettes par mode d'encaissement et par pôle d'activité</p>
+        <p class="text-muted small mb-0 mt-1">Arrêté des recettes par mode d'encaissement, sorties de caisse et solde net en tiroir</p>
     </div>
     <div class="d-flex gap-2">
         <form method="GET" action="{{ route('billing.daily.close') }}" class="d-flex gap-2">
@@ -49,7 +49,7 @@
             <table class="table table-bordered align-middle">
                 <tbody>
                     <tr class="table-success fw-bold">
-                        <td>💵 Espèces (Cash en tiroir)</td>
+                        <td>💵 Espèces (Cash brut encaissé)</td>
                         <td class="text-end">{{ number_format($byMethod['cash'], 0, ',', ' ') }} F</td>
                     </tr>
                     <tr>
@@ -127,18 +127,82 @@
                     </tr>
                 </tfoot>
             </table>
+        </div>
+    </div>
 
-            <!-- Zone de signatures pour remise de caisse -->
-            <div class="row mt-4 pt-3 border-top text-center small">
-                <div class="col-6">
-                    <strong>Signature Caissier(ère)</strong>
-                    <div style="height: 60px;"></div>
-                </div>
-                <div class="col-6">
-                    <strong>Visa Direction / Contrôle</strong>
-                    <div style="height: 60px;"></div>
+    <!-- 3. Sorties de Caisse, Dépenses & Acomptes RH du Jour -->
+    <div class="mt-4 pt-3 border-top">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-uppercase text-danger mb-0">
+                <i class="bi bi-box-arrow-up-right me-2"></i>3. Sorties de Caisse, Dépenses & Acomptes Personnel
+            </h6>
+            <span class="badge bg-danger-subtle text-danger fs-6 px-3 py-1">
+                Total Sorties : - {{ number_format($totalExpenses ?? 0, 0, ',', ' ') }} F
+            </span>
+        </div>
+
+        <table class="table table-bordered table-sm align-middle small mb-4">
+            <thead class="table-light text-uppercase text-muted">
+                <tr>
+                    <th class="ps-3">N° Bon</th>
+                    <th>Libellé / Bénéficiaire</th>
+                    <th>Mode de sortie</th>
+                    <th class="text-end pe-3">Montant Décaissé</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($dailyExpenses ?? [] as $exp)
+                    <tr>
+                        <td class="ps-3 fw-bold">{{ $exp->voucher_number }}</td>
+                        <td>
+                            {{ $exp->description }}
+                            @if($exp->reference === 'RH-AVANCE')
+                                <span class="badge bg-warning text-dark ms-1">Acompte RH</span>
+                            @endif
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ $exp->payment_method }}</span></td>
+                        <td class="text-end pe-3 fw-bold text-danger">- {{ number_format($exp->amount, 0, ',', ' ') }} F</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="4" class="text-center py-3 text-muted">Aucune dépense ni acompte versé sur cette journée.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+
+        <!-- Synthèse Solde Net Espèces en Tiroir-Caisse -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="p-3 rounded-4 border bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-uppercase fw-bold text-muted">Résultat Net Global du Jour</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">Toutes recettes moins toutes sorties</div>
+                    </div>
+                    <div class="fs-5 fw-bold text-dark">{{ number_format($netDailyTotal ?? $grandTotal, 0, ',', ' ') }} F</div>
                 </div>
             </div>
+            <div class="col-md-6">
+                <div class="p-3 rounded-4 text-white d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);">
+                    <div>
+                        <div class="small text-uppercase fw-bold text-warning">Solde Net Espèces en Tiroir</div>
+                        <div class="text-white-50" style="font-size: 0.75rem;">Cash encaissé ({{ number_format($byMethod['cash'], 0, ',', ' ') }} F) - Sorties cash ({{ number_format($cashExpenses ?? 0, 0, ',', ' ') }} F)</div>
+                    </div>
+                    <div class="fs-4 fw-bold text-white">{{ number_format($netCashInDrawer ?? $byMethod['cash'], 0, ',', ' ') }} F</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zone de signatures pour remise de caisse -->
+    <div class="row mt-4 pt-3 border-top text-center small">
+        <div class="col-6">
+            <strong>Signature Caissier(ère)</strong>
+            <div style="height: 60px;"></div>
+        </div>
+        <div class="col-6">
+            <strong>Visa Direction / Contrôle</strong>
+            <div style="height: 60px;"></div>
         </div>
     </div>
 </div>

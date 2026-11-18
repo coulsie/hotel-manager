@@ -609,7 +609,33 @@ public function dailyCloseReport(\Illuminate\Http\Request $request)
 
     $grandTotal = $transactions->sum('amount_paid');
 
-    return view('billing.daily_close', compact('date', 'transactions', 'byMethod', 'byService', 'grandTotal'));
+    // 3. Sorties de caisse du jour (Dépenses Petite Caisse & Acomptes sur salaire RH)
+    $dailyExpenses = \Illuminate\Support\Facades\DB::table('expenses')
+        ->whereDate('expense_date', $date)
+        ->orderBy('created_at')
+        ->get();
+
+    $totalExpenses = $dailyExpenses->sum('amount');
+    $cashExpenses  = $dailyExpenses->filter(
+        fn($e) => in_array(mb_strtolower($e->payment_method), ['espèces', 'especes', 'cash'])
+    )->sum('amount');
+
+    // 4. Soldes nets de clôture
+    $netCashInDrawer = $byMethod['cash'] - $cashExpenses;
+    $netDailyTotal   = $grandTotal - $totalExpenses;
+
+    return view('billing.daily_close', compact(
+        'date',
+        'transactions',
+        'byMethod',
+        'byService',
+        'grandTotal',
+        'dailyExpenses',
+        'totalExpenses',
+        'cashExpenses',
+        'netCashInDrawer',
+        'netDailyTotal'
+    ));
 }
 
 
