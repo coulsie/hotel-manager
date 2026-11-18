@@ -18,6 +18,7 @@ use App\Http\Controllers\StockController;
 use App\Http\Controllers\GuestPortalController;
 use App\Http\Controllers\CrmController;
 use App\Http\Controllers\HrController;
+use App\Http\Controllers\Admin\BackupController;
 // ==========================================================================
 // 0. AUTHENTIFICATION (Accès public)
 // ==========================================================================
@@ -156,6 +157,10 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/{id}/reset-password', 'resetPassword')->name('reset.password'); // <-- À ajouter ici
             Route::post('/roles/{role}/permissions', 'updateRolePermissions')->name('roles.permissions');
         });
+
+        // Sauvegarde de la base de données (Admin uniquement)
+        Route::middleware('role:admin')->get('/backup/download', [BackupController::class, 'downloadSql'])->name('backup.download');
+
 
     });
 

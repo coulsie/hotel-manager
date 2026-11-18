@@ -21,10 +21,13 @@ class GuestPortalController extends Controller
         }
 
         // Récupérer la carte du restaurant (articles disponibles)
+       
+
+        // Récupérer la carte du restaurant (articles disponibles)
         $menuItems = DB::table('menu_items')
-            ->orderBy('category')
             ->orderBy('name')
             ->get();
+
 
         // Suivi des demandes et commandes récentes du client durant son séjour actuel
         $activeCard = DB::table('magnetic_cards')
@@ -95,16 +98,17 @@ class GuestPortalController extends Controller
                 'updated_at'          => now(),
             ]);
 
-            foreach ($selectedItems as $line) {
+                       foreach ($selectedItems as $line) {
                 DB::table('order_items')->insert([
-                    'order_id'     => $orderId,
-                    'menu_item_id' => $line['menu_item_id'],
-                    'quantity'     => $line['quantity'],
-                    'unit_price'   => $line['unit_price'],
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
+                    'order_id'       => $orderId,
+                    'menu_item_id'   => $line['menu_item_id'],
+                    'quantity'       => $line['quantity'],
+                    'price_at_order' => $line['unit_price'],
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
                 ]);
             }
+
         });
 
         return back()->with('success', 'Votre commande Room Service a été transmise à la cuisine et ajoutée à votre chambre !');
