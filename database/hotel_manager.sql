@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : mar. 17 nov. 2026 à 13:31
+-- Généré le : mer. 18 nov. 2026 à 13:16
 -- Version du serveur : 11.4.9-MariaDB
 -- Version de PHP : 8.3.28
 
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS `cache` (
 --
 
 INSERT INTO `cache` (`key`, `value`, `expiration`) VALUES
-('laravel-cache-spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:18:{i:0;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:17:\"configurer_salles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:14:\"voir_dashboard\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:4;}}i:2;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:13:\"gerer_checkin\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:3;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:8:\"voir_iot\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:4;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:13:\"voir_chambres\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:5;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"gerer_menage\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:6;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:18:\"gerer_restauration\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:7;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:14:\"gerer_services\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:13:\"gerer_encours\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:9;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:16:\"voir_grand_livre\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:14:\"voir_rapport_z\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:11;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:17:\"gerer_billetterie\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:12;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:9:\"voir_rack\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:13;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:15:\"gerer_activites\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:14;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:14:\"gerer_depenses\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:15;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:11:\"gerer_stock\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:16;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:9:\"gerer_crm\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:17;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:8:\"gerer_rh\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}}s:5:\"roles\";a:4:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:14:\"receptionniste\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"restauration\";s:1:\"c\";s:3:\"web\";}i:3;a:3:{s:1:\"a\";i:4;s:1:\"b\";s:11:\"gouvernante\";s:1:\"c\";s:3:\"web\";}}}', 1795007665);
+('laravel-cache-spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:18:{i:0;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:17:\"configurer_salles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:14:\"voir_dashboard\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:4;}}i:2;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:13:\"gerer_checkin\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:3;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:8:\"voir_iot\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:4;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:13:\"voir_chambres\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:5;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"gerer_menage\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:6;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:18:\"gerer_restauration\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:7;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:14:\"gerer_services\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:13:\"gerer_encours\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:9;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:16:\"voir_grand_livre\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:14:\"voir_rapport_z\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:11;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:17:\"gerer_billetterie\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:12;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:9:\"voir_rack\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:13;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:15:\"gerer_activites\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:14;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:14:\"gerer_depenses\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:15;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:11:\"gerer_stock\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:16;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:9:\"gerer_crm\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:17;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:8:\"gerer_rh\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}}s:5:\"roles\";a:4:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:14:\"receptionniste\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"restauration\";s:1:\"c\";s:3:\"web\";}i:3;a:3:{s:1:\"a\";i:4;s:1:\"b\";s:11:\"gouvernante\";s:1:\"c\";s:3:\"web\";}}}', 1795092941);
 
 -- --------------------------------------------------------
 
@@ -296,7 +296,14 @@ CREATE TABLE IF NOT EXISTS `expenses` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `expenses_voucher_number_unique` (`voucher_number`) USING HASH,
   KEY `expenses_user_id_foreign` (`user_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `expenses`
+--
+
+INSERT INTO `expenses` (`id`, `voucher_number`, `category`, `description`, `amount`, `payment_method`, `beneficiary`, `reference`, `user_id`, `expense_date`, `created_at`, `updated_at`) VALUES
+(1, 'DEP-20261118-001', 'autre', 'Avance sur salaire : Koné Nafata (Acompte)', 15000.00, 'Espèces', 'Koné Nafata', 'RH-AVANCE', 1, '2026-11-18', '2026-11-18 12:57:00', '2026-11-18 12:57:00');
 
 -- --------------------------------------------------------
 
@@ -686,7 +693,7 @@ INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 DROP TABLE IF EXISTS `orders`;
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `restaurant_table_id` bigint(20) UNSIGNED NOT NULL,
+  `restaurant_table_id` bigint(20) UNSIGNED DEFAULT NULL,
   `room_id` bigint(20) UNSIGNED DEFAULT NULL,
   `total_amount` decimal(10,2) NOT NULL DEFAULT 0.00,
   `status` varchar(191) NOT NULL DEFAULT 'pending',
@@ -696,7 +703,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   KEY `orders_restaurant_table_id_foreign` (`restaurant_table_id`),
   KEY `orders_room_id_foreign` (`room_id`),
   KEY `room_id` (`room_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `orders`
@@ -710,7 +717,12 @@ INSERT INTO `orders` (`id`, `restaurant_table_id`, `room_id`, `total_amount`, `s
 (5, 2, 5, 27500.00, 'paid', '2026-11-11 15:05:59', '2026-11-11 15:15:09'),
 (6, 1, 2, 27500.00, 'paid', '2026-11-11 15:21:34', '2026-11-12 08:57:21'),
 (7, 1, NULL, 22000.00, 'paid', '2026-11-12 08:57:01', '2026-11-12 08:58:25'),
-(8, 1, 6, 42500.00, 'charged_to_room', '2026-11-12 14:33:39', '2026-11-12 14:33:39');
+(8, 1, 6, 42500.00, 'charged_to_room', '2026-11-12 14:33:39', '2026-11-12 14:33:39'),
+(9, NULL, 3, 12500.00, 'pending', '2026-11-18 12:13:47', '2026-11-18 12:13:47'),
+(10, NULL, 6, 7500.00, 'pending', '2026-11-18 12:14:19', '2026-11-18 12:14:19'),
+(11, NULL, 6, 7500.00, 'pending', '2026-11-18 12:16:48', '2026-11-18 12:16:48'),
+(12, NULL, 3, 5000.00, 'pending', '2026-11-18 12:16:57', '2026-11-18 12:16:57'),
+(13, NULL, 3, 5000.00, 'pending', '2026-11-18 12:19:39', '2026-11-18 12:19:39');
 
 -- --------------------------------------------------------
 
@@ -730,7 +742,7 @@ CREATE TABLE IF NOT EXISTS `order_items` (
   PRIMARY KEY (`id`),
   KEY `order_items_order_id_foreign` (`order_id`),
   KEY `order_items_menu_item_id_foreign` (`menu_item_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `order_items`
@@ -752,7 +764,9 @@ INSERT INTO `order_items` (`id`, `order_id`, `menu_item_id`, `quantity`, `price_
 (13, 7, 1, 2, 3500.00, '2026-11-12 08:57:01', '2026-11-12 08:57:01'),
 (14, 7, 2, 3, 5000.00, '2026-11-12 08:57:01', '2026-11-12 08:57:01'),
 (15, 8, 1, 5, 3500.00, '2026-11-12 14:33:39', '2026-11-12 14:33:39'),
-(16, 8, 2, 5, 5000.00, '2026-11-12 14:33:39', '2026-11-12 14:33:39');
+(16, 8, 2, 5, 5000.00, '2026-11-12 14:33:39', '2026-11-12 14:33:39'),
+(17, 13, 6, 1, 1500.00, '2026-11-18 12:19:39', '2026-11-18 12:19:39'),
+(18, 13, 1, 1, 3500.00, '2026-11-18 12:19:39', '2026-11-18 12:19:39');
 
 -- --------------------------------------------------------
 
@@ -1136,7 +1150,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('Pid6igltrggKBqPNx2IbNwqxO4jZIKwbecJqex9t', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJLSDNQcEtiQnlzQzhkSFRTY2JISmZpZmtBOE5YRGNQdHp1WlBoR0pRIiwiX2ZsYXNoIjp7Im5ldyI6W10sIm9sZCI6W119LCJfcHJldmlvdXMiOnsidXJsIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAiLCJyb3V0ZSI6ImRhc2hib2FyZCJ9LCJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI6MSwicGFzc3dvcmRfaGFzaF93ZWIiOiI2YWNmNTkyY2I2NTg5NTA2ZGU3YThjOGJjMDQxOGQwMzUyYTFlOTU4ODY2MDdkNWE5Nzg5NjAyN2U0OWU0N2VlIn0=', 1794922215);
+('ZPN5p9vHgYcLjWbvmWWrSIoKpXO2fRwh6nZu0Gfy', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJYV2tXZ1BkQnF1TnBGZ3BkNll3TzlJVjR0ekl0UFBwbGx5cGc0ck1NIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDBcL3Jvb20tZGlyZWN0b3J5XC9xcmNvZGVzIn0sIl9wcmV2aW91cyI6eyJ1cmwiOiJodHRwOlwvXC8xMjcuMC4wLjE6ODAwMFwvYmlsbGluZ1wvZGFpbHktY2xvc2UiLCJyb3V0ZSI6ImJpbGxpbmcuZGFpbHkuY2xvc2UifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119LCJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI6MSwicGFzc3dvcmRfaGFzaF93ZWIiOiI2YWNmNTkyY2I2NTg5NTA2ZGU3YThjOGJjMDQxOGQwMzUyYTFlOTU4ODY2MDdkNWE5Nzg5NjAyN2U0OWU0N2VlIn0=', 1795007626);
 
 -- --------------------------------------------------------
 
@@ -1218,7 +1232,14 @@ CREATE TABLE IF NOT EXISTS `staff_advances` (
   PRIMARY KEY (`id`),
   KEY `staff_advances_user_id_foreign` (`user_id`),
   KEY `staff_advances_approved_by_foreign` (`approved_by`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `staff_advances`
+--
+
+INSERT INTO `staff_advances` (`id`, `user_id`, `amount`, `advance_date`, `payment_method`, `reason`, `approved_by`, `created_at`, `updated_at`) VALUES
+(1, 2, 15000.00, '2026-11-18', 'Espèces', 'Acompte', 1, '2026-11-18 12:57:00', '2026-11-18 12:57:00');
 
 -- --------------------------------------------------------
 
