@@ -584,22 +584,41 @@ public function dailyCloseReport(\Illuminate\Http\Request $request)
         ->whereDate('created_at', $date)
         ->get();
 
-    // 1. Ventilation par mode de paiement
-    $knownMethods = ['cash', 'wave', 'orange_money', 'mtn_momo', 'moov_money', 'card'];
+    // 1. Ventilation par mode de paiement (insensible à la casse et aux variantes)
     $byMethod = [
-        'cash'         => $transactions->where('payment_method', 'cash')->sum('amount_paid'),
-        'wave'         => $transactions->where('payment_method', 'wave')->sum('amount_paid'),
-        'orange_money' => $transactions->where('payment_method', 'orange_money')->sum('amount_paid'),
-        'mtn_momo'     => $transactions->where('payment_method', 'mtn_momo')->sum('amount_paid'),
-        'moov_money'   => $transactions->where('payment_method', 'moov_money')->sum('amount_paid'),
-        'card'         => $transactions->where('payment_method', 'card')->sum('amount_paid'),
-        'other'        => $transactions->whereNotIn('payment_method', $knownMethods)->sum('amount_paid'),
+        'cash'         => 0,
+        'wave'         => 0,
+        'orange_money' => 0,
+        'mtn_momo'     => 0,
+        'moov_money'   => 0,
+        'card'         => 0,
+        'other'        => 0,
     ];
 
+    foreach ($transactions as $tx) {
+        $m = mb_strtolower(trim((string) $tx->payment_method));
+
+        if (in_array($m, ['cash', 'espèces', 'especes'])) {
+            $byMethod['cash'] += $tx->amount_paid;
+        } elseif (str_contains($m, 'wave')) {
+            $byMethod['wave'] += $tx->amount_paid;
+        } elseif (str_contains($m, 'orange')) {
+            $byMethod['orange_money'] += $tx->amount_paid;
+        } elseif (str_contains($m, 'mtn')) {
+            $byMethod['mtn_momo'] += $tx->amount_paid;
+        } elseif (str_contains($m, 'moov')) {
+            $byMethod['moov_money'] += $tx->amount_paid;
+        } elseif (in_array($m, ['card', 'carte', 'tpe', 'carte bancaire'])) {
+            $byMethod['card'] += $tx->amount_paid;
+        } else {
+            $byMethod['other'] += $tx->amount_paid;
+        }
+    }
+
     // 2. Ventilation par pôle d'activité (Hébergement, Resto, Pressing, Lavage Auto, Spectacles & Autres)
-    $knownServices = ['room_booking', 'restaurant', 'pressing', 'car_wash', 'show_ticket'];
+    $knownServices = ['room_booking', 'reservation_deposit', 'restaurant', 'pressing', 'car_wash', 'show_ticket'];
     $byService = [
-        'room_booking' => $transactions->where('service_type', 'room_booking')->sum('amount_paid'),
+        'room_booking' => $transactions->whereIn('service_type', ['room_booking', 'reservation_deposit'])->sum('amount_paid'),
         'restaurant'   => $transactions->where('service_type', 'restaurant')->sum('amount_paid'),
         'pressing'     => $transactions->where('service_type', 'pressing')->sum('amount_paid'),
         'car_wash'     => $transactions->where('service_type', 'car_wash')->sum('amount_paid'),
@@ -617,7 +636,7 @@ public function dailyCloseReport(\Illuminate\Http\Request $request)
 
     $totalExpenses = $dailyExpenses->sum('amount');
     $cashExpenses  = $dailyExpenses->filter(
-        fn($e) => in_array(mb_strtolower($e->payment_method), ['espèces', 'especes', 'cash'])
+        fn($e) => in_array(mb_strtolower(trim((string) $e->payment_method)), ['espèces', 'especes', 'cash'])
     )->sum('amount');
 
     // 4. Soldes nets de clôture

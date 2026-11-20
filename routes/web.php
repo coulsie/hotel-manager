@@ -205,6 +205,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('permission:gerer_depenses')->prefix('expenses')->name('expenses.')->controller(ExpenseController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
+        Route::put('/{id}', 'update')->name('update'); // <-- À ajouter ici
         Route::delete('/{id}', 'destroy')->name('destroy');
     });
 

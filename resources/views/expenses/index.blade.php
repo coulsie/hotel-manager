@@ -100,7 +100,8 @@
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label fw-bold small text-danger">Montant (FCFA) *</label>
-                                <input type="number" name="amount" min="1" step="50" class="form-control form-control-sm fw-bold border-danger" required>
+                               <input type="number" name="amount" min="0" step="1" class="form-control fw-bold" placeholder="Ex: 7500" required>
+
                             </div>
                             <div class="col-6">
                                 <label class="form-label fw-bold small">Mode de sortie *</label>
@@ -196,8 +197,17 @@
                                         <td><span class="badge bg-light text-dark border">{{ $exp->payment_method }}</span></td>
                                         <td class="text-end fw-bold text-danger">- {{ number_format($exp->amount, 0, ',', ' ') }} F</td>
                                         <td class="text-muted">{{ $exp->author_name ?? 'Système' }}</td>
-                                        <td class="text-end pe-4">
-                                            <form action="{{ route('expenses.destroy', $exp->id) }}" method="POST" onsubmit="return confirm('Supprimer ce bon de dépense ?');">
+                                        <td class="text-end pe-4 text-nowrap">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary rounded-circle px-2 py-0 me-1"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#editExpenseModal"
+                                                    data-expense="{{ json_encode($exp) }}"
+                                                    title="Modifier ce bon">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+
+                                            <form action="{{ route('expenses.destroy', $exp->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Supprimer ce bon de dépense ?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle px-2 py-0" title="Supprimer">
@@ -214,9 +224,103 @@
                             </tbody>
                         </table>
                     </div>
+
                 </div>
             </div>
         </div>
     </div>
 </div>
+<!-- MODALE : MODIFIER UN BON DE DÉPENSE -->
+<div class="modal fade" id="editExpenseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form id="editExpenseForm" method="POST" class="modal-content rounded-4 border-0 shadow">
+            @csrf
+            @method('PUT')
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-pencil-square me-2"></i>Modifier le Bon <span id="editVoucherLabel" class="badge bg-warning text-dark ms-1"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-bold small">Catégorie *</label>
+                        <select name="category" id="editExpCategory" class="form-select form-select-sm" required>
+                            <option value="approvisionnement">Approvisionnement Cuisine / Bar</option>
+                            <option value="entretien">Produits Entretien / Ménage</option>
+                            <option value="maintenance">Maintenance & Réparations</option>
+                            <option value="carburant">Carburant / Groupe Électrogène</option>
+                            <option value="facture">Facture Eau / Électricité / Internet</option>
+                            <option value="autre">Autre Dépense / Acompte</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold small">Date *</label>
+                        <input type="date" name="expense_date" id="editExpDate" class="form-control form-control-sm" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Libellé / Motif de la dépense *</label>
+                    <input type="text" name="description" id="editExpDescription" class="form-control form-control-sm" required>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-bold small">Montant (FCFA) *</label>
+                        <input type="number" name="amount" id="editExpAmount" min="0" step="1" class="form-control form-control-sm fw-bold" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold small">Mode de sortie *</label>
+                        <select name="payment_method" id="editExpMethod" class="form-select form-select-sm" required>
+                            <option value="Espèces">Espèces (Tiroir-caisse)</option>
+                            <option value="Wave">Wave</option>
+                            <option value="Orange Money">Orange Money</option>
+                            <option value="MTN MoMo">MTN MoMo</option>
+                            <option value="Virement / Chèque">Virement / Chèque</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label fw-bold small">Bénéficiaire / Fournisseur</label>
+                        <input type="text" name="beneficiary" id="editExpBeneficiary" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold small">N° Reçu / Référence</label>
+                        <input type="text" name="reference" id="editExpReference" class="form-control form-control-sm">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Enregistrer les modifications</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const editExpenseModal = document.getElementById('editExpenseModal');
+        if (editExpenseModal) {
+            editExpenseModal.addEventListener('show.bs.modal', function (event) {
+                const exp = JSON.parse(event.relatedTarget.getAttribute('data-expense'));
+                document.getElementById('editExpenseForm').action = `/expenses/${exp.id}`;
+                document.getElementById('editVoucherLabel').textContent = exp.voucher_number || '';
+                document.getElementById('editExpCategory').value = exp.category || 'autre';
+                document.getElementById('editExpDate').value = exp.expense_date ? exp.expense_date.substring(0, 10) : '';
+                document.getElementById('editExpDescription').value = exp.description || '';
+                document.getElementById('editExpAmount').value = Math.round(exp.amount || 0);
+                document.getElementById('editExpMethod').value = exp.payment_method || 'Espèces';
+                document.getElementById('editExpBeneficiary').value = exp.beneficiary || '';
+                document.getElementById('editExpReference').value = exp.reference || '';
+            });
+        }
+    });
+</script>
+
+
 @endsection

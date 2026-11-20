@@ -105,4 +105,36 @@ class ExpenseController extends Controller
 
         return back()->with('success', 'Bon de dépense supprimé.');
     }
+
+    /**
+     * Mettre à jour un bon de dépense existant
+     */
+    public function update(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'category'       => 'required|string|max:50',
+            'description'    => 'required|string|max:255',
+            'amount'         => 'required|numeric|min:0',
+            'payment_method' => 'required|string|max:50',
+            'beneficiary'    => 'nullable|string|max:191',
+            'reference'      => 'nullable|string|max:100',
+            'expense_date'   => 'required|date',
+        ]);
+
+        DB::table('expenses')->where('id', $id)->update([
+            'category'       => $validated['category'],
+            'description'    => $validated['description'],
+            'amount'         => $validated['amount'],
+            'payment_method' => $validated['payment_method'],
+            'beneficiary'    => $validated['beneficiary'] ?? null,
+            'reference'      => $validated['reference'] ?? null,
+            'expense_date'   => $validated['expense_date'],
+            'updated_at'     => now(),
+        ]);
+
+        return back()->with('success', 'Le bon de dépense a été modifié avec succès.');
+    }
+
+
+
 }

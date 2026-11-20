@@ -175,16 +175,28 @@ class ReservationController extends Controller
                 'special_requests' => $validated['special_requests'] ?? null,
             ]);
 
-            if ($depositPaid > 0) {
+                        if ($depositPaid > 0) {
+                // Normalisation du mode de paiement pour le Rapport Z et le Grand Livre
+                $rawMethod = mb_strtolower(trim((string) ($validated['payment_method'] ?? 'cash')));
+                $normalizedMethod = match (true) {
+                    str_contains($rawMethod, 'wave')                       => 'wave',
+                    str_contains($rawMethod, 'orange')                     => 'orange_money',
+                    str_contains($rawMethod, 'mtn')                        => 'mtn_momo',
+                    str_contains($rawMethod, 'moov')                       => 'moov_money',
+                    in_array($rawMethod, ['card', 'carte', 'tpe'])         => 'card',
+                    default                                                => 'cash',
+                };
+
                 $billing = Billing::create([
                     'receipt_number' => Billing::generateReceiptNumber(),
                     'room_id'        => $room->id,
-                    'service_type'   => 'reservation_deposit',
+                    'service_type'   => 'room_booking',
                     'amount_paid'    => $depositPaid,
-                    'payment_method' => $validated['payment_method'] ?? 'Espèces',
+                    'payment_method' => $normalizedMethod,
                     'status'         => 'completed',
                 ]);
             }
+
         });
 
         // 5. Si un acompte a été encaissé, redirection vers le Grand Livre avec impression du reçu
