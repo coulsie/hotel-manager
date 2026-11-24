@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : mar. 24 nov. 2026 à 11:52
+-- Généré le : mar. 24 nov. 2026 à 15:03
 -- Version du serveur : 11.4.9-MariaDB
 -- Version de PHP : 8.3.28
 
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS `billings` (
   KEY `billings_order_id_foreign` (`order_id`),
   KEY `billings_event_ticket_id_foreign` (`event_ticket_id`),
   KEY `room_id` (`room_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `billings`
@@ -84,7 +84,8 @@ INSERT INTO `billings` (`id`, `receipt_number`, `room_id`, `order_id`, `event_ti
 (6, 'REC-20261124-0002', 10, 2, NULL, 'restaurant', 39500.00, 'cash', 'completed', '2026-11-24 09:45:15', '2026-11-24 09:45:15'),
 (7, 'REC-20261124-0003', 1, NULL, NULL, 'room_booking', 34000.00, 'cash', 'completed', '2026-11-24 11:20:24', '2026-11-24 11:20:24'),
 (8, 'REC-20261124-0004', 1, NULL, NULL, 'room_booking', 45000.00, 'cash', 'completed', '2026-11-24 11:27:21', '2026-11-24 11:27:21'),
-(9, 'REC-20261124-0005', 4, 1, NULL, 'restaurant', 24500.00, 'cash', 'completed', '2026-11-24 11:31:46', '2026-11-24 11:31:46');
+(9, 'REC-20261124-0005', 4, 1, NULL, 'restaurant', 24500.00, 'cash', 'completed', '2026-11-24 11:31:46', '2026-11-24 11:31:46'),
+(10, 'REC-20261124-0006', 2, NULL, NULL, 'room_booking', 120000.00, 'cash', 'completed', '2026-11-24 13:13:13', '2026-11-24 13:13:13');
 
 -- --------------------------------------------------------
 
@@ -106,7 +107,7 @@ CREATE TABLE IF NOT EXISTS `cache` (
 --
 
 INSERT INTO `cache` (`key`, `value`, `expiration`) VALUES
-('laravel-cache-spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:18:{i:0;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:17:\"configurer_salles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:14:\"voir_dashboard\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:4;}}i:2;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:13:\"gerer_checkin\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:3;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:8:\"voir_iot\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:4;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:13:\"voir_chambres\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:5;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"gerer_menage\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:6;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:18:\"gerer_restauration\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:7;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:14:\"gerer_services\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:13:\"gerer_encours\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:9;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:16:\"voir_grand_livre\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:14:\"voir_rapport_z\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:11;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:17:\"gerer_billetterie\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:12;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:9:\"voir_rack\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:13;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:15:\"gerer_activites\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:14;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:14:\"gerer_depenses\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:15;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:11:\"gerer_stock\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:16;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:9:\"gerer_crm\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:17;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:8:\"gerer_rh\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}}s:5:\"roles\";a:4:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:14:\"receptionniste\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"restauration\";s:1:\"c\";s:3:\"web\";}i:3;a:3:{s:1:\"a\";i:4;s:1:\"b\";s:11:\"gouvernante\";s:1:\"c\";s:3:\"web\";}}}', 1795529670);
+('laravel-cache-spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:18:{i:0;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:17:\"configurer_salles\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:1;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:14:\"voir_dashboard\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:4:{i:0;i:1;i:1;i:2;i:2;i:3;i:3;i:4;}}i:2;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:13:\"gerer_checkin\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:3;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:8:\"voir_iot\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:4;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:13:\"voir_chambres\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:4;}}i:5;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"gerer_menage\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:6;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:18:\"gerer_restauration\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:7;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:14:\"gerer_services\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:13:\"gerer_encours\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:9;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:16:\"voir_grand_livre\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:14:\"voir_rapport_z\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:11;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:17:\"gerer_billetterie\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:12;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:9:\"voir_rack\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:13;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:15:\"gerer_activites\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:14;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:14:\"gerer_depenses\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:15;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:11:\"gerer_stock\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:16;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:9:\"gerer_crm\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:17;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:8:\"gerer_rh\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}}s:5:\"roles\";a:4:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:5:\"admin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:14:\"receptionniste\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"restauration\";s:1:\"c\";s:3:\"web\";}i:3;a:3:{s:1:\"a\";i:4;s:1:\"b\";s:11:\"gouvernante\";s:1:\"c\";s:3:\"web\";}}}', 1795616344);
 
 -- --------------------------------------------------------
 
@@ -146,6 +147,37 @@ CREATE TABLE IF NOT EXISTS `companies` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `conference_spaces`
+--
+
+DROP TABLE IF EXISTS `conference_spaces`;
+CREATE TABLE IF NOT EXISTS `conference_spaces` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `category` enum('reunion','seminaire','coworking') NOT NULL DEFAULT 'reunion',
+  `capacity` int(10) UNSIGNED NOT NULL DEFAULT 10,
+  `hourly_rate` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `half_day_rate` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `full_day_rate` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `equipments` text DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `conference_spaces`
+--
+
+INSERT INTO `conference_spaces` (`id`, `name`, `category`, `capacity`, `hourly_rate`, `half_day_rate`, `full_day_rate`, `equipments`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'Salle Exécutive Lagune', 'reunion', 16, 15000.00, 50000.00, 90000.00, 'Écran TV 75\", Visioconférence, Wi-Fi Fibre, Tableau blanc', 1, '2026-11-24 13:36:41', '2026-11-24 13:36:41'),
+(2, 'Grand Auditorium Ébène', 'seminaire', 80, 40000.00, 150000.00, 250000.00, 'Vidéoprojecteur HD, Sonorisation + 2 micros sans fil, Climatisation, Estrade', 1, '2026-11-24 13:36:41', '2026-11-24 13:36:41'),
+(3, 'Espace Coworking Horizon', 'coworking', 25, 2500.00, 8000.00, 15000.00, 'Poste individuel, Fibre optique haut débit, Prises électriques, Accès café', 1, '2026-11-24 13:36:41', '2026-11-24 13:36:41');
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `customers`
 --
 
@@ -167,7 +199,7 @@ CREATE TABLE IF NOT EXISTS `customers` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `customers_company_id_foreign` (`company_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `customers`
@@ -198,7 +230,8 @@ INSERT INTO `customers` (`id`, `company_id`, `full_name`, `phone`, `email`, `nat
 (22, NULL, 'Kouamé Jean-Marc', '07 89 45 12 36', NULL, 'Ivoirienne', 'standard', NULL, 'CNI', 'CI-00984521', NULL, NULL, '2026-11-17 08:27:28', '2026-11-17 08:27:28'),
 (23, NULL, 'Ablasse Ouédraogo', '0407050602', NULL, 'Ivoirienne', 'standard', NULL, 'CNI', 'CI0012345', NULL, NULL, '2026-11-23 16:15:30', '2026-11-23 16:15:30'),
 (24, NULL, 'KONE YAYA', '0405021326', NULL, 'Ivoirienne', 'standard', NULL, 'CNI', 'cni21022', NULL, NULL, '2026-11-23 16:32:02', '2026-11-23 16:32:02'),
-(25, NULL, 'Kouadio Seraphin', '0143677424', NULL, 'Ivoirienne', 'standard', NULL, 'CNI', 'CNI 123333', NULL, NULL, '2026-11-23 16:43:42', '2026-11-23 16:43:42');
+(25, NULL, 'Kouadio Seraphin', '0143677424', NULL, 'Ivoirienne', 'standard', NULL, 'CNI', 'CNI 123333', NULL, NULL, '2026-11-23 16:43:42', '2026-11-23 16:43:42'),
+(26, NULL, 'Koné Mariam', '0124536966', NULL, 'Ivoirienne', 'standard', NULL, 'CNI', 'cni21022', NULL, NULL, '2026-11-24 13:12:45', '2026-11-24 13:12:45');
 
 -- --------------------------------------------------------
 
@@ -556,7 +589,7 @@ CREATE TABLE IF NOT EXISTS `migrations` (
   `migration` varchar(191) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `migrations`
@@ -597,7 +630,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (32, '2026_11_17_120614_create_stock_management_tables', 15),
 (33, '2026_11_17_122336_create_room_requests_table', 16),
 (34, '2026_11_17_124315_add_crm_and_companies_tables', 17),
-(35, '2026_11_17_125718_create_hr_management_tables', 18);
+(35, '2026_11_17_125718_create_hr_management_tables', 18),
+(37, '2026_11_24_133004_create_conference_spaces_tables', 19);
 
 -- --------------------------------------------------------
 
@@ -813,14 +847,15 @@ CREATE TABLE IF NOT EXISTS `reservations` (
   PRIMARY KEY (`id`),
   KEY `reservations_customer_id_foreign` (`customer_id`),
   KEY `reservations_room_id_foreign` (`room_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `reservations`
 --
 
 INSERT INTO `reservations` (`id`, `customer_id`, `room_id`, `check_in_date`, `check_out_date`, `nights`, `total_amount`, `deposit_paid`, `status`, `provenance`, `destination`, `special_requests`, `created_at`, `updated_at`) VALUES
-(1, 23, 1, '2026-11-24', '2026-11-26', 2, 90000.00, 11000.00, 'checked_in', NULL, 'Abidjan', NULL, '2026-11-23 16:15:30', '2026-11-24 10:51:29');
+(1, 23, 1, '2026-11-24', '2026-11-26', 2, 90000.00, 11000.00, 'checked_in', NULL, 'Abidjan', NULL, '2026-11-23 16:15:30', '2026-11-24 10:51:29'),
+(2, 26, 2, '2026-11-26', '2026-11-30', 4, 300000.00, 120000.00, 'confirmed', NULL, 'Abidjan', NULL, '2026-11-24 13:12:45', '2026-11-24 13:13:13');
 
 -- --------------------------------------------------------
 
@@ -1088,7 +1123,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('FcKiLETIEt07cSx3XSZVS8csVHUEodSL2IllLsuE', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJLODIxOFdyVExNZmtiTmR6dlZoOVF1cVd4aW93U3NzWmZveUk5clhjIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDBcL2JpbGxpbmcifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119LCJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI6MSwicGFzc3dvcmRfaGFzaF93ZWIiOiI2YWNmNTkyY2I2NTg5NTA2ZGU3YThjOGJjMDQxOGQwMzUyYTFlOTU4ODY2MDdkNWE5Nzg5NjAyN2U0OWU0N2VlIn0=', 1795520989);
+('FcKiLETIEt07cSx3XSZVS8csVHUEodSL2IllLsuE', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJLODIxOFdyVExNZmtiTmR6dlZoOVF1cVd4aW93U3NzWmZveUk5clhjIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDBcL2JpbGxpbmcifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9iaWxsaW5nIiwicm91dGUiOiJiaWxsaW5nLmluZGV4In0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfSwibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiOjEsInBhc3N3b3JkX2hhc2hfd2ViIjoiNmFjZjU5MmNiNjU4OTUwNmRlN2E4YzhiYzA0MThkMDM1MmExZTk1ODg2NjA3ZDVhOTc4OTYwMjdlNDllNDdlZSJ9', 1795532553);
 
 -- --------------------------------------------------------
 
@@ -1142,6 +1177,42 @@ CREATE TABLE IF NOT EXISTS `show_bookings` (
   KEY `show_bookings_room_id_foreign` (`room_id`),
   KEY `show_bookings_event_id_foreign` (`event_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `space_bookings`
+--
+
+DROP TABLE IF EXISTS `space_bookings`;
+CREATE TABLE IF NOT EXISTS `space_bookings` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `space_id` bigint(20) UNSIGNED NOT NULL,
+  `company_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `room_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `client_name` varchar(255) NOT NULL,
+  `client_phone` varchar(255) DEFAULT NULL,
+  `booking_date` date NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `pricing_type` enum('hourly','half_day','full_day') NOT NULL DEFAULT 'full_day',
+  `attendees` int(10) UNSIGNED NOT NULL DEFAULT 1,
+  `total_amount` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `amount_paid` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `payment_status` enum('unpaid','partial','paid') NOT NULL DEFAULT 'unpaid',
+  `status` enum('confirmed','in_progress','completed','cancelled') NOT NULL DEFAULT 'confirmed',
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `space_bookings`
+--
+
+INSERT INTO `space_bookings` (`id`, `space_id`, `company_id`, `room_id`, `client_name`, `client_phone`, `booking_date`, `start_time`, `end_time`, `pricing_type`, `attendees`, `total_amount`, `amount_paid`, `payment_status`, `status`, `notes`, `created_at`, `updated_at`) VALUES
+(1, 3, NULL, 4, 'Client Chambre Chambre 104', NULL, '2026-11-24', '15:30:00', '20:45:00', 'hourly', 5, 75000.00, 0.00, 'unpaid', 'confirmed', NULL, '2026-11-24 14:31:20', '2026-11-24 14:31:20');
 
 -- --------------------------------------------------------
 
