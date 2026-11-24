@@ -226,22 +226,23 @@
 
                                     <!-- Détail des consommations restaurant liées -->
                                     <!-- Détail complet des Extras liés (Resto, Pressing, Lavage Auto, Spectacles) -->
-                                    <div class="col-md-5">
+                                    <!-- Détail complet des Extras liés (Resto, Pressing, Lavage Auto, Salles Pro & Spectacles) -->
+                                                                        <div class="col-md-5">
                                         <div class="p-3 bg-white rounded-4 border border-warning-subtle shadow-sm h-100">
                                             <h6 class="fw-bold small text-uppercase text-warning-emphasis mb-2">
-                                                <i class="bi bi-stars text-warning me-1 fs-6"></i>Extras Liés (Resto, Pressing, Auto & Spectacles)
+                                                <i class="bi bi-stars text-warning me-1 fs-6"></i>Extras Liés (Resto, Pressing, Auto, Salles & Spectacles)
                                             </h6>
 
                                             @php
                                                 $hasOrders     = isset($account['orders']) && $account['orders']->count() > 0;
                                                 $hasServices   = isset($account['extra_services']) && $account['extra_services']->count() > 0;
                                                 $hasActivities = isset($account['activities']) && $account['activities']->count() > 0;
+                                                $hasSpaces     = isset($account['space_bookings']) && $account['space_bookings']->count() > 0;
                                                 $hasOthers     = isset($account['other_billings']) && $account['other_billings']->count() > 0;
                                             @endphp
 
-                                            @if($hasOrders || $hasServices || $hasActivities || $hasOthers)
+                                            @if($hasOrders || $hasServices || $hasActivities || $hasSpaces || $hasOthers)
                                                 <ul class="list-group list-group-flush">
-                                                    <!-- 1. Commandes Restaurant -->
                                                     @if($hasOrders)
                                                         @foreach($account['orders'] as $ord)
                                                             <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
@@ -255,7 +256,6 @@
                                                         @endforeach
                                                     @endif
 
-                                                    <!-- 2. Prestations Pressing & Lavage Auto -->
                                                     @if($hasServices)
                                                         @foreach($account['extra_services'] as $srv)
                                                             <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
@@ -272,7 +272,25 @@
                                                         @endforeach
                                                     @endif
 
-                                                    <!-- 3. Activités Annexes (Piscine, Spa, Navette, Coworking...) -->
+                                                    @if($hasSpaces)
+                                                        @foreach($account['space_bookings'] as $sp)
+                                                            <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
+                                                                <div>
+                                                                    @if($sp->space_category === 'coworking')
+                                                                        <span class="badge text-white me-1" style="background-color: #059669;">💻 COWORKING</span>
+                                                                    @elseif($sp->space_category === 'seminaire')
+                                                                        <span class="badge text-white me-1" style="background-color: #7c3aed;">🎤 SÉMINAIRE</span>
+                                                                    @else
+                                                                        <span class="badge text-white me-1" style="background-color: #2563eb;">🤝 RÉUNION</span>
+                                                                    @endif
+                                                                    <span class="fw-semibold text-dark">{{ $sp->space_name }}</span>
+                                                                    <small class="text-muted">({{ \Carbon\Carbon::parse($sp->booking_date)->format('d/m') }} {{ substr($sp->start_time, 0, 5) }}-{{ substr($sp->end_time, 0, 5) }})</small>
+                                                                </div>
+                                                                <span class="fw-bold" style="color: #4338ca;">{{ number_format($sp->total_amount, 0, ',', ' ') }} F</span>
+                                                            </li>
+                                                        @endforeach
+                                                    @endif
+
                                                     @if($hasActivities)
                                                         @foreach($account['activities'] as $act)
                                                             <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
@@ -285,10 +303,9 @@
                                                         @endforeach
                                                     @endif
 
-                                                    <!-- 4. Billets de Spectacles & Autres reçus liés à la chambre -->
                                                     @if($hasOthers)
                                                         @foreach($account['other_billings'] as $other)
-                                                            @if(!in_array($other->service_type, ['pressing', 'car_wash']))
+                                                            @if(!in_array($other->service_type, ['pressing', 'car_wash', 'seminaire', 'coworking']))
                                                                 <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
                                                                     <div>
                                                                         @if($other->service_type === 'show_ticket')
@@ -305,11 +322,18 @@
                                                     @endif
                                                 </ul>
                                             @else
-                                                <div class="text-muted small py-2">Aucun extra (restaurant, pressing, lavage ou spectacle) imputé à cette chambre.</div>
+                                                <div class="text-muted small py-2">Aucun extra (restaurant, pressing, lavage, salle ou spectacle) imputé à cette chambre.</div>
                                             @endif
-
                                         </div>
                                     </div>
+
+
+
+
+
+
+
+
 
                                 </div>
                             </td>

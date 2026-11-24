@@ -205,7 +205,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('checkin.form') ? 'active fw-bold text-primary' : '' }}" href="{{ route('checkin.form') }}">
                                     <i class="bi bi-person-plus-fill text-primary me-2"></i>
-                                    <span>Réservation / Check-in</span>
+                                    <span>Attribution / Check-in</span>
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -404,6 +404,14 @@
                                     <span>Salles de Spectacle</span>
                                 </a>
                             </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('conferences.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('conferences.index') }}">
+                                    <i class="bi bi-easel2-fill text-indigo me-2"></i>
+                                    <span>Salles de Conférence</span>
+                                </a>
+                            </li>
+
 
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('admin.events.index') ? 'active fw-bold text-primary' : '' }}" href="{{ route('admin.events.index') }}">

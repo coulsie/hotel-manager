@@ -45,6 +45,23 @@ class BillingController extends Controller
             ->latest()
             ->get();
 
+        $pendingSpaceBookings = DB::table('space_bookings')
+            ->join('conference_spaces', 'space_bookings.space_id', '=', 'conference_spaces.id')
+            ->leftJoin('rooms', 'space_bookings.room_id', '=', 'rooms.id')
+            ->where('space_bookings.status', '!=', 'cancelled')
+            ->where('space_bookings.payment_status', '!=', 'paid')
+            ->select(
+                'space_bookings.*',
+                'conference_spaces.name as space_name',
+                'conference_spaces.category as space_category',
+                'rooms.number as room_number'
+            )
+            ->orderByDesc('space_bookings.booking_date')
+            ->orderBy('space_bookings.start_time')
+            ->get();
+
+
+
         // 2. Suivi complet de TOUTES les chambres actuellement occupées
         $occupiedRooms = Room::where('status', 'occupied')->get();
         $pendingRooms = [];
@@ -93,7 +110,14 @@ class BillingController extends Controller
                 ->where('payment_status', 'unpaid')
                 ->sum('total_amount');
 
-            $extrasCost = $restoCost + $pressingAutoCost + $activitiesCost;
+            $spacesCost = DB::table('space_bookings')
+                ->where('room_id', $room->id)
+                ->where('status', '!=', 'cancelled')
+                ->where('payment_status', '!=', 'paid')
+                ->selectRaw('COALESCE(SUM(total_amount - amount_paid), 0) as due')
+                ->value('due');
+
+            $extrasCost = $restoCost + $pressingAutoCost + $activitiesCost + (float) $spacesCost;
             $totalCost  = $roomCost + $extrasCost;
 
             $reservationDeposit = $checkedInReservation ? (float) $checkedInReservation->deposit_paid : 0;
@@ -128,7 +152,13 @@ class BillingController extends Controller
             ];
         }
 
-        return view('billing.index', compact('pendingOrders', 'pendingExtraServices', 'pendingRooms'));
+        return view('billing.index', compact(
+            'pendingOrders',
+            'pendingExtraServices',
+            'pendingSpaceBookings',
+            'pendingRooms'
+        ));
+
     }
 
 
@@ -183,7 +213,7 @@ class BillingController extends Controller
     $allBillings = $query->latest()->get();
     $periodTotal = $allBillings->sum('amount_paid');
 
-       // 5. REGROUPEMENT PAR DOSSIER CHAMBRE (Séjours en cours, passés, extras et réservations avec acompte)
+       // 5. REGROUPEMENT PAR DOSSIER CHAMBRE (Séjours en cours, passés, extras, salles pro et réservations avec acompte)
     $roomAccounts = [];
 
     $billingRoomIds      = $allBillings->whereNotNull('room_id')->pluck('room_id');
@@ -191,12 +221,14 @@ class BillingController extends Controller
     $occupiedRoomIds     = Room::where('status', 'occupied')->pluck('id');
     $extraServiceRoomIds = \App\Models\ExtraService::whereNotNull('room_id')->pluck('room_id');
     $activityRoomIds     = DB::table('activity_bookings')->whereNotNull('room_id')->pluck('room_id');
+    $spaceRoomIds        = DB::table('space_bookings')->whereNotNull('room_id')->where('status', '!=', 'cancelled')->pluck('room_id');
 
     $allRelevantRoomIds = $billingRoomIds
         ->merge($checkedInRoomIds)
         ->merge($occupiedRoomIds)
         ->merge($extraServiceRoomIds)
         ->merge($activityRoomIds)
+        ->merge($spaceRoomIds)
         ->unique();
 
     foreach ($allRelevantRoomIds as $roomId) {
@@ -219,24 +251,31 @@ class BillingController extends Controller
             ->latest('id')
             ->first();
 
-        // Calcul exact des nuits et du coût chambre : Carte active -> Réservation -> Dernière carte -> 1 nuit
-        if ($activeCard && (int) $activeCard->duration_days > 0) {
+        // Calcul exact des nuits et du coût chambre : Réservation active -> Carte active -> Dernière carte -> 1 nuit
+        if ($activeOrFutureRes) {
+            $days = max(1, (int) $activeOrFutureRes->nights);
+            $roomBaseCost = $room->price_per_night * $days;
+        } elseif ($activeCard && (int) $activeCard->duration_days > 0) {
             $days = (int) $activeCard->duration_days;
             $roomBaseCost = $room->price_per_night * $days;
-        } elseif ($activeOrFutureRes) {
-            $days = (int) $activeOrFutureRes->nights;
-            $roomBaseCost = (float) $activeOrFutureRes->total_amount;
         } else {
             $lastCard = DB::table('magnetic_cards')->where('room_id', $roomId)->latest('id')->first();
             $days = $lastCard ? (int) ($lastCard->duration_days ?? 1) : 1;
             $roomBaseCost = $room->price_per_night * $days;
         }
 
-        // Commandes Restaurant, Prestations Pressing/Auto & Activités Annexes liées à la chambre
+        // Commandes Restaurant, Prestations Pressing/Auto, Activités & Salles Pro liées à la chambre
         $roomOrders        = Order::where('room_id', $roomId)->with('restaurantTable')->get();
         $roomExtraServices = \App\Models\ExtraService::where('room_id', $roomId)->get();
         $roomActivities    = DB::table('activity_bookings')->where('room_id', $roomId)->get();
-        $roomOtherBillings = $transactions->whereNotIn('service_type', ['room_booking', 'reservation_deposit', 'pressing', 'car_wash', 'restaurant']);
+        $roomSpaceBookings = DB::table('space_bookings')
+            ->join('conference_spaces', 'space_bookings.space_id', '=', 'conference_spaces.id')
+            ->where('space_bookings.room_id', $roomId)
+            ->where('space_bookings.status', '!=', 'cancelled')
+            ->select('space_bookings.*', 'conference_spaces.name as space_name', 'conference_spaces.category as space_category')
+            ->get();
+
+        $roomOtherBillings = $transactions->whereNotIn('service_type', ['room_booking', 'reservation_deposit', 'pressing', 'car_wash', 'restaurant', 'seminaire', 'coworking']);
 
         // 1. Prestations impayées (en attente sur la note de chambre)
         $unpaidOrdersTotal = $roomOrders
@@ -251,7 +290,11 @@ class BillingController extends Controller
             ->where('payment_status', 'unpaid')
             ->sum('total_amount');
 
-        // 2. Extras déjà encaissés directement (Restaurant payé, Pressing/Auto payé, Spectacles...)
+        $unpaidSpacesTotal = $roomSpaceBookings
+            ->where('payment_status', '!=', 'paid')
+            ->sum(fn($sb) => max(0, (float) $sb->total_amount - (float) $sb->amount_paid));
+
+        // 2. Extras déjà encaissés directement (Restaurant payé, Pressing/Auto payé, Salles Pro payées, Spectacles...)
         $paidExtrasBillingsTotal = $transactions
             ->whereNotIn('service_type', ['room_booking', 'reservation_deposit'])
             ->sum('amount_paid');
@@ -260,6 +303,7 @@ class BillingController extends Controller
         $extrasTotal = $unpaidOrdersTotal
                      + $unpaidExtraServicesTotal
                      + $unpaidActivitiesTotal
+                     + $unpaidSpacesTotal
                      + $paidExtrasBillingsTotal;
 
         // Engagement global (Chambre + Extras)
@@ -286,6 +330,7 @@ class BillingController extends Controller
             'orders'              => $roomOrders,
             'extra_services'      => $roomExtraServices,
             'activities'          => $roomActivities,
+            'space_bookings'      => $roomSpaceBookings,
             'other_billings'      => $roomOtherBillings,
             'total_engagement'    => $totalEngagement,
             'reservation_deposit' => $reservationDeposit,
@@ -294,6 +339,7 @@ class BillingController extends Controller
             'transactions'        => $transactions,
         ];
     }
+
 
 
 
@@ -408,7 +454,7 @@ class BillingController extends Controller
      * Route : billing.room
      */
 
-        public function showRoomInvoice($roomId)
+      public function showRoomInvoice($roomId)
     {
         $room = Room::findOrFail($roomId);
 
@@ -453,11 +499,23 @@ class BillingController extends Controller
 
         $extraServicesTotal = $extraServices->sum('total_amount');
 
-        // 3 bis. Activités Annexes (Piscine, Spa, Navette...) non payées
-        $showsTotal = DB::table('activity_bookings')
+        // 3 bis. Activités Annexes (Piscine, Spa, Navette...) & Salles Pro / Coworking non payées
+        $activitiesTotal = DB::table('activity_bookings')
             ->where('room_id', $room->id)
             ->where('payment_status', 'unpaid')
             ->sum('total_amount');
+
+        $spaceBookings = DB::table('space_bookings')
+            ->join('conference_spaces', 'space_bookings.space_id', '=', 'conference_spaces.id')
+            ->where('space_bookings.room_id', $room->id)
+            ->where('space_bookings.status', '!=', 'cancelled')
+            ->where('space_bookings.payment_status', '!=', 'paid')
+            ->select('space_bookings.*', 'conference_spaces.name as space_name')
+            ->get();
+
+        $spacesTotal = $spaceBookings->sum(fn($sb) => max(0, (float) $sb->total_amount - (float) $sb->amount_paid));
+
+        $showsTotal = (float) $activitiesTotal + (float) $spacesTotal;
 
         $totalInvoice = $roomCost + $restaurantTotal + $extraServicesTotal + $showsTotal;
 
@@ -484,6 +542,7 @@ class BillingController extends Controller
             'restaurantTotal',
             'extraServices',
             'extraServicesTotal',
+            'spaceBookings',
             'showsTotal',
             'totalInvoice',
             'alreadyPaid',
@@ -527,11 +586,22 @@ public function storeRoomPayment(Request $request, $roomId)
             ->where('payment_status', 'unpaid')
             ->update(['payment_status' => 'paid']);
 
-        // 4. Clôturer les nouvelles Activités (Piscine, Spa, Navette, Coworking...) non payées de cette chambre
+        // 4. Clôturer les nouvelles Activités (Piscine, Spa, Navette...) non payées de cette chambre
         DB::table('activity_bookings')
             ->where('room_id', $room->id)
             ->where('payment_status', 'unpaid')
             ->update([
+                'payment_status' => 'paid',
+                'updated_at'     => now(),
+            ]);
+
+        // 4 bis. Clôturer les réservations de Salles de Réunion, Séminaires & Coworking non payées de cette chambre
+        DB::table('space_bookings')
+            ->where('room_id', $room->id)
+            ->where('status', '!=', 'cancelled')
+            ->where('payment_status', '!=', 'paid')
+            ->update([
+                'amount_paid'    => DB::raw('total_amount'),
                 'payment_status' => 'paid',
                 'updated_at'     => now(),
             ]);
@@ -751,7 +821,7 @@ public function dailyCloseReport(\Illuminate\Http\Request $request)
     /**
      * Libération officielle de la chambre (Check-out) avec verrouillage des impayés et passage en ménage
      */
-    public function checkoutRoom(int $roomId)
+       public function checkoutRoom(int $roomId)
     {
         $room = Room::findOrFail($roomId);
 
@@ -759,18 +829,29 @@ public function dailyCloseReport(\Illuminate\Http\Request $request)
             return back()->with('error', "La Chambre {$room->number} n'est pas actuellement occupée.");
         }
 
-        // 1. Calculer l'engagement total actuel du séjour
+        // 1. Récupérer la réservation active et la carte magnétique pour calculer la durée exacte
+        $checkedInReservation = Reservation::where('room_id', $room->id)
+            ->where('status', 'checked_in')
+            ->latest('id')
+            ->first();
+
         $activeCard = DB::table('magnetic_cards')
             ->where('room_id', $room->id)
             ->where('is_active', 1)
             ->latest('id')
             ->first();
 
-        $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
-        $stayStartDate = $activeCard ? Carbon::parse($activeCard->created_at) : now()->startOfDay();
+        if ($checkedInReservation) {
+            $days          = max(1, (int) $checkedInReservation->nights);
+            $stayStartDate = Carbon::parse($checkedInReservation->check_in_date)->setTime(14, 0, 0);
+        } else {
+            $days          = $activeCard ? max(1, (int) ($activeCard->duration_days ?? 1)) : 1;
+            $stayStartDate = $activeCard ? Carbon::parse($activeCard->created_at) : now()->startOfDay();
+        }
 
         $roomCost = $room->price_per_night * $days;
 
+        // 2. Cumul de toutes les prestations impayées rattachées à la chambre
         $restoCost = Order::where('room_id', $room->id)
             ->where(function ($q) {
                 $q->whereNotIn('status', ['paid', 'completed'])
@@ -782,20 +863,21 @@ public function dailyCloseReport(\Illuminate\Http\Request $request)
             ->where('payment_status', 'unpaid')
             ->sum('total_amount');
 
-        // Cumul des Activités Annexes (Piscine, Spa, Navette, Coworking...) non soldées
         $activitiesCost = DB::table('activity_bookings')
             ->where('room_id', $room->id)
             ->where('payment_status', 'unpaid')
             ->sum('total_amount');
 
-        $totalCost = $roomCost + $restoCost + $extraServicesCost + $activitiesCost;
+        $spacesCost = DB::table('space_bookings')
+            ->where('room_id', $room->id)
+            ->where('status', '!=', 'cancelled')
+            ->where('payment_status', '!=', 'paid')
+            ->selectRaw('COALESCE(SUM(total_amount - amount_paid), 0) as due')
+            ->value('due');
 
-        // 2. Calculer tout ce qui a été réglé (arrhes de réservation + règlements effectués pendant le séjour)
-        $checkedInReservation = Reservation::where('room_id', $room->id)
-            ->where('status', 'checked_in')
-            ->latest('id')
-            ->first();
+        $totalCost = $roomCost + $restoCost + $extraServicesCost + $activitiesCost + (float) $spacesCost;
 
+        // 3. Calculer tout ce qui a été réglé (arrhes de réservation + règlements effectués pendant le séjour)
         $reservationDeposit = $checkedInReservation ? (float) $checkedInReservation->deposit_paid : 0;
 
         $cutoffDate = $checkedInReservation
@@ -811,13 +893,13 @@ public function dailyCloseReport(\Illuminate\Http\Request $request)
         $totalPaid = $reservationDeposit + $stayPayments;
         $remaining = max(0, $totalCost - $totalPaid);
 
-        // 3. Verrouillage de sécurité : Interdire le Check-out s'il reste un impayé
+        // 4. Verrouillage de sécurité : Interdire le Check-out s'il reste un impayé
         if ($remaining > 0) {
             $resteFormate = number_format($remaining, 0, ',', ' ');
             return back()->with('error', "Check-out bloqué : il reste un solde impayé de {$resteFormate} F sur la Chambre {$room->number}. Veuillez d'abord encaisser le règlement.");
         }
 
-        // 4. Exécution atomique de la libération et envoi en Gouvernance / Ménage
+        // 5. Exécution atomique de la libération et envoi en Gouvernance / Ménage
         DB::transaction(function () use ($room, $checkedInReservation) {
             // Désactiver la carte magnétique
             DB::table('magnetic_cards')

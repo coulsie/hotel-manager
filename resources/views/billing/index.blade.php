@@ -317,6 +317,102 @@
         </div>
     </div>
 </div>
+<!-- ===================================================================== -->
+<!-- SECTION C : CONFÉRENCES, SÉMINAIRES & COWORKING NON SOLDÉS            -->
+<!-- ===================================================================== -->
+<div class="card shadow border-0 rounded-4 overflow-hidden mt-5">
+    <div class="card-header text-white fw-bold py-3 px-4 d-flex justify-content-between align-items-center"
+         style="background: linear-gradient(135deg, #312e81 0%, #4f46e5 100%);">
+        <span><i class="bi bi-building-check text-warning me-2 fs-5"></i>Conférences, Séminaires & Coworking non soldés</span>
+        <span class="badge bg-white text-primary rounded-pill px-3 py-1 fw-bold">
+            {{ isset($pendingSpaceBookings) ? $pendingSpaceBookings->count() : 0 }} réservation(s)
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="small text-uppercase" style="background-color: #eef2ff; color: #312e81;">
+                    <tr>
+                        <th class="ps-4 py-3">Date & Créneau</th>
+                        <th class="py-3">Catégorie / Espace</th>
+                        <th class="py-3">Détail & Capacité</th>
+                        <th class="py-3">Affectation de la Note</th>
+                        <th class="text-end py-3">Montant Dû</th>
+                        <th class="text-center pe-4 py-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($pendingSpaceBookings ?? [] as $sb)
+                        @php
+                            $remainingSpace = max(0, (float) $sb->total_amount - (float) $sb->amount_paid);
+                            $catBadge = match($sb->space_category) {
+                                'reunion'   => ['bg' => '#2563eb', 'label' => '🤝 RÉUNION'],
+                                'seminaire' => ['bg' => '#7c3aed', 'label' => '🎤 SÉMINAIRE'],
+                                'coworking' => ['bg' => '#059669', 'label' => '💻 COWORKING'],
+                                default     => ['bg' => '#475569', 'label' => strtoupper($sb->space_category)],
+                            };
+                        @endphp
+                        <tr>
+                            <td class="ps-4 small">
+                                <div class="fw-bold text-dark">{{ \Carbon\Carbon::parse($sb->booking_date)->format('d/m/Y') }}</div>
+                                <span class="badge bg-light text-primary border">
+                                    {{ substr($sb->start_time, 0, 5) }} - {{ substr($sb->end_time, 0, 5) }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge text-white rounded-pill px-3 py-1 fw-bold shadow-sm" style="background-color: {{ $catBadge['bg'] }};">
+                                    {{ $catBadge['label'] }}
+                                </span>
+                                <div class="fw-bold text-dark mt-1 small">{{ $sb->space_name }}</div>
+                            </td>
+                            <td class="small">
+                                <div class="fw-bold text-dark">{{ $sb->client_name }}</div>
+                                <div class="text-muted">
+                                    {{ $sb->attendees }} {{ $sb->space_category === 'coworking' ? 'poste(s)' : 'participant(s)' }}
+                                    @if((float) $sb->amount_paid > 0)
+                                        • <span class="text-success fw-semibold">Acompte : {{ number_format($sb->amount_paid, 0, ',', ' ') }} F</span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td>
+                                @if($sb->room_id)
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-bold">
+                                        <i class="bi bi-house-door-fill me-1"></i>Note Chambre ({{ $sb->room_number }})
+                                    </span>
+                                @else
+                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill px-3 py-1 fw-bold">
+                                        <i class="bi bi-building me-1"></i>Externe / Société
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="text-end fw-bold text-danger fs-6">
+                                {{ number_format($remainingSpace, 0, ',', ' ') }} F
+                            </td>
+                            <td class="text-center pe-4">
+                                <form action="{{ route('conferences.bookings.status', $sb->id) }}" method="POST" class="d-inline"
+                                      onsubmit="return confirm('Encaisser le solde de {{ number_format($remainingSpace, 0, ',', ' ') }} F CFA pour {{ addslashes($sb->space_name) }} ?');">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="action" value="pay">
+                                    <input type="hidden" name="payment_method" value="cash">
+                                    <button type="submit" class="btn btn-sm btn-primary rounded-pill fw-bold px-3 shadow-sm">
+                                        <i class="bi bi-cash-coin me-1"></i> Encaisser Cash
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted small">
+                                <i class="bi bi-check-all text-success me-1"></i> Aucun encours de conférence, séminaire ou coworking en attente.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 <!-- Modale de prolongation à coller tout en bas de billing/index.blade.php avant  -->
 <!-- MODALE : PROLONGER OU RÉDUIRE LA DURÉE DU SÉJOUR -->

@@ -19,6 +19,8 @@ use App\Http\Controllers\GuestPortalController;
 use App\Http\Controllers\CrmController;
 use App\Http\Controllers\HrController;
 use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\ConferenceSpaceController;
+
 // ==========================================================================
 // 0. AUTHENTIFICATION (Accès public)
 // ==========================================================================
@@ -226,7 +228,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/requests/{id}/complete', 'completeRequest')->name('complete');
     });
 
-   
+
 
     // 13. Fichier Clients CRM, Fidélité VIP & Comptes Entreprises
     Route::middleware('permission:gerer_crm')->prefix('crm')->name('crm.')->controller(CrmController::class)->group(function () {
@@ -246,6 +248,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/advances', 'storeAdvance')->name('advances.store');
     });
 
+
+
+Route::resource('conferences', ConferenceSpaceController::class);
+Route::post('conferences/bookings', [ConferenceSpaceController::class, 'storeBooking'])->name('conferences.bookings.store');
+Route::patch('conferences/bookings/{booking}/status', [ConferenceSpaceController::class, 'updateBookingStatus'])->name('conferences.bookings.status');
 
 
 });
