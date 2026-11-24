@@ -206,6 +206,18 @@
 <!-- ===================================================================== -->
 <!-- 2 BIS. MOUVEMENTS RÉCEPTION DU JOUR (ARRIVÉES & DÉPARTS PRÉVUS)       -->
 <!-- ===================================================================== -->
+
+<!-- Barre d'en-tête Mouvements Réception + Bouton Planning Semaine -->
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h5 class="fw-bold text-dark mb-0">
+        <i class="bi bi-arrow-left-right text-primary me-2"></i>Mouvements Réception & Occupation
+    </h5>
+    <button type="button" class="btn btn-outline-primary rounded-pill px-3 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#weeklyMovementsModal">
+        <i class="bi bi-calendar-week-fill me-1"></i> Planning Semaine (Arrivées / Départs)
+    </button>
+</div>
+
+
 <div class="row g-4 mb-4">
     <!-- Arrivées attendues aujourd'hui -->
     <div class="col-lg-6">
@@ -363,6 +375,259 @@
         </div>
     </div>
 </div>
+
+<!-- MODALE : ARRIVÉES & DÉPARTS DE LA SEMAINE (DESIGN PREMIUM & TABLEAUX) -->
+<div class="modal fade" id="weeklyMovementsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <!-- En-tête dégradé Indigo / Bleu Nuit -->
+            <div class="modal-header text-white border-0 py-3 px-4" style="background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-white bg-opacity-10 p-2 rounded-3">
+                        <i class="bi bi-calendar2-week-fill text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0">Planning Réception — Arrivées & Départs (7 Jours)</h5>
+                        <small class="text-white-50">Suivi prévisionnel des mouvements chambres et rotation gouvernance</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4 bg-light">
+                @php
+                    $totalWeekArrivals   = collect($weeklyMovements ?? [])->sum(fn($d) => $d['arrivals']->count());
+                    $totalWeekDepartures = collect($weeklyMovements ?? [])->sum(fn($d) => $d['departures']->count());
+                @endphp
+
+                <!-- Résumé rapide de la semaine -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded-4 border-start border-4 border-primary shadow-sm d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase small fw-bold text-muted">Période couverte</div>
+                                <div class="fw-bold text-dark">7 prochains jours</div>
+                            </div>
+                            <i class="bi bi-calendar-range text-primary fs-3 opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded-4 border-start border-4 border-success shadow-sm d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase small fw-bold text-muted">Total Arrivées Prévues</div>
+                                <div class="fs-5 fw-bold text-success">{{ $totalWeekArrivals }} client(s)</div>
+                            </div>
+                            <i class="bi bi-box-arrow-in-right text-success fs-3 opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded-4 border-start border-4 border-danger shadow-sm d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-uppercase small fw-bold text-muted">Total Départs Prévus</div>
+                                <div class="fs-5 fw-bold text-danger">{{ $totalWeekDepartures }} chambre(s)</div>
+                            </div>
+                            <i class="bi bi-box-arrow-right text-danger fs-3 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Onglets de navigation par jour -->
+                <div class="bg-white p-2 rounded-4 shadow-sm border mb-4">
+                    <ul class="nav nav-pills gap-2 flex-wrap" id="weekDaysTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active rounded-pill fw-bold small px-3" id="tab-all-week" data-bs-toggle="pill" data-bs-target="#pane-all-week" type="button">
+                                <i class="bi bi-table me-1"></i> Vue Consolidée Semaine
+                            </button>
+                        </li>
+                        @foreach($weeklyMovements ?? [] as $idx => $dayData)
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link rounded-pill fw-bold small px-3" id="tab-day-{{ $idx }}" data-bs-toggle="pill" data-bs-target="#pane-day-{{ $idx }}" type="button">
+                                    {{ $dayData['label'] }}
+                                    <span class="badge bg-success ms-1" title="Arrivées">{{ $dayData['arrivals']->count() }}</span>
+                                    <span class="badge bg-danger ms-1" title="Départs">{{ $dayData['departures']->count() }}</span>
+                                </button>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+
+                <div class="tab-content">
+                    <!-- VUE 1 : TABLEAU CONSOLIDÉ DE TOUTE LA SEMAINE -->
+                    <div class="tab-pane fade show active" id="pane-all-week">
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 bg-white">
+                                    <thead class="text-white small text-uppercase" style="background: linear-gradient(90deg, #1e293b 0%, #334155 100%);">
+                                        <tr>
+                                            <th class="ps-4 py-3" style="width: 20%;">Jour / Date</th>
+                                            <th class="py-3" style="width: 40%;">
+                                                <i class="bi bi-box-arrow-in-right text-success me-1"></i> Arrivées Prévues (Check-in)
+                                            </th>
+                                            <th class="pe-4 py-3" style="width: 40%;">
+                                                <i class="bi bi-box-arrow-right text-warning me-1"></i> Départs Prévus (Check-out 12h)
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($weeklyMovements ?? [] as $dayData)
+                                            <tr class="{{ $loop->first ? 'table-primary bg-opacity-10' : '' }}">
+                                                <td class="ps-4 align-top py-3">
+                                                    <div class="fw-bold text-dark">{{ $dayData['label'] }}</div>
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                                            +{{ $dayData['arrivals']->count() }} Arr.
+                                                        </span>
+                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">
+                                                            -{{ $dayData['departures']->count() }} Dép.
+                                                        </span>
+                                                    </div>
+                                                </td>
+
+                                                <!-- Colonne Arrivées -->
+                                                <td class="align-top py-3">
+                                                    @forelse($dayData['arrivals'] as $arr)
+                                                        <div class="d-flex justify-content-between align-items-center p-2 mb-1 rounded-3 border border-success-subtle bg-success-subtle bg-opacity-10 small">
+                                                            <div>
+                                                                <span class="badge bg-success me-1">Ch. {{ $arr->room->number ?? '?' }}</span>
+                                                                <strong class="text-dark">{{ $arr->customer->full_name ?? 'Client' }}</strong>
+                                                            </div>
+                                                            <span class="badge bg-white text-dark border">{{ $arr->nights }} nuit(s)</span>
+                                                        </div>
+                                                    @empty
+                                                        <span class="text-muted small fst-italic">Aucune arrivée prévue</span>
+                                                    @endforelse
+                                                </td>
+
+                                                <!-- Colonne Départs -->
+                                                <td class="pe-4 align-top py-3">
+                                                    @forelse($dayData['departures'] as $dep)
+                                                        <div class="d-flex justify-content-between align-items-center p-2 mb-1 rounded-3 border border-danger-subtle bg-danger-subtle bg-opacity-10 small">
+                                                            <div>
+                                                                <span class="badge bg-danger me-1">Ch. {{ $dep->room->number ?? '?' }}</span>
+                                                                <strong class="text-dark">{{ $dep->customer->full_name ?? 'Client' }}</strong>
+                                                            </div>
+                                                                                                                        <span class="badge {{ $dep->status === 'checked_in' ? 'bg-primary text-white' : 'bg-warning text-dark' }}">
+                                                                {{ $dep->status === 'checked_in' ? 'En séjour' : 'Réservé' }}
+                                                            </span>
+                                                        </div>
+                                                    @empty
+                                                        <span class="text-muted small fst-italic">Aucun départ prévu</span>
+                                                    @endforelse
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="3" class="text-center py-4 text-muted">Aucune donnée disponible pour cette semaine.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VUES 2..8 : TABLEAUX DÉTAILLÉS PAR JOUR DE LA SEMAINE -->
+                    @foreach($weeklyMovements ?? [] as $idx => $dayData)
+                        <div class="tab-pane fade" id="pane-day-{{ $idx }}">
+                            <div class="row g-4">
+                                <!-- Tableau Arrivées du jour -->
+                                <div class="col-md-6">
+                                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+                                        <div class="card-header text-white fw-bold py-3 px-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #065f46 0%, #10b981 100%);">
+                                            <span><i class="bi bi-box-arrow-in-right me-2"></i>Arrivées — {{ $dayData['label'] }}</span>
+                                            <span class="badge bg-white text-success rounded-pill px-3">{{ $dayData['arrivals']->count() }}</span>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover align-middle mb-0 small">
+                                                    <thead class="table-light text-uppercase text-muted">
+                                                        <tr>
+                                                            <th class="ps-4">Chambre</th>
+                                                            <th>Client & Téléphone</th>
+                                                            <th class="text-end pe-4">Séjour</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse($dayData['arrivals'] as $arr)
+                                                            <tr>
+                                                                <td class="ps-4"><span class="badge bg-success">Ch. {{ $arr->room->number ?? '?' }}</span></td>
+                                                                <td>
+                                                                    <div class="fw-bold text-dark">{{ $arr->customer->full_name ?? 'Client' }}</div>
+                                                                    <div class="text-muted" style="font-size: 0.75rem;">{{ $arr->customer->phone ?? '—' }}</div>
+                                                                </td>
+                                                                <td class="text-end pe-4 fw-bold text-success">{{ $arr->nights }} nuit(s)</td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="3" class="text-center py-4 text-muted">Aucune arrivée prévue ce jour.</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tableau Départs du jour -->
+                                <div class="col-md-6">
+                                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+                                        <div class="card-header text-white fw-bold py-3 px-4 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%);">
+                                            <span><i class="bi bi-box-arrow-right me-2"></i>Départs — {{ $dayData['label'] }}</span>
+                                            <span class="badge bg-white text-danger rounded-pill px-3">{{ $dayData['departures']->count() }}</span>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover align-middle mb-0 small">
+                                                    <thead class="table-light text-uppercase text-muted">
+                                                        <tr>
+                                                            <th class="ps-4">Chambre</th>
+                                                            <th>Client & Téléphone</th>
+                                                            <th class="text-end pe-4">Statut</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse($dayData['departures'] as $dep)
+                                                            <tr>
+                                                                <td class="ps-4"><span class="badge bg-danger">Ch. {{ $dep->room->number ?? '?' }}</span></td>
+                                                                <td>
+                                                                    <div class="fw-bold text-dark">{{ $dep->customer->full_name ?? 'Client' }}</div>
+                                                                    <div class="text-muted" style="font-size: 0.75rem;">{{ $dep->customer->phone ?? '—' }}</div>
+                                                                </td>
+                                                                <td class="text-end pe-4">
+                                                                    <span class="badge {{ $dep->status === 'checked_in' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-warning-subtle text-dark border border-warning-subtle' }} rounded-pill px-2">
+                                                                        {{ $dep->status === 'checked_in' ? 'En séjour (12h00)' : 'Réservé' }}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="3" class="text-center py-4 text-muted">Aucun départ prévu ce jour.</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="modal-footer bg-white border-top px-4 py-3">
+                <a href="{{ route('reservations.rack') }}" class="btn btn-outline-dark rounded-pill px-4 fw-bold">
+                    <i class="bi bi-grid-3x3-gap-fill text-primary me-1"></i> Ouvrir le Rack Hôtelier complet
+                </a>
+                <button type="button" class="btn btn-dark rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 <!-- SCRIPT DU GRAPHIQUE FINANCIER (CHART.JS) -->
 <script>

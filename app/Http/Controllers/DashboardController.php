@@ -138,7 +138,7 @@ class DashboardController extends Controller
             ->whereDate('check_in_date', $today)
             ->get();
 
-        // Départs issus des réservations (en cours 'checked_in' ou 'confirmed' dont la sortie est aujourd'hui ou dépassée)
+             // Départs issus des réservations (en cours 'checked_in' ou 'confirmed' dont la sortie est aujourd'hui ou dépassée)
         $departuresToday = Reservation::with(['customer', 'room'])
             ->whereIn('status', ['checked_in', 'confirmed'])
             ->whereDate('check_out_date', '<=', $today)
@@ -164,6 +164,62 @@ class DashboardController extends Controller
             $virtualRes->setRelation('room', Room::find($cardDep->room_id));
             $virtualRes->setRelation('customer', new \App\Models\Customer(['full_name' => 'Client Séjour Direct']));
             $departuresToday->push($virtualRes);
+        }
+
+        // 8 bis. Planning des Arrivées & Départs de la semaine (Aujourd'hui + 6 prochains jours)
+        $weekStart = Carbon::today();
+        $weekEnd   = Carbon::today()->addDays(6);
+
+        $weekReservations = Reservation::with(['customer', 'room'])
+            ->whereIn('status', ['confirmed', 'checked_in'])
+            ->where(function ($q) use ($weekStart, $weekEnd) {
+                $q->whereBetween('check_in_date', [$weekStart, $weekEnd])
+                  ->orWhereBetween('check_out_date', [$weekStart, $weekEnd]);
+            })
+            ->get();
+
+        $weekDirectCards = DB::table('magnetic_cards')
+            ->join('rooms', 'magnetic_cards.room_id', '=', 'rooms.id')
+            ->where('magnetic_cards.is_active', 1)
+            ->where('rooms.status', 'occupied')
+            ->whereBetween(DB::raw('DATE(magnetic_cards.expires_at)'), [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->select('rooms.id as room_id', 'magnetic_cards.expires_at')
+            ->get();
+
+        $weeklyMovements = [];
+        for ($d = 0; $d < 7; $d++) {
+            $dayDate = $weekStart->copy()->addDays($d);
+            $dayStr  = $dayDate->toDateString();
+
+            $dayArrivals = $weekReservations->filter(
+                fn($r) => $r->status === 'confirmed' && Carbon::parse($r->check_in_date)->toDateString() === $dayStr
+            );
+
+            $dayDepartures = $weekReservations->filter(
+                fn($r) => in_array($r->status, ['checked_in', 'confirmed']) && Carbon::parse($r->check_out_date)->toDateString() === $dayStr
+            )->values();
+
+            // Ajouter les départs de check-ins directs prévus ce jour-là
+            $dayResRoomIds = $dayDepartures->pluck('room_id')->toArray();
+            foreach ($weekDirectCards as $wCard) {
+                if (!in_array($wCard->room_id, $dayResRoomIds) && Carbon::parse($wCard->expires_at)->toDateString() === $dayStr) {
+                    $vRes = new Reservation([
+                        'room_id'        => $wCard->room_id,
+                        'check_out_date' => $wCard->expires_at,
+                        'status'         => 'checked_in',
+                    ]);
+                    $vRes->setRelation('room', Room::find($wCard->room_id));
+                    $vRes->setRelation('customer', new \App\Models\Customer(['full_name' => 'Client Séjour Direct']));
+                    $dayDepartures->push($vRes);
+                }
+            }
+
+            $weeklyMovements[] = [
+                'date_iso'   => $dayStr,
+                'label'      => $d === 0 ? "Aujourd'hui (" . $dayDate->format('d/m') . ")" : ucfirst($dayDate->locale('fr')->isoFormat('dddd DD/MM')),
+                'arrivals'   => $dayArrivals,
+                'departures' => $dayDepartures,
+            ];
         }
 
         return view('welcome', compact(
@@ -193,6 +249,7 @@ class DashboardController extends Controller
             'upcomingEvents',
             'arrivalsToday',
             'departuresToday',
+            'weeklyMovements',
             'chartLabels',
             'lodgingData',
             'restaurantData',
@@ -202,6 +259,5 @@ class DashboardController extends Controller
             'activitiesData',
             'expensesData'
         ));
-
     }
 }
