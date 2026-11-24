@@ -305,7 +305,7 @@ class ConferenceSpaceController extends Controller
     /**
      * Mettre à jour le statut d'une réservation ou encaisser un règlement.
      */
-       public function updateBookingStatus(Request $request, string $bookingId)
+      public function updateBookingStatus(Request $request, string $bookingId)
     {
         $booking = DB::table('space_bookings')
             ->join('conference_spaces', 'space_bookings.space_id', '=', 'conference_spaces.id')
@@ -327,12 +327,11 @@ class ConferenceSpaceController extends Controller
                 return back()->with('error', "Cette réservation est déjà entièrement soldée.");
             }
 
-            $billing = null;
-
-            DB::transaction(function () use ($request, $booking, $remaining, &$billing) {
+            /** @var \App\Models\Billing $billing */
+            $billing = DB::transaction(function () use ($request, $booking, $remaining) {
                 $serviceType = ($booking->space_category === 'coworking') ? 'coworking' : 'seminaire';
 
-                $billing = \App\Models\Billing::create([
+                $createdBilling = \App\Models\Billing::create([
                     'receipt_number' => \App\Models\Billing::generateReceiptNumber(),
                     'room_id'        => $booking->room_id,
                     'service_type'   => $serviceType,
@@ -348,6 +347,8 @@ class ConferenceSpaceController extends Controller
                         'payment_status' => 'paid',
                         'updated_at'     => now(),
                     ]);
+
+                return $createdBilling;
             });
 
             return back()
@@ -380,5 +381,6 @@ class ConferenceSpaceController extends Controller
 
         return back()->with('success', 'Statut de la réservation mis à jour.');
     }
+
 
 }
