@@ -155,7 +155,15 @@ class ReservationController extends Controller
         $room = Room::findOrFail($validated['room_id']);
         $nights = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
         $totalAmount = $nights * $room->price_per_night;
-        $depositPaid = $validated['deposit_paid'] ?? 0;
+        $depositPaid = (float) ($validated['deposit_paid'] ?? 0);
+
+        // Sécurité financière : interdire un acompte supérieur au coût total du séjour
+        if ($depositPaid > $totalAmount) {
+            $maxFormate = number_format($totalAmount, 0, ',', ' ');
+            return back()
+                ->withErrors(['deposit_paid' => "Montant invalide : les arrhes ne peuvent pas dépasser le coût total du séjour ({$maxFormate} F CFA)."])
+                ->withInput();
+        }
 
         $billing = null;
 
@@ -175,7 +183,7 @@ class ReservationController extends Controller
                 'special_requests' => $validated['special_requests'] ?? null,
             ]);
 
-                        if ($depositPaid > 0) {
+            if ($depositPaid > 0) {
                 // Normalisation du mode de paiement pour le Rapport Z et le Grand Livre
                 $rawMethod = mb_strtolower(trim((string) ($validated['payment_method'] ?? 'cash')));
                 $normalizedMethod = match (true) {
@@ -196,7 +204,6 @@ class ReservationController extends Controller
                     'status'         => 'completed',
                 ]);
             }
-
         });
 
         // 5. Si un acompte a été encaissé, redirection vers le Grand Livre avec impression du reçu
@@ -214,7 +221,7 @@ class ReservationController extends Controller
     /**
      * Met à jour une réservation existante avec contrôle des dates et des conflits.
      */
-    public function update(Request $request, Reservation $reservation)
+       public function update(Request $request, Reservation $reservation)
     {
         $validated = $request->validate([
             'room_id'        => 'required|exists:rooms,id',
@@ -240,19 +247,61 @@ class ReservationController extends Controller
         $room = Room::findOrFail($validated['room_id']);
         $nights = Carbon::parse($validated['check_in_date'])->diffInDays(Carbon::parse($validated['check_out_date']));
         $totalAmount = $nights * $room->price_per_night;
+        $depositPaid = (float) ($validated['deposit_paid'] ?? 0);
 
-        $reservation->update([
-            'room_id'        => $room->id,
-            'check_in_date'  => $validated['check_in_date'],
-            'check_out_date' => $validated['check_out_date'],
-            'nights'         => $nights,
-            'total_amount'   => $totalAmount,
-            'deposit_paid'   => $validated['deposit_paid'] ?? 0,
-        ]);
+        // 1. Sécurité financière : bloquer tout acompte supérieur au total du séjour
+        if ($depositPaid > $totalAmount) {
+            $maxFormate = number_format($totalAmount, 0, ',', ' ');
+            return back()
+                ->withErrors(['deposit_paid' => "Montant invalide : les arrhes ne peuvent pas dépasser le coût total du séjour ({$maxFormate} F CFA)."]);
+        }
+
+        DB::transaction(function () use ($reservation, $room, $validated, $nights, $totalAmount, $depositPaid) {
+            // 2. Synchronisation du reçu dans le Grand Livre (Billing) si un reçu d'arrhes existe déjà
+            $linkedBilling = Billing::where('room_id', $reservation->room_id)
+                ->whereIn('service_type', ['room_booking', 'reservation_deposit'])
+                ->whereBetween('created_at', [
+                    Carbon::parse($reservation->created_at)->subMinute(),
+                    Carbon::parse($reservation->created_at)->addMinute(),
+                ])
+                ->first();
+
+            if ($linkedBilling) {
+                if ($depositPaid > 0) {
+                    $linkedBilling->update([
+                        'room_id'     => $room->id,
+                        'amount_paid' => $depositPaid,
+                    ]);
+                } else {
+                    $linkedBilling->delete();
+                }
+            } elseif ($depositPaid > 0) {
+                // Si aucun acompte n'avait été versé initialement mais qu'on en ajoute un lors de la modification
+                Billing::create([
+                    'receipt_number' => Billing::generateReceiptNumber(),
+                    'room_id'        => $room->id,
+                    'service_type'   => 'room_booking',
+                    'amount_paid'    => $depositPaid,
+                    'payment_method' => 'cash',
+                    'status'         => 'completed',
+                ]);
+            }
+
+            // 3. Mise à jour de la réservation
+            $reservation->update([
+                'room_id'        => $room->id,
+                'check_in_date'  => $validated['check_in_date'],
+                'check_out_date' => $validated['check_out_date'],
+                'nights'         => $nights,
+                'total_amount'   => $totalAmount,
+                'deposit_paid'   => $depositPaid,
+            ]);
+        });
 
         return redirect()->route('reservations.index')
-            ->with('success', 'La réservation a été mise à jour avec succès.');
+            ->with('success', 'La réservation et le reçu associé ont été mis à jour avec succès.');
     }
+
 
     /**
      * Vérifie si la chambre demandée est libre et propose des alternatives ou signale l'hôtel complet.

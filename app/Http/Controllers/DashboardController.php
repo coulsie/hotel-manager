@@ -132,16 +132,39 @@ class DashboardController extends Controller
             ->take(4)
             ->get();
 
-        // 8. Mouvements Réception du jour (Arrivées & Départs prévus)
+               // 8. Mouvements Réception du jour (Arrivées & Départs prévus)
         $arrivalsToday = Reservation::with(['customer', 'room'])
             ->where('status', 'confirmed')
             ->whereDate('check_in_date', $today)
             ->get();
 
+        // Départs issus des réservations (en cours 'checked_in' ou 'confirmed' dont la sortie est aujourd'hui ou dépassée)
         $departuresToday = Reservation::with(['customer', 'room'])
-            ->where('status', 'checked_in')
-            ->whereDate('check_out_date', $today)
+            ->whereIn('status', ['checked_in', 'confirmed'])
+            ->whereDate('check_out_date', '<=', $today)
             ->get();
+
+        // Ajouter les éventuels check-ins directs (sans réservation préalable) dont la carte magnétique expire aujourd'hui
+        $resaRoomIds = $departuresToday->pluck('room_id')->toArray();
+        $directExpiringCards = DB::table('magnetic_cards')
+            ->join('rooms', 'magnetic_cards.room_id', '=', 'rooms.id')
+            ->where('magnetic_cards.is_active', 1)
+            ->where('rooms.status', 'occupied')
+            ->whereNotIn('rooms.id', $resaRoomIds)
+            ->whereDate('magnetic_cards.expires_at', '<=', $today)
+            ->select('rooms.id as room_id', 'magnetic_cards.expires_at')
+            ->get();
+
+        foreach ($directExpiringCards as $cardDep) {
+            $virtualRes = new Reservation([
+                'room_id'        => $cardDep->room_id,
+                'check_out_date' => $cardDep->expires_at,
+                'status'         => 'checked_in',
+            ]);
+            $virtualRes->setRelation('room', Room::find($cardDep->room_id));
+            $virtualRes->setRelation('customer', new \App\Models\Customer(['full_name' => 'Client Séjour Direct']));
+            $departuresToday->push($virtualRes);
+        }
 
         return view('welcome', compact(
             'roomsStats',
@@ -179,5 +202,6 @@ class DashboardController extends Controller
             'activitiesData',
             'expensesData'
         ));
+
     }
 }

@@ -22,62 +22,91 @@
         <hr>
 
         @php
-            $totalCost = $billing->amount_paid;
-            $remaining = 0;
-
-            // 1. Calcul des soldes si règlement d'hébergement
-            if ($billing->service_type === 'room_booking' && $billing->room) {
-                $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')->where('room_id', $billing->room_id)->latest()->first();
-                $days = $activeCard ? ($activeCard->duration_days ?? 1) : 1;
-                $roomBaseCost = $billing->room->price_per_night * $days;
-                $restaurantOrdersTotal = \App\Models\Order::where('room_id', $billing->room_id)->sum('total_amount');
-                $extraServicesTotal = \App\Models\ExtraService::where('room_id', $billing->room_id)->sum('total_amount');
-                $activitiesTotal = \Illuminate\Support\Facades\DB::table('activity_bookings')->where('room_id', $billing->room_id)->sum('total_amount');
-
-                $totalCost = $roomBaseCost + $restaurantOrdersTotal + $extraServicesTotal + $activitiesTotal;
-
-                $checkedInReservation = \App\Models\Reservation::where('room_id', $billing->room_id)->where('status', 'checked_in')->latest('updated_at')->first();
-                $depositPaid = $checkedInReservation ? (float) $checkedInReservation->deposit_paid : 0;
-
-                $totalPaidForRoom = \App\Models\Billing::where('room_id', $billing->room_id)
-                    ->where('service_type', 'room_booking')
-                    ->where('status', 'completed')
-                    ->sum('amount_paid') + $depositPaid;
-
-                $remaining = max(0, $totalCost - $totalPaidForRoom);
-            }
-
-            // 2. Détermination précise du libellé de la prestation
-            $prestationLabel = match($billing->service_type) {
-                'room_booking'        => 'Hébergement Chambre ' . ($billing->room->number ?? ''),
-                'reservation_deposit' => 'Arrhes Réservation Ch. ' . ($billing->room->number ?? ''),
-                'restaurant'          => 'Restauration / Bar' . ($billing->order && $billing->order->restaurantTable ? ' (' . $billing->order->restaurantTable->number . ')' : ''),
-                'pressing'            => 'Pressing & Blanchisserie',
-                'car_wash'            => 'Lavage Auto',
-                'show_ticket'         => 'Spectacle' . ($billing->eventTicket && $billing->eventTicket->event ? ' : ' . $billing->eventTicket->event->title : ''),
-                'piscine'             => 'Pass Piscine & Transats',
-                'spa'                 => 'Spa & Bien-être',
-                'coworking'           => 'Coworking & Day-Use',
-                'seminaire'           => 'Location Salle de Séminaire',
-                'navette'             => 'Navette & Location Véhicule',
-                'boutique'            => 'Boutique & Services Divers',
-                default               => ucfirst(str_replace('_', ' ', $billing->service_type)),
+            // 1. Libellé lisible de la prestation
+            $prestationLabel = match ($billing->service_type) {
+                'room_booking', 'reservation_deposit' => 'Hébergement Chambre',
+                'restaurant'                          => 'Restauration & Bar',
+                'pressing'                            => 'Pressing & Blanchisserie',
+                'car_wash'                            => 'Lavage Auto',
+                'show_ticket'                         => 'Billetterie Spectacle',
+                default                               => ucfirst(str_replace('_', ' ', (string) $billing->service_type)),
             };
 
-            // Si c'est une activité annexe, on tente de retrouver le nom exact dans activity_bookings
-            if (in_array($billing->service_type, ['piscine', 'spa', 'coworking', 'seminaire', 'navette', 'boutique'])) {
-                $activityMatch = \Illuminate\Support\Facades\DB::table('activity_bookings')
-                    ->join('hotel_activities', 'activity_bookings.hotel_activity_id', '=', 'hotel_activities.id')
-                    ->where('hotel_activities.category', $billing->service_type)
-                    ->where('activity_bookings.total_amount', $billing->amount_paid)
-                    ->whereDate('activity_bookings.created_at', $billing->created_at ? $billing->created_at->toDateString() : today())
-                    ->orderByDesc('activity_bookings.id')
-                    ->select('hotel_activities.name', 'activity_bookings.quantity')
+            if ($billing->room) {
+                $prestationLabel .= " — Ch. {$billing->room->number}";
+            } elseif ($billing->eventTicket && $billing->eventTicket->event) {
+                $prestationLabel .= " — {$billing->eventTicket->event->title}";
+            }
+
+            $totalCost   = (float) $billing->amount_paid;
+            $alreadyPaid = (float) $billing->amount_paid;
+            $remaining   = 0;
+
+            if ($billing->room_id && in_array($billing->service_type, ['room_booking', 'reservation_deposit'])) {
+                // 2. Vérifier si ce reçu correspond à l'acompte d'une réservation créée au même moment (± 1 minute)
+                $matchingReservation = \App\Models\Reservation::where('room_id', $billing->room_id)
+                    ->whereBetween('created_at', [
+                        \Carbon\Carbon::parse($billing->created_at)->subMinute(),
+                        \Carbon\Carbon::parse($billing->created_at)->addMinute(),
+                    ])
                     ->first();
 
-                if ($activityMatch) {
-                    $prestationLabel = $activityMatch->name . ' (x' . $activityMatch->quantity . ')';
+                if ($matchingReservation) {
+                    $prestationLabel = "Arrhes Réservation Ch. {$billing->room->number} ({$matchingReservation->nights} nuit" . ($matchingReservation->nights > 1 ? 's' : '') . ")";
+                    $totalCost       = (float) $matchingReservation->total_amount;
+                    $alreadyPaid     = (float) $billing->amount_paid;
+                    $remaining       = max(0, $totalCost - $alreadyPaid);
+                } else {
+                    // 3. Sinon, règlement sur place d'un séjour en cours
+                    $activeReservation = \App\Models\Reservation::where('room_id', $billing->room_id)
+                        ->whereIn('status', ['checked_in', 'completed'])
+                        ->whereDate('check_in_date', '<=', $billing->created_at)
+                        ->latest('id')
+                        ->first();
+
+                    $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
+                        ->where('room_id', $billing->room_id)
+                        ->where('created_at', '<=', \Carbon\Carbon::parse($billing->created_at)->addMinutes(5))
+                        ->latest('id')
+                        ->first();
+
+                    $days = $activeReservation
+                        ? (int) $activeReservation->nights
+                        : ($activeCard ? (int) ($activeCard->duration_days ?? 1) : 1);
+
+                    $stayStart = $activeReservation
+                        ? \Carbon\Carbon::parse($activeReservation->created_at)->subSeconds(5)
+                        : ($activeCard ? \Carbon\Carbon::parse($activeCard->created_at)->subSeconds(5) : \Carbon\Carbon::parse($billing->created_at)->startOfDay());
+
+                    $roomBaseCost = ($billing->room ? (float) $billing->room->price_per_night : 0) * $days;
+
+                    $ordersCost = \App\Models\Order::where('room_id', $billing->room_id)
+                        ->whereBetween('created_at', [$stayStart, $billing->created_at])
+                        ->sum('total_amount');
+
+                    $extrasCost = \App\Models\ExtraService::where('room_id', $billing->room_id)
+                        ->whereBetween('created_at', [$stayStart, $billing->created_at])
+                        ->sum('total_amount');
+
+                    $activitiesCost = \Illuminate\Support\Facades\DB::table('activity_bookings')
+                        ->where('room_id', $billing->room_id)
+                        ->whereBetween('created_at', [$stayStart, $billing->created_at])
+                        ->sum('total_amount');
+
+                    $totalCost = $roomBaseCost + $ordersCost + $extrasCost + $activitiesCost;
+
+                    $alreadyPaid = \App\Models\Billing::where('room_id', $billing->room_id)
+                        ->whereIn('service_type', ['room_booking', 'reservation_deposit'])
+                        ->where('status', 'completed')
+                        ->whereBetween('created_at', [$stayStart, $billing->created_at])
+                        ->sum('amount_paid');
+
+                    $remaining = max(0, $totalCost - $alreadyPaid);
                 }
+            } elseif ($billing->order_id && $billing->order) {
+                $totalCost   = (float) $billing->order->total_amount;
+                $alreadyPaid = (float) $billing->amount_paid;
+                $remaining   = max(0, $totalCost - $alreadyPaid);
             }
         @endphp
 
@@ -93,6 +122,12 @@
                 <td style="color: green;"><strong>Montant Perçu :</strong></td>
                 <td class="text-end" style="color: green;"><strong>{{ number_format($billing->amount_paid, 0, ',', ' ') }} F CFA</strong></td>
             </tr>
+            @if($alreadyPaid > $billing->amount_paid)
+            <tr>
+                <td><strong>Total déjà réglé :</strong></td>
+                <td class="text-end">{{ number_format($alreadyPaid, 0, ',', ' ') }} F CFA</td>
+            </tr>
+            @endif
             <tr>
                 <td style="color: red;"><strong>Reste à payer :</strong></td>
                 <td class="text-end" style="color: red;">{{ number_format($remaining, 0, ',', ' ') }} F CFA</td>
