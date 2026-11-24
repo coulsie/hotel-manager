@@ -305,15 +305,63 @@ class ConferenceSpaceController extends Controller
     /**
      * Mettre à jour le statut d'une réservation ou encaisser un règlement.
      */
-    public function updateBookingStatus(Request $request, string $bookingId)
+       public function updateBookingStatus(Request $request, string $bookingId)
     {
+        $booking = DB::table('space_bookings')
+            ->join('conference_spaces', 'space_bookings.space_id', '=', 'conference_spaces.id')
+            ->select(
+                'space_bookings.*',
+                'conference_spaces.name as space_name',
+                'conference_spaces.category as space_category'
+            )
+            ->where('space_bookings.id', $bookingId)
+            ->first();
+
+        abort_if(!$booking, 404);
+
+        // 1. Cas d'encaissement / solde direct (Bouton "Encaisser Cash" ou "Solder")
+        if ($request->input('action') === 'pay') {
+            $remaining = max(0, (float) $booking->total_amount - (float) $booking->amount_paid);
+
+            if ($remaining <= 0) {
+                return back()->with('error', "Cette réservation est déjà entièrement soldée.");
+            }
+
+            $billing = null;
+
+            DB::transaction(function () use ($request, $booking, $remaining, &$billing) {
+                $serviceType = ($booking->space_category === 'coworking') ? 'coworking' : 'seminaire';
+
+                $billing = \App\Models\Billing::create([
+                    'receipt_number' => \App\Models\Billing::generateReceiptNumber(),
+                    'room_id'        => $booking->room_id,
+                    'service_type'   => $serviceType,
+                    'amount_paid'    => $remaining,
+                    'payment_method' => $request->input('payment_method', 'cash'),
+                    'status'         => 'completed',
+                ]);
+
+                DB::table('space_bookings')
+                    ->where('id', $booking->id)
+                    ->update([
+                        'amount_paid'    => $booking->total_amount,
+                        'payment_status' => 'paid',
+                        'updated_at'     => now(),
+                    ]);
+            });
+
+            return back()
+                ->with('success', "Règlement de " . number_format($remaining, 0, ',', ' ') . " F CFA encaissé pour « {$booking->space_name} » (Reçu n° {$billing->receipt_number}).")
+                ->with('print_billing_id', $billing->id);
+        }
+
+        // 2. Cas d'annulation ou changement de statut classique
         $validated = $request->validate([
-            'status' => 'required|in:confirmed,in_progress,completed,cancelled',
+            'status'      => 'required|in:confirmed,in_progress,completed,cancelled',
             'amount_paid' => 'nullable|numeric|min:0',
         ]);
 
-        $booking = DB::table('space_bookings')->where('id', $bookingId)->firstOrFail();
-        $paid = isset($validated['amount_paid']) ? (float) $validated['amount_paid'] : (float) $booking->amount_paid;
+        $paid  = isset($validated['amount_paid']) ? (float) $validated['amount_paid'] : (float) $booking->amount_paid;
         $total = (float) $booking->total_amount;
 
         $paymentStatus = 'unpaid';
@@ -324,12 +372,13 @@ class ConferenceSpaceController extends Controller
         }
 
         DB::table('space_bookings')->where('id', $bookingId)->update([
-            'status' => $validated['status'],
-            'amount_paid' => $paid,
+            'status'         => $validated['status'],
+            'amount_paid'    => $paid,
             'payment_status' => $paymentStatus,
-            'updated_at' => now(),
+            'updated_at'     => now(),
         ]);
 
         return back()->with('success', 'Statut de la réservation mis à jour.');
     }
+
 }
