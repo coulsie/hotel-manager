@@ -288,36 +288,76 @@ public function earlyCheckout(\App\Models\Room $room)
 public function extendStay(\Illuminate\Http\Request $request, \App\Models\Room $room)
 {
     $request->validate([
-        'extra_days' => 'required|integer|min:1|max:60',
+        'extra_days' => 'required|integer|not_in:0|min:-30|max:60',
+    ], [
+        'extra_days.not_in' => 'Veuillez saisir un nombre de nuitées supérieur ou égal à 1.',
     ]);
 
-    $extraDays = (int) $request->input('extra_days');
+    $deltaDays = (int) $request->input('extra_days'); // Ex: +2 pour prolonger, -1 pour réduire
 
     $activeCard = \Illuminate\Support\Facades\DB::table('magnetic_cards')
         ->where('room_id', $room->id)
         ->where('is_active', 1)
-        ->latest()
+        ->latest('id')
         ->first();
 
-    if (!$activeCard) {
-        return redirect()->back()->with('error', "Aucune carte magnétique active trouvée pour la Chambre {$room->number}.");
+    $activeReservation = \App\Models\Reservation::where('room_id', $room->id)
+        ->where('status', 'checked_in')
+        ->latest('id')
+        ->first();
+
+    if (!$activeCard && !$activeReservation) {
+        return redirect()->back()->with('error', "Aucun séjour actif trouvé pour la Chambre {$room->number}.");
     }
 
-    // Calcul de la nouvelle date d'expiration (ancienne date + X jours à 12h00 précise)
-    $currentExpiry = \Carbon\Carbon::parse($activeCard->expires_at);
-    $newExpiry     = $currentExpiry->copy()->addDays($extraDays)->setTime(12, 0, 0);
-    $newDuration   = ($activeCard->duration_days ?? 1) + $extraDays;
+    // Durée actuelle de référence (priorité à la réservation en cours)
+    $currentDuration = $activeReservation
+        ? max(1, (int) $activeReservation->nights)
+        : max(1, (int) ($activeCard->duration_days ?? 1));
 
-    \Illuminate\Support\Facades\DB::table('magnetic_cards')
-        ->where('id', $activeCard->id)
-        ->update([
-            'duration_days' => $newDuration,
-            'expires_at'    => $newExpiry,
-            'updated_at'    => now(),
-        ]);
+    $newDuration = $currentDuration + $deltaDays;
 
-    return redirect()->back()->with('success', "Séjour prolongé de {$extraDays} nuit(s) pour la Chambre {$room->number}. Nouveau départ : {$newExpiry->format('d/m/Y à H:i')}.");
+    // Sécurité : conserver au minimum 1 nuitée
+    if ($newDuration < 1) {
+        return redirect()->back()->with('error', "Action impossible : un séjour en cours doit durer au minimum 1 nuitée.");
+    }
+
+    // Calcul de la nouvelle date d'expiration (12h00 précise)
+    $baseExpiry = $activeReservation
+        ? \Carbon\Carbon::parse($activeReservation->check_out_date)->setTime(12, 0, 0)
+        : \Carbon\Carbon::parse($activeCard->expires_at)->setTime(12, 0, 0);
+
+    $newExpiry = $baseExpiry->copy()->addDays($deltaDays)->setTime(12, 0, 0);
+
+    \Illuminate\Support\Facades\DB::transaction(function () use ($room, $activeCard, $activeReservation, $newDuration, $newExpiry) {
+        // 1. Mise à jour de la carte magnétique active si présente
+        if ($activeCard) {
+            \Illuminate\Support\Facades\DB::table('magnetic_cards')
+                ->where('id', $activeCard->id)
+                ->update([
+                    'duration_days' => $newDuration,
+                    'expires_at'    => $newExpiry,
+                    'updated_at'    => now(),
+                ]);
+        }
+
+        // 2. Synchronisation de la réservation active (nuits, date de départ et montant total)
+        if ($activeReservation) {
+            $activeReservation->update([
+                'nights'         => $newDuration,
+                'check_out_date' => $newExpiry->toDateString(),
+                'total_amount'   => $newDuration * (float) $room->price_per_night,
+            ]);
+        }
+    });
+
+    $actionMsg = $deltaDays > 0
+        ? "Séjour prolongé de {$deltaDays} nuit(s)"
+        : "Séjour réduit de " . abs($deltaDays) . " nuit(s)";
+
+    return redirect()->back()->with('success', "{$actionMsg} pour la Chambre {$room->number} (Total : {$newDuration} nuit(s) • Nouveau départ : {$newExpiry->format('d/m/Y à H:i')}).");
 }
+
 
 
 }

@@ -170,14 +170,17 @@
                                     @endif
 
                                     <!-- Bouton de prolongation de séjour toujours accessible -->
+                                    <!-- Bouton d'ajustement de durée (+ ou - Nuit) -->
                                     <button type="button" class="btn btn-sm btn-info text-white rounded-pill fw-bold px-3 shadow-sm"
                                             data-bs-toggle="modal"
                                             data-bs-target="#extendStayModal"
                                             data-room-id="{{ $pRoom['id'] }}"
                                             data-room-number="{{ $pRoom['room_number'] }}"
-                                            title="Prolonger le séjour">
-                                        <i class="bi bi-calendar-plus-fill me-1"></i> +Nuit
+                                            data-current-days="{{ $pRoom['days'] }}"
+                                            title="Prolonger ou réduire la durée du séjour">
+                                        <i class="bi bi-calendar-range-fill me-1"></i> ± Nuit
                                     </button>
+
                                 </div>
 
                             </td>
@@ -316,40 +319,91 @@
 </div>
 
 <!-- Modale de prolongation à coller tout en bas de billing/index.blade.php avant  -->
+<!-- MODALE : PROLONGER OU RÉDUIRE LA DURÉE DU SÉJOUR -->
 <div class="modal fade" id="extendStayModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header text-white py-3" style="background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);">
-                <h6 class="modal-title fw-bold"><i class="bi bi-calendar-plus me-2"></i>Prolonger <span id="extend-room-title"></span></h6>
+    <div class="modal-dialog modal-dialog-centered">
+        <form id="extendStayForm" method="POST" class="modal-content rounded-4 border-0 shadow">
+            @csrf
+            <div class="modal-header bg-info text-white rounded-top-4">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-calendar-range-fill me-2"></i>Ajuster la durée — Chambre <span id="extendRoomNumber"></span>
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form id="extendStayForm" method="POST" action="">
-                @csrf
-                <div class="modal-body p-4 text-center">
-                    <label class="form-label fw-bold small text-uppercase text-dark">Nombre de nuits à ajouter</label>
-                    <input type="number" name="extra_days" class="form-control form-control-lg fw-bold text-center text-primary border-primary" min="1" max="60" value="1" required>
+            <div class="modal-body p-4">
+                <div class="alert alert-light border small mb-3 d-flex justify-content-between align-items-center">
+                    <span>Durée actuelle du séjour :</span>
+                    <strong class="fs-6 text-primary"><span id="currentStayDaysLabel">1</span> nuit(s)</strong>
                 </div>
-                <div class="modal-footer bg-light border-0 p-2 justify-content-center">
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold w-100">Valider la prolongation</button>
+
+                <label class="form-label fw-bold small">Action & Nombre de nuitées *</label>
+                <div class="row g-2 mb-3">
+                    <div class="col-7">
+                        <select id="stayDirection" class="form-select fw-bold">
+                            <option value="1" class="text-success">➕ Prolonger (+ Nuits)</option>
+                            <option value="-1" class="text-danger">➖ Réduire (- Nuits)</option>
+                        </select>
+                    </div>
+                    <div class="col-5">
+                        <input type="number" id="stayDaysCount" min="1" max="30" value="1" class="form-control fw-bold text-center" required>
+                    </div>
                 </div>
-            </form>
-        </div>
+
+                <input type="hidden" name="extra_days" id="finalExtraDays" value="1">
+
+                <div class="small text-muted bg-light p-2 rounded-3 border">
+                    <i class="bi bi-info-circle text-info me-1"></i>
+                    Nouvelle durée estimée : <strong id="previewNewDaysLabel" class="text-dark">2</strong> nuit(s)
+                    <span class="d-block mt-1">La facture, le badge RFID et la date de sortie prévue seront recalculés automatiquement.</span>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-info text-white rounded-pill px-4 fw-bold">Valider l'ajustement</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const extendModal = document.getElementById('extendStayModal');
-    if (extendModal) {
-        extendModal.addEventListener('show.bs.modal', function (event) {
-            const button = event.relatedTarget;
-            const roomId = button.getAttribute('data-room-id');
-            const roomNumber = button.getAttribute('data-room-number');
-            document.getElementById('extend-room-title').textContent = 'Chambre ' + roomNumber;
-            document.getElementById('extendStayForm').action = '/rooms/' + roomId + '/extend';
-        });
-    }
-});
+    document.addEventListener('DOMContentLoaded', function () {
+        const extendModal = document.getElementById('extendStayModal');
+        const dirSelect   = document.getElementById('stayDirection');
+        const countInput  = document.getElementById('stayDaysCount');
+        const hiddenInput = document.getElementById('finalExtraDays');
+        const previewLbl  = document.getElementById('previewNewDaysLabel');
+        let baseDays      = 1;
+
+        function syncExtraDays() {
+            const dir = parseInt(dirSelect.value || '1', 10);
+            const cnt = Math.max(1, parseInt(countInput.value || '1', 10));
+            const delta = dir * cnt;
+            hiddenInput.value = delta;
+            previewLbl.textContent = Math.max(1, baseDays + delta);
+        }
+
+        if (extendModal) {
+            extendModal.addEventListener('show.bs.modal', function (event) {
+                const btn     = event.relatedTarget;
+                const roomId  = btn.getAttribute('data-room-id');
+                const roomNum = btn.getAttribute('data-room-number');
+                baseDays      = parseInt(btn.getAttribute('data-current-days') || '1', 10);
+
+                document.getElementById('extendRoomNumber').textContent = roomNum;
+                document.getElementById('currentStayDaysLabel').textContent = baseDays;
+
+                // Conservez ici votre route exacte (ex: /rooms/${roomId}/extend ou /checkin/extend/${roomId})
+                document.getElementById('extendStayForm').action = `/rooms/${roomId}/extend`;
+
+                dirSelect.value  = '1';
+                countInput.value = '1';
+                syncExtraDays();
+            });
+
+            dirSelect.addEventListener('change', syncExtraDays);
+            countInput.addEventListener('input', syncExtraDays);
+        }
+    });
 </script>
 
 @endsection

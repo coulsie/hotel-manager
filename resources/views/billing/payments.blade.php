@@ -152,7 +152,7 @@
                     <tr>
                         <th class="ps-4 py-3">Chambre / Séjour</th>
                         <th class="text-end py-3">Hébergement</th>
-                        <th class="text-end py-3">Extras Resto</th>
+                        <th class="text-end py-3">Extras</th>
                         <th class="text-end py-3">Engagement Total</th>
                         <th class="text-end py-3 text-success">Déjà Payé</th>
                         <th class="text-end py-3 text-danger">Reste à Payer</th>
@@ -233,12 +233,13 @@
                                             </h6>
 
                                             @php
-                                                $hasOrders   = isset($account['orders']) && $account['orders']->count() > 0;
-                                                $hasServices = isset($account['extra_services']) && $account['extra_services']->count() > 0;
-                                                $hasOthers   = isset($account['other_billings']) && $account['other_billings']->count() > 0;
+                                                $hasOrders     = isset($account['orders']) && $account['orders']->count() > 0;
+                                                $hasServices   = isset($account['extra_services']) && $account['extra_services']->count() > 0;
+                                                $hasActivities = isset($account['activities']) && $account['activities']->count() > 0;
+                                                $hasOthers     = isset($account['other_billings']) && $account['other_billings']->count() > 0;
                                             @endphp
 
-                                            @if($hasOrders || $hasServices || $hasOthers)
+                                            @if($hasOrders || $hasServices || $hasActivities || $hasOthers)
                                                 <ul class="list-group list-group-flush">
                                                     <!-- 1. Commandes Restaurant -->
                                                     @if($hasOrders)
@@ -271,30 +272,42 @@
                                                         @endforeach
                                                     @endif
 
-                                                    <!-- 3. Billets de Spectacles & Autres -->
-                                                    <!-- 3. Billets de Spectacles & Autres reçus liés à la chambre -->
-                                                        @if($hasOthers)
-                                                            @foreach($account['other_billings'] as $other)
-                                                                @if(!in_array($other->service_type, ['pressing', 'car_wash']))
-                                                                    <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
-                                                                        <div>
-                                                                            @if($other->service_type === 'show_ticket')
-                                                                                <span class="badge text-white me-1" style="background-color: #db2777;">🎟️ SPECTACLE</span>
-                                                                            @else
-                                                                                <span class="badge bg-secondary text-white me-1">✨ {{ strtoupper($other->service_type) }}</span>
-                                                                            @endif
-                                                                            <span class="fw-semibold text-dark">Reçu {{ $other->receipt_number }}</span>
-                                                                        </div>
-                                                                        <span class="fw-bold text-danger">{{ number_format($other->amount_paid, 0, ',', ' ') }} F</span>
-                                                                    </li>
-                                                                @endif
-                                                            @endforeach
-                                                        @endif
+                                                    <!-- 3. Activités Annexes (Piscine, Spa, Navette, Coworking...) -->
+                                                    @if($hasActivities)
+                                                        @foreach($account['activities'] as $act)
+                                                            <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
+                                                                <div>
+                                                                    <span class="badge bg-primary-subtle text-primary border border-primary me-1">🏊 ACTIVITÉ</span>
+                                                                    <span class="fw-semibold text-dark">{{ $act->activity_name ?? ucfirst($act->activity_type ?? 'Prestation') }}</span>
+                                                                </div>
+                                                                <span class="fw-bold text-primary">{{ number_format($act->total_amount, 0, ',', ' ') }} F</span>
+                                                            </li>
+                                                        @endforeach
+                                                    @endif
 
+                                                    <!-- 4. Billets de Spectacles & Autres reçus liés à la chambre -->
+                                                    @if($hasOthers)
+                                                        @foreach($account['other_billings'] as $other)
+                                                            @if(!in_array($other->service_type, ['pressing', 'car_wash']))
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0 small">
+                                                                    <div>
+                                                                        @if($other->service_type === 'show_ticket')
+                                                                            <span class="badge text-white me-1" style="background-color: #db2777;">🎟️ SPECTACLE</span>
+                                                                        @else
+                                                                            <span class="badge bg-secondary text-white me-1">✨ {{ strtoupper($other->service_type) }}</span>
+                                                                        @endif
+                                                                        <span class="fw-semibold text-dark">Reçu {{ $other->receipt_number }}</span>
+                                                                    </div>
+                                                                    <span class="fw-bold text-danger">{{ number_format($other->amount_paid, 0, ',', ' ') }} F</span>
+                                                                </li>
+                                                            @endif
+                                                        @endforeach
+                                                    @endif
                                                 </ul>
                                             @else
                                                 <div class="text-muted small py-2">Aucun extra (restaurant, pressing, lavage ou spectacle) imputé à cette chambre.</div>
                                             @endif
+
                                         </div>
                                     </div>
 
