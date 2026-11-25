@@ -29,6 +29,9 @@
                 'pressing'                            => 'Pressing & Blanchisserie',
                 'car_wash'                            => 'Lavage Auto',
                 'show_ticket'                         => 'Billetterie Spectacle',
+                'coworking'                           => 'Espace Coworking',
+                'seminaire'                           => 'Salle de Séminaire',
+                'reunion'                             => 'Salle de Réunion',
                 default                               => ucfirst(str_replace('_', ' ', (string) $billing->service_type)),
             };
 
@@ -38,12 +41,14 @@
                 $prestationLabel .= " — {$billing->eventTicket->event->title}";
             }
 
+            $clientName  = null;
             $totalCost   = (float) $billing->amount_paid;
             $alreadyPaid = (float) $billing->amount_paid;
             $remaining   = 0;
 
+            // CAS A : Hébergement / Chambre
             if ($billing->room_id && in_array($billing->service_type, ['room_booking', 'reservation_deposit'])) {
-                // 2. Vérifier si ce reçu correspond à l'acompte d'une réservation créée au même moment (± 1 minute)
+                // Vérifier si ce reçu correspond à l'acompte d'une réservation créée au même moment (± 1 minute)
                 $matchingReservation = \App\Models\Reservation::where('room_id', $billing->room_id)
                     ->whereBetween('created_at', [
                         \Carbon\Carbon::parse($billing->created_at)->subMinute(),
@@ -57,7 +62,7 @@
                     $alreadyPaid     = (float) $billing->amount_paid;
                     $remaining       = max(0, $totalCost - $alreadyPaid);
                 } else {
-                    // 3. Sinon, règlement sur place d'un séjour en cours
+                    // Sinon, règlement sur place d'un séjour en cours
                     $activeReservation = \App\Models\Reservation::where('room_id', $billing->room_id)
                         ->whereIn('status', ['checked_in', 'completed'])
                         ->whereDate('check_in_date', '<=', $billing->created_at)
@@ -93,7 +98,13 @@
                         ->whereBetween('created_at', [$stayStart, $billing->created_at])
                         ->sum('total_amount');
 
-                    $totalCost = $roomBaseCost + $ordersCost + $extrasCost + $activitiesCost;
+                    $spacesCost = \Illuminate\Support\Facades\DB::table('space_bookings')
+                        ->where('room_id', $billing->room_id)
+                        ->where('status', '!=', 'cancelled')
+                        ->whereBetween('created_at', [$stayStart, $billing->created_at])
+                        ->sum('total_amount');
+
+                    $totalCost = $roomBaseCost + $ordersCost + $extrasCost + $activitiesCost + $spacesCost;
 
                     $alreadyPaid = \App\Models\Billing::where('room_id', $billing->room_id)
                         ->whereIn('service_type', ['room_booking', 'reservation_deposit'])
@@ -103,13 +114,40 @@
 
                     $remaining = max(0, $totalCost - $alreadyPaid);
                 }
-            } elseif ($billing->order_id && $billing->order) {
+            }
+            // CAS B : Conférence, Séminaire, Réunion ou Coworking
+            elseif (in_array($billing->service_type, ['coworking', 'seminaire', 'reunion', 'conference'])) {
+                $sb = $billing->spaceBooking;
+
+                // Secours pour les anciens reçus créés avant l'ajout de space_booking_id
+                if (!$sb) {
+                    $sb = \App\Models\SpaceBooking::with('space')
+                        ->whereNull('room_id')
+                        ->where('amount_paid', (float) $billing->amount_paid)
+                        ->whereDate('created_at', \Carbon\Carbon::parse($billing->created_at)->toDateString())
+                        ->first();
+                }
+
+                if ($sb) {
+                    $spaceName       = $sb->space->name ?? 'Espace Pro';
+                    $prestationLabel = "{$spaceName} (" . ucfirst($billing->service_type) . ")";
+                    $clientName      = $sb->client_name;
+                    $totalCost       = (float) $sb->total_amount;
+                    $alreadyPaid     = (float) $sb->amount_paid;
+                    $remaining       = max(0, $totalCost - $alreadyPaid);
+                }
+            }
+            // CAS C : Commande Restaurant
+            elseif ($billing->order_id && $billing->order) {
                 $totalCost   = (float) $billing->order->total_amount;
                 $alreadyPaid = (float) $billing->amount_paid;
                 $remaining   = max(0, $totalCost - $alreadyPaid);
             }
         @endphp
 
+        @if($clientName)
+            <p><strong>Client :</strong> {{ $clientName }}</p>
+        @endif
         <p><strong>Prestation :</strong> {{ $prestationLabel }}</p>
 
         <hr>

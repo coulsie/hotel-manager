@@ -558,27 +558,106 @@
                         <th class="py-3">Service</th>
                         <th class="py-3">Origine</th>
                         <th class="py-3">Mode</th>
+                        <th class="text-end py-3">Total Prestation</th>
                         <th class="text-end py-3 text-success">Somme Perçue</th>
+                        <th class="text-end py-3 text-danger">Reste à Payer</th>
                         <th class="text-center pe-4 py-3">Action</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @php
+                        $grandTotalAmount = 0;
+                        $grandTotalPaid   = 0;
+                        $grandTotalDue    = 0;
+                    @endphp
+
                     @forelse($serviceGroups as $typeKey => $meta)
                         @php $items = $groupedDirect->get($typeKey, collect()); @endphp
                         @if($items->count() > 0)
+                            @php
+                                $subTotalAmount = 0;
+                                $subTotalPaid   = 0;
+                                $subTotalDue    = 0;
+
+                                $enrichedItems = $items->map(function ($billing) use (&$subTotalAmount, &$subTotalPaid, &$subTotalDue) {
+                                    $itemPaid  = (float) $billing->amount_paid;
+                                    $itemTotal = $itemPaid;
+                                    $itemDue   = 0;
+                                    $origin    = 'Client Comptoir';
+
+                                    // 1. Cas Conférence / Séminaire / Coworking
+                                    if (in_array($billing->service_type, ['coworking', 'seminaire', 'reunion', 'conference'])) {
+                                        $sb = $billing->spaceBooking;
+
+                                        // Secours pour les anciens reçus créés avant l'ajout de space_booking_id
+                                        if (!$sb) {
+                                            $sb = \App\Models\SpaceBooking::with('space')
+                                                ->whereNull('room_id')
+                                                ->where('amount_paid', $itemPaid)
+                                                ->whereDate('created_at', \Carbon\Carbon::parse($billing->created_at)->toDateString())
+                                                ->first();
+                                        }
+
+                                        if ($sb) {
+                                            $itemTotal = (float) $sb->total_amount;
+                                            $itemDue   = max(0, $itemTotal - (float) $sb->amount_paid);
+                                            $origin    = ($sb->space->name ?? 'Espace') . ' (' . $sb->client_name . ')';
+                                        }
+                                    }
+                                    // 2. Cas Commande Restaurant
+                                    elseif ($billing->service_type === 'restaurant' && $billing->order) {
+                                        $itemTotal = (float) ($billing->order->total_amount ?? $itemPaid);
+                                        $itemDue   = max(0, $itemTotal - (float) ($billing->order->amount_paid ?? $itemPaid));
+                                        $origin    = 'Table n° ' . ($billing->order->restaurantTable->number ?? 'Comptoir');
+                                    }
+                                    // 3. Cas Spectacle
+                                    elseif ($billing->service_type === 'show_ticket' && $billing->eventTicket && $billing->eventTicket->event) {
+                                        $origin = $billing->eventTicket->event->title;
+                                    }
+                                    // 4. Cas Pressing / Lavage Auto
+                                    elseif ($billing->service_type === 'pressing') {
+                                        $origin = 'Client Pressing Externe';
+                                    }
+                                    elseif ($billing->service_type === 'car_wash') {
+                                        $origin = 'Client Lavage Auto Externe';
+                                    }
+
+                                    $subTotalAmount += $itemTotal;
+                                    $subTotalPaid   += $itemPaid;
+                                    $subTotalDue    += $itemDue;
+
+                                    $billing->calc_total  = $itemTotal;
+                                    $billing->calc_paid   = $itemPaid;
+                                    $billing->calc_due    = $itemDue;
+                                    $billing->calc_origin = $origin;
+
+                                    return $billing;
+                                });
+
+                                $grandTotalAmount += $subTotalAmount;
+                                $grandTotalPaid   += $subTotalPaid;
+                                $grandTotalDue    += $subTotalDue;
+                            @endphp
+
                             <!-- En-tête de groupe par service -->
                             <tr style="background-color: {{ $meta['bg'] }};">
                                 <td colspan="5" class="ps-4 py-2 fw-bold text-uppercase small" style="color: {{ $meta['color'] }};">
                                     {{ $meta['label'] }} <span class="badge bg-white text-dark border ms-1">{{ $items->count() }} reçu(s)</span>
                                 </td>
+                                <td class="text-end fw-bold small text-dark">
+                                    {{ number_format($subTotalAmount, 0, ',', ' ') }} F
+                                </td>
                                 <td class="text-end fw-bold small" style="color: {{ $meta['color'] }};">
-                                    Sous-total : {{ number_format($items->sum('amount_paid'), 0, ',', ' ') }} F
+                                    {{ number_format($subTotalPaid, 0, ',', ' ') }} F
+                                </td>
+                                <td class="text-end fw-bold small {{ $subTotalDue > 0 ? 'text-danger' : 'text-muted' }}">
+                                    {{ number_format($subTotalDue, 0, ',', ' ') }} F
                                 </td>
                                 <td></td>
                             </tr>
 
                             <!-- Lignes des reçus du service -->
-                            @foreach($items as $billing)
+                            @foreach($enrichedItems as $billing)
                                 <tr>
                                     <td class="ps-4 fw-bold text-primary">{{ $billing->receipt_number }}</td>
                                     <td class="small">{{ $billing->created_at ? $billing->created_at->format('d/m/Y H:i') : '---' }}</td>
@@ -588,20 +667,14 @@
                                         </span>
                                     </td>
                                     <td class="small fw-semibold">
-                                        @if($billing->service_type === 'restaurant' && $billing->order)
-                                            Table n° {{ $billing->order->restaurantTable->number ?? 'Comptoir' }}
-                                        @elseif($billing->service_type === 'show_ticket' && $billing->eventTicket && $billing->eventTicket->event)
-                                            {{ $billing->eventTicket->event->title }}
-                                        @elseif($billing->service_type === 'pressing')
-                                            Client Pressing Externe
-                                        @elseif($billing->service_type === 'car_wash')
-                                            Client Lavage Auto Externe
-                                        @else
-                                            Client Comptoir
-                                        @endif
+                                        {{ $billing->calc_origin }}
                                     </td>
                                     <td><span class="badge bg-dark text-white rounded-pill px-2">{{ strtoupper($billing->payment_method) }}</span></td>
-                                    <td class="text-end fw-bold text-success fs-6">{{ number_format($billing->amount_paid, 0, ',', ' ') }} F</td>
+                                    <td class="text-end fw-semibold text-dark">{{ number_format($billing->calc_total, 0, ',', ' ') }} F</td>
+                                    <td class="text-end fw-bold text-success fs-6">{{ number_format($billing->calc_paid, 0, ',', ' ') }} F</td>
+                                    <td class="text-end fw-bold {{ $billing->calc_due > 0 ? 'text-danger' : 'text-muted' }}">
+                                        {{ number_format($billing->calc_due, 0, ',', ' ') }} F
+                                    </td>
                                     <td class="text-center pe-4">
                                         <a href="{{ route('billing.print', $billing->id) }}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
                                             <i class="bi bi-printer-fill me-1"></i> Imprimer
@@ -622,19 +695,20 @@
 
                     @if($directTransactions->count() === 0)
                         <tr>
-                            <td colspan="7" class="text-center py-4 text-muted small">Aucun encaissement direct hors chambre sur cette période.</td>
+                            <td colspan="9" class="text-center py-4 text-muted small">Aucun encaissement direct hors chambre sur cette période.</td>
                         </tr>
                     @endif
                 </tbody>
 
-                <!-- PIED DE TABLEAU POUR LES VENTES DIRECTES -->
                 @if($directTransactions->count() > 0)
                     <tfoot style="background-color: #d1fae5;" class="border-top border-success border-2">
                         <tr class="fw-bold align-middle">
                             <td colspan="5" class="ps-4 py-3 text-uppercase small text-success">
                                 <i class="bi bi-calculator-fill me-1"></i> Total Encaissements Directs Comptoir :
                             </td>
-                            <td class="text-end text-success fs-6">{{ number_format($sumDirect, 0, ',', ' ') }} F</td>
+                            <td class="text-end text-dark fs-6">{{ number_format($grandTotalAmount, 0, ',', ' ') }} F</td>
+                            <td class="text-end text-success fs-6">{{ number_format($sumDirect ?? $grandTotalPaid, 0, ',', ' ') }} F</td>
+                            <td class="text-end {{ $grandTotalDue > 0 ? 'text-danger' : 'text-muted' }} fs-6">{{ number_format($grandTotalDue, 0, ',', ' ') }} F</td>
                             <td></td>
                         </tr>
                     </tfoot>
@@ -643,6 +717,7 @@
         </div>
     </div>
 </div>
+
 
 <!-- SCRIPT D'IMPRESSION AUTOMATIQUE APRÈS VALIDATION -->
 @if(session('print_billing_id'))

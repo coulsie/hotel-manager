@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Reservation;
 use Carbon\Carbon;
+use App\Models\SpaceBooking;
+use App\Models\ConferenceSpace;
 
 class BillingController extends Controller
 {
@@ -175,10 +177,11 @@ class BillingController extends Controller
          * PAGE 2 : Grand Livre des Recettes (billing.payments)
          * URL : http://127.0.0
          */
- public function paymentsHistory(\Illuminate\Http\Request $request)
+
+   public function paymentsHistory(\Illuminate\Http\Request $request)
 {
-    // 1. Initialisation de la requête de base avec chargement des relations
-    $query = \App\Models\Billing::with(['room', 'order.restaurantTable', 'eventTicket.event'])
+    // 1. Initialisation de la requête de base avec chargement des relations (y compris spaceBooking.space)
+    $query = \App\Models\Billing::with(['room', 'order.restaurantTable', 'eventTicket.event', 'spaceBooking.space'])
         ->where('status', 'completed');
 
     // 2. Filtrage Temporel (Journalier, Hebdomadaire, Mensuel)
@@ -213,7 +216,7 @@ class BillingController extends Controller
     $allBillings = $query->latest()->get();
     $periodTotal = $allBillings->sum('amount_paid');
 
-       // 5. REGROUPEMENT PAR DOSSIER CHAMBRE (Séjours en cours, passés, extras, salles pro et réservations avec acompte)
+    // 5. REGROUPEMENT PAR DOSSIER CHAMBRE (Séjours en cours, passés, extras, salles pro et réservations avec acompte)
     $roomAccounts = [];
 
     $billingRoomIds      = $allBillings->whereNotNull('room_id')->pluck('room_id');
@@ -275,36 +278,26 @@ class BillingController extends Controller
             ->select('space_bookings.*', 'conference_spaces.name as space_name', 'conference_spaces.category as space_category')
             ->get();
 
-        $roomOtherBillings = $transactions->whereNotIn('service_type', ['room_booking', 'reservation_deposit', 'pressing', 'car_wash', 'restaurant', 'seminaire', 'coworking']);
+        $roomOtherBillings = $transactions->whereNotIn('service_type', [
+            'room_booking',
+            'reservation_deposit',
+            'pressing',
+            'car_wash',
+            'restaurant',
+            'seminaire',
+            'coworking',
+            'piscine',
+            'spa',
+            'navette',
+            'boutique',
+        ]);
 
-        // 1. Prestations impayées (en attente sur la note de chambre)
-        $unpaidOrdersTotal = $roomOrders
-            ->filter(fn($o) => !in_array($o->status, ['paid', 'completed']))
-            ->sum('total_amount');
-
-        $unpaidExtraServicesTotal = $roomExtraServices
-            ->where('payment_status', 'unpaid')
-            ->sum('total_amount');
-
-        $unpaidActivitiesTotal = $roomActivities
-            ->where('payment_status', 'unpaid')
-            ->sum('total_amount');
-
-        $unpaidSpacesTotal = $roomSpaceBookings
-            ->where('payment_status', '!=', 'paid')
-            ->sum(fn($sb) => max(0, (float) $sb->total_amount - (float) $sb->amount_paid));
-
-        // 2. Extras déjà encaissés directement (Restaurant payé, Pressing/Auto payé, Salles Pro payées, Spectacles...)
-        $paidExtrasBillingsTotal = $transactions
-            ->whereNotIn('service_type', ['room_booking', 'reservation_deposit'])
-            ->sum('amount_paid');
-
-        // Total Engagement Extras = Extras impayés + Extras déjà réglés (0 doublon !)
-        $extrasTotal = $unpaidOrdersTotal
-                     + $unpaidExtraServicesTotal
-                     + $unpaidActivitiesTotal
-                     + $unpaidSpacesTotal
-                     + $paidExtrasBillingsTotal;
+        // Total Engagement Extras = Toutes les prestations liées à la chambre + spectacles (0 doublon)
+        $extrasTotal = $roomOrders->sum('total_amount')
+                     + $roomExtraServices->sum('total_amount')
+                     + $roomActivities->sum('total_amount')
+                     + $roomSpaceBookings->sum('total_amount')
+                     + $roomOtherBillings->sum('amount_paid');
 
         // Engagement global (Chambre + Extras)
         $totalEngagement = $roomBaseCost + $extrasTotal;
@@ -339,9 +332,6 @@ class BillingController extends Controller
             'transactions'        => $transactions,
         ];
     }
-
-
-
 
     // 5 bis. RUBRIQUE RÉSERVATIONS, ARRIVÉES & SUIVI DES ARRHES
     $reservations = Reservation::with(['customer', 'room'])
@@ -407,8 +397,7 @@ class BillingController extends Controller
             'billings'         => $depositBillings,
         ];
     }
-
-    // 6. VENTES DIRECTES HORS CHAMBRE
+    // 6. VENTES DIRECTES HORS CHAMBRE (utilise directement $allBillings filtré à l'étape 4)
     $directTransactions = $allBillings->whereNull('room_id');
 
     // 7. Envoi vers la vue avec les dossiers groupés + les réservations
@@ -419,6 +408,7 @@ class BillingController extends Controller
         'periodTotal'
     ));
 }
+
 
     /**
      * Valide le paiement d'une commande restaurant et génère le reçu dans le Grand Livre.
@@ -643,11 +633,14 @@ public function storeRoomPayment(Request $request, $roomId)
     /**
      * Action d'impression ou d'ouverture du reçu
      */
-    public function printReceipt($id)
-    {
-        $billing = Billing::with(['room', 'order', 'eventTicket.event'])->findOrFail($id);
 
-        return view('pdf.receipt', compact('billing'));
+
+        public function printReceipt($id)
+    {
+        $billing = \App\Models\Billing::with(['room', 'order.restaurantTable', 'eventTicket.event', 'spaceBooking.space'])->findOrFail($id);
+
+        return view('pdf.billing.print', compact('billing'));
+
     }
 
 
@@ -775,16 +768,18 @@ public function dailyCloseReport(\Illuminate\Http\Request $request)
         }
     }
 
-    // 2. Ventilation par pôle d'activité (Hébergement, Resto, Pressing, Lavage Auto, Spectacles & Autres)
-    $knownServices = ['room_booking', 'reservation_deposit', 'restaurant', 'pressing', 'car_wash', 'show_ticket'];
+       // 2. Ventilation par pôle d'activité (Hébergement, Resto, Pressing, Lavage Auto, Salles Pro & Coworking, Spectacles & Autres)
+    $knownServices = ['room_booking', 'reservation_deposit', 'restaurant', 'pressing', 'car_wash', 'seminaire', 'coworking', 'show_ticket'];
     $byService = [
         'room_booking' => $transactions->whereIn('service_type', ['room_booking', 'reservation_deposit'])->sum('amount_paid'),
         'restaurant'   => $transactions->where('service_type', 'restaurant')->sum('amount_paid'),
         'pressing'     => $transactions->where('service_type', 'pressing')->sum('amount_paid'),
         'car_wash'     => $transactions->where('service_type', 'car_wash')->sum('amount_paid'),
+        'conferences'  => $transactions->whereIn('service_type', ['seminaire', 'coworking'])->sum('amount_paid'),
         'show_ticket'  => $transactions->where('service_type', 'show_ticket')->sum('amount_paid'),
         'other'        => $transactions->whereNotIn('service_type', $knownServices)->sum('amount_paid'),
     ];
+
 
     $grandTotal = $transactions->sum('amount_paid');
 

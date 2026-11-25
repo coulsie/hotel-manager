@@ -17,6 +17,92 @@
         <button onclick="window.print()" class="btn btn-dark rounded-pill px-4 fw-bold shadow-sm">
             <i class="bi bi-printer-fill text-warning me-1"></i> Imprimer le Rapport Z
         </button>
+     @php
+    $occupiedCount = \App\Models\Room::where('status', 'occupied')->count();
+    $totalRooms    = max(1, \App\Models\Room::count());
+    $occRate       = round(($occupiedCount / $totalRooms) * 100);
+
+    $waLines = [
+        "📊 *RAPPORT Z — CLÔTURE DE CAISSE*",
+        "🏨 *" . config('hotel.name') . "*",
+        "📅 Date : *" . $date->format('d/m/Y') . "*",
+        "🛏️ Occupation : *{$occupiedCount}/{$totalRooms} chambres ({$occRate}%)*",
+        "",
+        "💰 *RECETTES PAR PÔLE :*",
+        "• Hébergement : " . number_format($byService['room_booking'] ?? 0, 0, ',', ' ') . " F",
+        "• Restaurant & Bar : " . number_format($byService['restaurant'] ?? 0, 0, ',', ' ') . " F",
+        "• Pressing : " . number_format($byService['pressing'] ?? 0, 0, ',', ' ') . " F",
+        "• Lavage Auto : " . number_format($byService['car_wash'] ?? 0, 0, ',', ' ') . " F",
+        "• Salles & Coworking : " . number_format($byService['conferences'] ?? 0, 0, ',', ' ') . " F",
+        "• Billetterie : " . number_format($byService['show_ticket'] ?? 0, 0, ',', ' ') . " F",
+        "",
+        "💳 *ENCAISSEMENTS PAR MODE :*",
+        "• Espèces : " . number_format($byMethod['cash'] ?? 0, 0, ',', ' ') . " F",
+        "• Wave : " . number_format($byMethod['wave'] ?? 0, 0, ',', ' ') . " F",
+        "• Orange Money : " . number_format($byMethod['orange_money'] ?? 0, 0, ',', ' ') . " F",
+        "• MTN MoMo : " . number_format($byMethod['mtn_momo'] ?? 0, 0, ',', ' ') . " F",
+        "• Moov Money : " . number_format($byMethod['moov_money'] ?? 0, 0, ',', ' ') . " F",
+        "• Carte / TPE : " . number_format($byMethod['card'] ?? 0, 0, ',', ' ') . " F",
+        "",
+        "📈 *TOTAL BRUT ENCAISSÉ : " . number_format($grandTotal, 0, ',', ' ') . " F CFA*",
+        "💸 Dépenses / Sorties : -" . number_format($totalExpenses, 0, ',', ' ') . " F",
+        "💵 *ESPÈCES NETTES EN TIROIR : " . number_format($netCashInDrawer, 0, ',', ' ') . " F CFA*",
+        "✅ *SOLDE NET DU JOUR : " . number_format($netDailyTotal, 0, ',', ' ') . " F CFA*",
+    ];
+
+    $rawWaMessage = implode("\n", $waLines);
+    $managerPhone = preg_replace('/\D+/', '', (string) config('hotel.manager_whatsapp', '2250707584396'));
+    $waWebDomain  = implode('.', ['web', 'whatsapp', 'com']);
+    $whatsappUrl  = 'https://' . $waWebDomain . '/send?phone=' . $managerPhone . '&text=' . rawurlencode($rawWaMessage);
+
+@endphp
+
+<div class="d-inline-flex flex-wrap align-items-center gap-2 no-print">
+    <button type="button"
+            id="btnSendWaZReport"
+            data-url="{{ $whatsappUrl }}"
+            class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">
+        <i class="bi bi-whatsapp me-1 fs-5 align-middle"></i> Envoyer sur WhatsApp Web
+    </button>
+
+    <button type="button"
+            id="btnCopyZReport"
+            data-text="{{ $rawWaMessage }}"
+            class="btn btn-outline-success rounded-pill px-3 fw-bold">
+        <i class="bi bi-clipboard me-1"></i> Copier le texte
+    </button>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btnWa   = document.getElementById('btnSendWaZReport');
+    const btnCopy = document.getElementById('btnCopyZReport');
+
+    if (btnWa) {
+        btnWa.addEventListener('click', function () {
+            const url = this.getAttribute('data-url');
+            if (url) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+        });
+    }
+
+    if (btnCopy) {
+        btnCopy.addEventListener('click', function () {
+            const text = this.getAttribute('data-text') || '';
+            navigator.clipboard.writeText(text).then(() => {
+                const original = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-check2-all me-1"></i> Rapport Z copié !';
+                setTimeout(() => { this.innerHTML = original; }, 2500);
+            });
+        });
+    }
+});
+</script>
+
+
+
+
     </div>
 </div>
 
@@ -111,6 +197,11 @@
                         <td>🚗 Lavage Auto</td>
                         <td class="text-end fw-bold text-primary">{{ number_format($byService['car_wash'] ?? 0, 0, ',', ' ') }} F</td>
                     </tr>
+                    <tr>
+                        <td><span class="badge text-white me-2" style="background-color: #4f46e5;">🏢</span> Salles de Réunion, Séminaires & Coworking</td>
+                        <td class="text-end fw-bold">{{ number_format($byService['conferences'] ?? 0, 0, ',', ' ') }} F</td>
+                    </tr>
+
                     <tr>
                         <td>🎟️ Billetterie & Spectacles</td>
                         <td class="text-end fw-bold text-danger">{{ number_format($byService['show_ticket'], 0, ',', ' ') }} F</td>

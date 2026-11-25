@@ -148,17 +148,21 @@
         </table>
     </div>
 
-    <!-- Bloc de calcul final et validation du paiement -->
-    <div class="row align-items-center">
-        <!-- Zone Validation Paiement (Masquée si déjà payé ou à l'impression) -->
+        <!-- Bloc de calcul final et validation du paiement -->
+    <div class="row align-items-start g-4">
+        <!-- Zone Validation Paiement & QR Code Mobile Money (Masquée si déjà payé ou à l'impression) -->
         <div class="col-md-7 d-print-none">
             @if(!isset($isPaid) || !$isPaid)
-                <div class="card border-danger shadow-sm rounded-4 p-3 bg-light">
+                @php
+                    $dueAmount = (int) ($remainingToPay ?? max(0, ($grand_total ?? $totalInvoice ?? 0) - ($alreadyPaid ?? 0)));
+                @endphp
+
+                <!-- 1. Encaissement Classique au Comptoir -->
+                <div class="card border-danger shadow-sm rounded-4 p-3 bg-light mb-3">
                     <h6 class="fw-bold text-danger mb-2">
                         <i class="bi bi-cash-coin me-2"></i>Encaisser le règlement au comptoir
                     </h6>
 
-                    {{-- Affichage des erreurs éventuelles si la validation bloque --}}
                     @if($errors->any())
                         <div class="alert alert-danger py-2 small mb-2">
                             @foreach($errors->all() as $error)
@@ -169,8 +173,7 @@
 
                     <form action="{{ route('billing.room.pay', $room->id) }}" method="POST">
                         @csrf
-                        {{-- Utilise directement le reste à payer exact calculé par le contrôleur --}}
-                        <input type="hidden" name="amount_paid" value="{{ $remainingToPay ?? max(0, $grand_total - ($alreadyPaid ?? 0)) }}">
+                        <input type="hidden" name="amount_paid" value="{{ $dueAmount }}">
 
                         <div class="row g-2">
                             <div class="col-sm-7">
@@ -191,6 +194,103 @@
                         </div>
                     </form>
                 </div>
+
+                <!-- 2. Paiement Express Mobile Money par QR Code -->
+                @if($dueAmount > 0)
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="border: 2px solid #0284c7 !important;">
+                        <div class="card-header text-white fw-bold py-2 px-3 d-flex justify-content-between align-items-center"
+                             style="background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);">
+                            <span class="small"><i class="bi bi-qr-code-scan text-warning me-1"></i>Paiement QR Code Mobile Money</span>
+                            <span class="badge bg-white text-primary rounded-pill px-2">{{ number_format($dueAmount, 0, ',', ' ') }} F</span>
+                        </div>
+                        <div class="card-body p-3 bg-white">
+                            <div class="row align-items-center g-3">
+                                <div class="col-sm-7">
+                                    <div class="d-flex flex-wrap gap-1 mb-2">
+                                        <button type="button" class="btn btn-sm btn-info text-white fw-bold rounded-pill px-2 py-1 qr-operator-btn active"
+                                                data-operator="wave"
+                                                data-label="Wave (Montant pré-rempli)"
+                                                data-payload="{{ rtrim(config('hotel.wave_base_url'), '/') }}/?amount={{ $dueAmount }}">
+                                            🐧 Wave
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-2 py-1 qr-operator-btn"
+                                                data-operator="orange_money"
+                                                data-label="Orange Money ({{ config('hotel.orange_number') }})"
+                                                data-payload="tel:*144*1*1*{{ preg_replace('/\D+/', '', config('hotel.orange_number')) }}*{{ $dueAmount }}#">
+                                            🍊 Orange
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-2 py-1 qr-operator-btn"
+                                                data-operator="mtn_momo"
+                                                data-label="MTN MoMo ({{ config('hotel.mtn_number') }})"
+                                                data-payload="tel:*133*1*1*{{ preg_replace('/\D+/', '', config('hotel.mtn_number')) }}*{{ $dueAmount }}#">
+                                            💛 MTN
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-2 py-1 qr-operator-btn"
+                                                data-operator="moov_money"
+                                                data-label="Moov Money ({{ config('hotel.moov_number') }})"
+                                                data-payload="tel:*155*1*1*{{ preg_replace('/\D+/', '', config('hotel.moov_number')) }}*{{ $dueAmount }}#">
+                                            🔵 Moov
+                                        </button>
+                                    </div>
+
+                                    <div class="small text-muted mb-2">
+                                        Opérateur : <strong class="text-dark" id="qrOperatorTitle">Wave (Montant pré-rempli)</strong><br>
+                                        Faites scanner le QR code au client puis validez la réception :
+                                    </div>
+
+                                    <form action="{{ route('billing.room.pay', $room->id) }}" method="POST"
+                                          onsubmit="return confirm('Confirmez-vous avoir reçu le transfert Mobile Money de {{ number_format($dueAmount, 0, ',', ' ') }} F CFA ?');">
+                                        @csrf
+                                        <input type="hidden" name="amount_paid" value="{{ $dueAmount }}">
+                                        <input type="hidden" name="payment_method" id="qrPaymentMethodInput" value="wave">
+                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm w-100">
+                                            <i class="bi bi-check-circle-fill me-1"></i> Confirmer réception Mobile Money
+                                        </button>
+                                    </form>
+                                </div>
+
+                                                          <div class="col-sm-5 text-center">
+                                    <div class="p-2 bg-white rounded-3 border shadow-sm d-inline-block">
+                                        <img id="mobileMoneyQrImg"
+                                             src="{{ route('qr.generate', ['text' => rtrim(config('hotel.wave_base_url'), '/') . '/?amount=' . $dueAmount]) }}"
+                                             alt="QR Code Paiement Mobile Money"
+                                             width="145" height="145" class="rounded-2">
+                                        <div class="fw-bold text-primary mt-1" style="font-size: 0.72rem;">Scanner pour payer</div>
+                                        <div class="text-muted" style="font-size: 0.68rem;">Ch. {{ $room->number }} • {{ number_format($dueAmount, 0, ',', ' ') }} F</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const buttons     = document.querySelectorAll('.qr-operator-btn');
+                        const qrImg       = document.getElementById('mobileMoneyQrImg');
+                        const titleEl     = document.getElementById('qrOperatorTitle');
+                        const methodInput = document.getElementById('qrPaymentMethodInput');
+                        const qrBaseUrl   = @json(route('qr.generate'));
+
+                        buttons.forEach(btn => {
+                            btn.addEventListener('click', function () {
+                                buttons.forEach(b => b.classList.remove('active', 'btn-info', 'text-white'));
+                                this.classList.add('active', 'btn-info', 'text-white');
+
+                                const operator = this.getAttribute('data-operator');
+                                const label    = this.getAttribute('data-label');
+                                const payload  = this.getAttribute('data-payload');
+
+                                if (titleEl) titleEl.textContent = label;
+                                if (methodInput) methodInput.value = operator;
+                                if (qrImg) {
+                                    qrImg.src = qrBaseUrl + '?text=' + encodeURIComponent(payload);
+                                }
+                            });
+                        });
+                    });
+                    </script>
+                @endif
+
             @else
                 <div class="alert alert-success border-0 shadow-sm rounded-4 p-3 mb-0">
                     <div class="d-flex align-items-center">
@@ -204,22 +304,17 @@
             @endif
         </div>
 
-
-
         <!-- Bloc Solde Finaux -->
-               <!-- Bloc Solde Finaux -->
-        <!-- Bloc Solde Finaux avec déduction de l'acompte -->
-        <!-- Bloc Solde Finaux corrigé -->
         <div class="col-md-5 ms-auto">
             <div class="p-4 rounded-4 bg-light border shadow-sm">
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-secondary fw-semibold">Total des Prestations :</span>
-                    <span class="text-dark fw-bold">{{ number_format($grand_total, 0, ',', ' ') }} F</span>
+                    <span class="text-dark fw-bold">{{ number_format($grand_total ?? $totalInvoice ?? 0, 0, ',', ' ') }} F</span>
                 </div>
 
                 @if(isset($alreadyPaid) && $alreadyPaid > 0)
                     <div class="d-flex justify-content-between mb-2 text-primary">
-                        <span class="fw-semibold">Acompte initial versé :</span>
+                        <span class="fw-semibold">Acompte / Règlements versés :</span>
                         <span class="fw-bold">- {{ number_format($alreadyPaid, 0, ',', ' ') }} F</span>
                     </div>
                 @endif
@@ -232,23 +327,25 @@
                 @if(isset($isPaid) && $isPaid)
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="text-dark fw-black text-uppercase small">Net Réglé (Soldé) :</span>
-                        <span class="fs-4 fw-black text-success">{{ number_format(max(0, $grand_total - ($alreadyPaid ?? 0)), 0, ',', ' ') }} F CFA</span>
+                        <span class="fs-4 fw-black text-success">{{ number_format($alreadyPaid ?? 0, 0, ',', ' ') }} F CFA</span>
                     </div>
                 @else
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="text-dark fw-black text-uppercase small">Reste à percevoir :</span>
-                        <span class="fs-4 fw-black text-danger">{{ number_format(max(0, $grand_total - ($alreadyPaid ?? 0)), 0, ',', ' ') }} F CFA</span>
+                        <span class="fs-4 fw-black text-danger">{{ number_format($remainingToPay ?? max(0, ($grand_total ?? $totalInvoice ?? 0) - ($alreadyPaid ?? 0)), 0, ',', ' ') }} F CFA</span>
                     </div>
                 @endif
             </div>
         </div>
+    </div>
 
-            <!-- Pied de page de la facture -->
-            <div class="text-center mt-5 pt-4 border-top text-muted small">
-                Merci pour votre séjour dans notre établissement !<br>
-                <span class="fw-bold">Hotel Manager System v13.39</span>
-            </div>
-        </div>
+    <!-- Pied de page de la facture -->
+    <div class="text-center mt-5 pt-4 border-top text-muted small">
+        Merci pour votre séjour dans notre établissement !<br>
+        <span class="fw-bold">Hotel Manager System v13.39</span>
+    </div>
+</div>
+
 
 <!-- STYLE DE SÉCURITÉ POUR L'IMPRESSION PROPRE SANS LES MENUS DU SITE -->
 <style>

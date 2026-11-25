@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\SpaceBooking;
 
 
 class Billing extends Model
@@ -16,11 +17,13 @@ class Billing extends Model
      *
      * @var array<int, string>
      */
+
     protected $fillable = [
         'receipt_number',
         'room_id',
         'order_id',
         'event_ticket_id',
+        'space_booking_id', // <-- À AJOUTER ICI
         'service_type',
         'amount_paid',
         'payment_method',
@@ -66,4 +69,11 @@ class Billing extends Model
     {
         return $this->belongsTo(EventTicket::class);
     }
+
+    public function spaceBooking()
+    {
+        return $this->belongsTo(SpaceBooking::class, 'space_booking_id');
+    }
+
+
 }

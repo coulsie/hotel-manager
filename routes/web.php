@@ -251,12 +251,18 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/advances', 'storeAdvance')->name('advances.store');
     });
 
+    Route::resource('conferences', ConferenceSpaceController::class);
+    Route::post('conferences/bookings', [ConferenceSpaceController::class, 'storeBooking'])->name('conferences.bookings.store');
+    Route::patch('conferences/bookings/{booking}/status', [ConferenceSpaceController::class, 'updateBookingStatus'])->name('conferences.bookings.status');
 
+    Route::get('/qr-code', function (\Illuminate\Http\Request $request) {
+        $text = (string) $request->query('text', 'https://wave.com');
 
-Route::resource('conferences', ConferenceSpaceController::class);
-Route::post('conferences/bookings', [ConferenceSpaceController::class, 'storeBooking'])->name('conferences.bookings.store');
-Route::patch('conferences/bookings/{booking}/status', [ConferenceSpaceController::class, 'updateBookingStatus'])->name('conferences.bookings.status');
+        $generator = new \SimpleSoftwareIO\QrCode\Generator();
+        $svg = $generator->format('svg')->size(160)->margin(1)->generate($text);
 
+        return response($svg, 200, ['Content-Type' => 'image/svg+xml']);
+    })->name('qr.generate');
 
 });
 // ==========================================================================

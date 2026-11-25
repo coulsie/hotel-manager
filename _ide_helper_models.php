@@ -18,6 +18,7 @@ namespace App\Models{
  * @property int|null $room_id
  * @property int|null $order_id
  * @property int|null $event_ticket_id
+ * @property int|null $space_booking_id
  * @property string $service_type
  * @property numeric $amount_paid
  * @property string $payment_method
@@ -27,6 +28,7 @@ namespace App\Models{
  * @property-read \App\Models\EventTicket|null $eventTicket
  * @property-read \App\Models\Order|null $order
  * @property-read \App\Models\Room|null $room
+ * @property-read \App\Models\SpaceBooking|null $spaceBooking
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Billing newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Billing newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Billing query()
@@ -39,6 +41,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Billing whereReceiptNumber($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Billing whereRoomId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Billing whereServiceType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Billing whereSpaceBookingId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Billing whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Billing whereUpdatedAt($value)
  */
@@ -48,10 +51,44 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $id
+ * @property string $name
+ * @property string $category
+ * @property int $capacity
+ * @property numeric $hourly_rate
+ * @property numeric $half_day_rate
+ * @property numeric $full_day_rate
+ * @property string|null $equipments
+ * @property int $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace whereCapacity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace whereCategory($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace whereEquipments($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace whereFullDayRate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace whereHalfDayRate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace whereHourlyRate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ConferenceSpace whereUpdatedAt($value)
+ */
+	class ConferenceSpace extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $id
+ * @property int|null $company_id
  * @property string $full_name
  * @property string|null $phone
  * @property string|null $email
  * @property string $nationality
+ * @property string $vip_level
+ * @property string|null $preferences
  * @property string $id_type
  * @property string|null $id_card_number
  * @property string|null $address
@@ -64,6 +101,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer query()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereAddress($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereCompanyId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereEmail($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereFullName($value)
@@ -73,7 +111,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereNationality($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereNotes($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer wherePhone($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer wherePreferences($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Customer whereVipLevel($value)
  */
 	class Customer extends \Eloquent {}
 }
@@ -221,7 +261,7 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $id
- * @property int $restaurant_table_id
+ * @property int|null $restaurant_table_id
  * @property int|null $room_id
  * @property numeric $total_amount
  * @property string $status
@@ -271,8 +311,8 @@ namespace App\Models{
  * @property int $id
  * @property int $customer_id
  * @property int $room_id
- * @property string $check_in_date
- * @property string $check_out_date
+ * @property \Illuminate\Support\Carbon $check_in_date
+ * @property \Illuminate\Support\Carbon $check_out_date
  * @property int $nights
  * @property numeric $total_amount
  * @property numeric $deposit_paid
@@ -282,6 +322,8 @@ namespace App\Models{
  * @property string|null $special_requests
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Customer|null $customer
+ * @property-read \App\Models\Room|null $room
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Reservation query()
@@ -453,6 +495,55 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ShowBooking whereUserId($value)
  */
 	class ShowBooking extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $id
+ * @property int $space_id
+ * @property int|null $company_id
+ * @property int|null $room_id
+ * @property string $client_name
+ * @property string|null $client_phone
+ * @property string $booking_date
+ * @property string $start_time
+ * @property string $end_time
+ * @property string $pricing_type
+ * @property int $attendees
+ * @property numeric $total_amount
+ * @property numeric $amount_paid
+ * @property string $payment_status
+ * @property string $status
+ * @property string|null $notes
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Billing> $billings
+ * @property-read int|null $billings_count
+ * @property-read \App\Models\Room|null $room
+ * @property-read \App\Models\ConferenceSpace|null $space
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereAmountPaid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereAttendees($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereBookingDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereClientName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereClientPhone($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereCompanyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereEndTime($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereNotes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking wherePaymentStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking wherePricingType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereRoomId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereSpaceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereStartTime($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereTotalAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SpaceBooking whereUpdatedAt($value)
+ */
+	class SpaceBooking extends \Eloquent {}
 }
 
 namespace App\Models{

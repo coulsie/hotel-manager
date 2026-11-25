@@ -337,14 +337,29 @@
                         <th class="py-3">Catégorie / Espace</th>
                         <th class="py-3">Détail & Capacité</th>
                         <th class="py-3">Affectation de la Note</th>
+                        <th class="text-end py-3">Total</th>
+                        <th class="text-end py-3">Déjà Payé</th>
                         <th class="text-end py-3">Montant Dû</th>
                         <th class="text-center pe-4 py-3">Action</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @php
+                        $sumTotal = 0;
+                        $sumPaid  = 0;
+                        $sumDue   = 0;
+                    @endphp
+
                     @forelse($pendingSpaceBookings ?? [] as $sb)
                         @php
-                            $remainingSpace = max(0, (float) $sb->total_amount - (float) $sb->amount_paid);
+                            $totalSpace     = (float) $sb->total_amount;
+                            $paidSpace      = (float) $sb->amount_paid;
+                            $remainingSpace = max(0, $totalSpace - $paidSpace);
+
+                            $sumTotal += $totalSpace;
+                            $sumPaid  += $paidSpace;
+                            $sumDue   += $remainingSpace;
+
                             $catBadge = match($sb->space_category) {
                                 'reunion'   => ['bg' => '#2563eb', 'label' => '🤝 RÉUNION'],
                                 'seminaire' => ['bg' => '#7c3aed', 'label' => '🎤 SÉMINAIRE'],
@@ -369,9 +384,6 @@
                                 <div class="fw-bold text-dark">{{ $sb->client_name }}</div>
                                 <div class="text-muted">
                                     {{ $sb->attendees }} {{ $sb->space_category === 'coworking' ? 'poste(s)' : 'participant(s)' }}
-                                    @if((float) $sb->amount_paid > 0)
-                                        • <span class="text-success fw-semibold">Acompte : {{ number_format($sb->amount_paid, 0, ',', ' ') }} F</span>
-                                    @endif
                                 </div>
                             </td>
                             <td>
@@ -384,6 +396,12 @@
                                         <i class="bi bi-building me-1"></i>Externe / Société
                                     </span>
                                 @endif
+                            </td>
+                            <td class="text-end fw-semibold text-dark">
+                                {{ number_format($totalSpace, 0, ',', ' ') }} F
+                            </td>
+                            <td class="text-end fw-semibold text-success">
+                                {{ number_format($paidSpace, 0, ',', ' ') }} F
                             </td>
                             <td class="text-end fw-bold text-danger fs-6">
                                 {{ number_format($remainingSpace, 0, ',', ' ') }} F
@@ -403,12 +421,24 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted small">
+                            <td colspan="8" class="text-center py-4 text-muted small">
                                 <i class="bi bi-check-all text-success me-1"></i> Aucun encours de conférence, séminaire ou coworking en attente.
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
+
+                @if(isset($pendingSpaceBookings) && $pendingSpaceBookings->isNotEmpty())
+                <tfoot class="bg-light fw-bold border-top">
+                    <tr>
+                        <td colspan="4" class="ps-4 py-3 text-end text-uppercase small text-muted">Totaux Section :</td>
+                        <td class="text-end py-3 text-dark">{{ number_format($sumTotal, 0, ',', ' ') }} F</td>
+                        <td class="text-end py-3 text-success">{{ number_format($sumPaid, 0, ',', ' ') }} F</td>
+                        <td class="text-end py-3 text-danger fs-6">{{ number_format($sumDue, 0, ',', ' ') }} F</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+                @endif
             </table>
         </div>
     </div>

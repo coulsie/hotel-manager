@@ -184,8 +184,8 @@ class ConferenceSpaceController extends Controller
             'payment_method' => 'nullable|string|max:50',
             'notes'          => 'nullable|string',
         ], [
-            'end_time.after'          => "L'heure de fin doit être postérieure à l'heure de début.",
-            'room_id.required_if'     => "Veuillez sélectionner une chambre occupée.",
+            'end_time.after'              => "L'heure de fin doit être postérieure à l'heure de début.",
+            'room_id.required_if'         => "Veuillez sélectionner une chambre occupée.",
             'client_name.required_unless' => "Veuillez saisir le nom du client ou de la société.",
         ]);
 
@@ -215,7 +215,7 @@ class ConferenceSpaceController extends Controller
             }
         }
 
-        // 2. Calcul sécurisé du total (prend total_amount du formulaire ou le recalcule côté serveur)
+        // 2. Calcul sécurisé du total
         $start = \Carbon\Carbon::parse($validated['booking_date'] . ' ' . $validated['start_time']);
         $end   = \Carbon\Carbon::parse($validated['booking_date'] . ' ' . $validated['end_time']);
         $hours = max(1, (int) ceil($start->diffInMinutes($end) / 60));
@@ -229,7 +229,7 @@ class ConferenceSpaceController extends Controller
             ? $unitRate * (int) $validated['attendees']
             : $unitRate;
 
-        $total  = isset($validated['total_amount']) && (float) $validated['total_amount'] > 0
+        $total = isset($validated['total_amount']) && (float) $validated['total_amount'] > 0
             ? (float) $validated['total_amount']
             : $computedTotal;
 
@@ -254,9 +254,8 @@ class ConferenceSpaceController extends Controller
             $paymentStatus = 'partial';
         }
 
-        $billing = null;
-
-        DB::transaction(function () use ($validated, $space, $isRoom, $clientName, $total, $paid, $paymentStatus, &$billing) {
+        /** @var \App\Models\Billing|null $billing */
+        $billing = DB::transaction(function () use ($validated, $space, $isRoom, $clientName, $total, $paid, $paymentStatus) {
             DB::table('space_bookings')->insert([
                 'space_id'       => $validated['space_id'],
                 'company_id'     => $validated['company_id'] ?? null,
@@ -279,7 +278,7 @@ class ConferenceSpaceController extends Controller
 
             if ($paid > 0) {
                 $serviceType = ($space->category === 'coworking') ? 'coworking' : 'seminaire';
-                $billing = \App\Models\Billing::create([
+                return \App\Models\Billing::create([
                     'receipt_number' => \App\Models\Billing::generateReceiptNumber(),
                     'room_id'        => $isRoom ? $validated['room_id'] : null,
                     'service_type'   => $serviceType,
@@ -288,6 +287,8 @@ class ConferenceSpaceController extends Controller
                     'status'         => 'completed',
                 ]);
             }
+
+            return null;
         });
 
         if ($billing) {
