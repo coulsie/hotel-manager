@@ -444,103 +444,107 @@ class BillingController extends Controller
      * Route : billing.room
      */
 
-      public function showRoomInvoice($roomId)
-    {
-        $room = Room::findOrFail($roomId);
+   public function showRoomInvoice($roomId)
+{
+    $room = Room::findOrFail($roomId);
 
-        // 1. Récupération de la réservation active (checked_in) et de la carte magnétique
-        $checkedInReservation = Reservation::where('room_id', $room->id)
-            ->where('status', 'checked_in')
-            ->latest('id')
-            ->first();
+    // 1. Récupération de la réservation active (checked_in) OU confirmée (confirmed) et de la carte magnétique
+    $activeReservation = Reservation::where('room_id', $room->id)
+        ->whereIn('status', ['checked_in', 'confirmed'])
+        ->orderByRaw("FIELD(status, 'checked_in', 'confirmed')")
+        ->latest('id')
+        ->first();
 
-        $activeCard = DB::table('magnetic_cards')
-            ->where('room_id', $room->id)
-            ->where('is_active', 1)
-            ->latest('id')
-            ->first();
+    $activeCard = DB::table('magnetic_cards')
+        ->where('room_id', $room->id)
+        ->where('is_active', 1)
+        ->latest('id')
+        ->first();
 
-        if ($checkedInReservation) {
-            // Priorité directe aux nuits de la réservation (reflète +Nuit et -Nuit)
-            $days          = max(1, (int) $checkedInReservation->nights);
-            $stayStartDate = Carbon::parse($checkedInReservation->check_in_date)->setTime(14, 0, 0);
-        } else {
-            $days          = $activeCard ? max(1, (int) ($activeCard->duration_days ?? 1)) : 1;
-            $stayStartDate = $activeCard ? Carbon::parse($activeCard->created_at) : now()->startOfDay();
-        }
-
-        $roomCost = $room->price_per_night * $days;
-
-        // 2. Commandes restaurant du séjour actuel non payées
-        $orders = Order::where('room_id', $room->id)
-            ->where(function ($q) {
-                $q->whereNotIn('status', ['paid', 'completed'])
-                  ->orWhereNull('status');
-            })
-            ->with('restaurantTable')
-            ->get();
-
-        $restaurantTotal = $orders->sum('total_amount');
-
-        // 3. Prestations Pressing & Lavage Auto imputées à cette chambre et non payées
-        $extraServices = \App\Models\ExtraService::where('room_id', $room->id)
-            ->where('payment_status', 'unpaid')
-            ->get();
-
-        $extraServicesTotal = $extraServices->sum('total_amount');
-
-        // 3 bis. Activités Annexes (Piscine, Spa, Navette...) & Salles Pro / Coworking non payées
-        $activitiesTotal = DB::table('activity_bookings')
-            ->where('room_id', $room->id)
-            ->where('payment_status', 'unpaid')
-            ->sum('total_amount');
-
-        $spaceBookings = DB::table('space_bookings')
-            ->join('conference_spaces', 'space_bookings.space_id', '=', 'conference_spaces.id')
-            ->where('space_bookings.room_id', $room->id)
-            ->where('space_bookings.status', '!=', 'cancelled')
-            ->where('space_bookings.payment_status', '!=', 'paid')
-            ->select('space_bookings.*', 'conference_spaces.name as space_name')
-            ->get();
-
-        $spacesTotal = $spaceBookings->sum(fn($sb) => max(0, (float) $sb->total_amount - (float) $sb->amount_paid));
-
-        $showsTotal = (float) $activitiesTotal + (float) $spacesTotal;
-
-        $totalInvoice = $roomCost + $restaurantTotal + $extraServicesTotal + $showsTotal;
-
-        // 4. Déduction de l'acompte réservation + règlements effectués pendant le séjour
-        $reservationDeposit = $checkedInReservation ? (float) $checkedInReservation->deposit_paid : 0;
-        $cutoffDate = $checkedInReservation
-            ? Carbon::parse($checkedInReservation->created_at)->addSeconds(5)
-            : $stayStartDate->copy()->subSeconds(5);
-
-        $stayPayments = Billing::where('room_id', $room->id)
-            ->where('service_type', 'room_booking')
-            ->where('status', 'completed')
-            ->where('created_at', '>', $cutoffDate)
-            ->sum('amount_paid');
-
-        $alreadyPaid    = $reservationDeposit + $stayPayments;
-        $remainingToPay = max(0, $totalInvoice - $alreadyPaid);
-        $isPaid         = ($remainingToPay <= 0);
-
-        return view('billing.room_invoice', compact(
-            'room',
-            'roomCost',
-            'orders',
-            'restaurantTotal',
-            'extraServices',
-            'extraServicesTotal',
-            'spaceBookings',
-            'showsTotal',
-            'totalInvoice',
-            'alreadyPaid',
-            'remainingToPay',
-            'days',
-            'isPaid'
-        ));
+    if ($activeReservation) {
+        // Priorité directe aux nuits de la réservation (4 nuits même si encore en statut 'confirmed')
+        $days          = max(1, (int) $activeReservation->nights);
+        $stayStartDate = Carbon::parse($activeReservation->check_in_date)->setTime(14, 0, 0);
+    } else {
+        $days          = $activeCard ? max(1, (int) ($activeCard->duration_days ?? 1)) : 1;
+        $stayStartDate = $activeCard ? Carbon::parse($activeCard->created_at) : now()->startOfDay();
     }
+
+    $roomCost = $room->price_per_night * $days;
+
+    // 2. Commandes restaurant du séjour actuel non payées
+    $orders = Order::where('room_id', $room->id)
+        ->where(function ($q) {
+            $q->whereNotIn('status', ['paid', 'completed'])
+              ->orWhereNull('status');
+        })
+        ->with('restaurantTable')
+        ->get();
+
+    $restaurantTotal = $orders->sum('total_amount');
+
+    // 3. Prestations Pressing & Lavage Auto imputées à cette chambre et non payées
+    $extraServices = \App\Models\ExtraService::where('room_id', $room->id)
+        ->where('payment_status', 'unpaid')
+        ->get();
+
+    $extraServicesTotal = $extraServices->sum('total_amount');
+
+    // 3 bis. Activités Annexes (Piscine, Spa, Navette...) & Salles Pro / Coworking non payées
+    $activitiesTotal = DB::table('activity_bookings')
+        ->where('room_id', $room->id)
+        ->where('payment_status', 'unpaid')
+        ->sum('total_amount');
+
+    $spaceBookings = DB::table('space_bookings')
+        ->join('conference_spaces', 'space_bookings.space_id', '=', 'conference_spaces.id')
+        ->where('space_bookings.room_id', $room->id)
+        ->where('space_bookings.status', '!=', 'cancelled')
+        ->where('space_bookings.payment_status', '!=', 'paid')
+        ->select('space_bookings.*', 'conference_spaces.name as space_name')
+        ->get();
+
+    $spacesTotal = $spaceBookings->sum(fn($sb) => max(0, (float) $sb->total_amount - (float) $sb->amount_paid));
+
+    $showsTotal = (float) $activitiesTotal + (float) $spacesTotal;
+
+    $totalInvoice = $roomCost + $restaurantTotal + $extraServicesTotal + $showsTotal;
+
+    // 4. Déduction de l'acompte réservation + règlements effectués pendant le séjour
+      // 4. Déduction des règlements (sans doubler l'acompte initial déjà enregistré dans billings)
+    $reservationDeposit = $activeReservation ? (float) $activeReservation->deposit_paid : 0;
+    $cutoffDate = $activeReservation
+        ? Carbon::parse($activeReservation->created_at)->subSeconds(5)
+        : $stayStartDate->copy()->subSeconds(5);
+
+    // Tous les paiements enregistrés dans billings pour ce séjour
+    $allStayBillings = Billing::where('room_id', $room->id)
+        ->whereIn('service_type', ['room_booking', 'reservation_deposit'])
+        ->where('status', 'completed')
+        ->where('created_at', '>=', $cutoffDate)
+        ->sum('amount_paid');
+
+    // On prend le plus grand des deux (évite le doublon si l'acompte est à la fois dans deposit_paid et dans billings)
+    $alreadyPaid    = max($reservationDeposit, (float) $allStayBillings);
+    $remainingToPay = max(0, $totalInvoice - $alreadyPaid);
+    $isPaid         = ($remainingToPay <= 0);
+
+    return view('billing.room_invoice', compact(
+        'room',
+        'roomCost',
+        'orders',
+        'restaurantTotal',
+        'extraServices',
+        'extraServicesTotal',
+        'spaceBookings',
+        'showsTotal',
+        'totalInvoice',
+        'alreadyPaid',
+        'remainingToPay',
+        'days',
+        'isPaid'
+    ));
+}
 
 
     /**
