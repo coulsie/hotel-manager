@@ -196,12 +196,15 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // 10. Activités & Services Annexes (Piscine, Spa, Coworking, Séminaire, Navette)
-    Route::middleware('permission:gerer_activites')->prefix('activities')->name('activities.')->controller(ActivityController::class)->group(function () {
+        Route::middleware('permission:gerer_activites')->prefix('activities')->name('activities.')->controller(ActivityController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/catalog', 'storeCatalog')->name('catalog.store');
+        Route::put('/catalog/{id}', 'updateCatalog')->name('catalog.update');
+        Route::delete('/catalog/{id}', 'destroyCatalog')->name('catalog.destroy');
         Route::post('/book', 'storeBooking')->name('book');
         Route::post('/{id}/pay', 'markAsPaid')->name('pay');
     });
+
 
     // 11. Dépenses & Petite Caisse (Sorties de fonds)
     Route::middleware('permission:gerer_depenses')->prefix('expenses')->name('expenses.')->controller(ExpenseController::class)->group(function () {

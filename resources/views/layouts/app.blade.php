@@ -301,7 +301,14 @@
                                 </a>
                             </li>
                             @endcan
-
+                            @can('gerer_conferences')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('conferences.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('conferences.index') }}">
+                                    <i class="bi bi-easel2-fill text-indigo me-2"></i>
+                                    <span>Salles de Reunion & Conférence</span>
+                                </a>
+                            </li>
+                            @endcan
                             @can('gerer_stock')
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('stock.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('stock.index') }}">
@@ -405,12 +412,7 @@
                                 </a>
                             </li>
 
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('conferences.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('conferences.index') }}">
-                                    <i class="bi bi-easel2-fill text-indigo me-2"></i>
-                                    <span>Salles de Conférence</span>
-                                </a>
-                            </li>
+
 
 
                             <li class="nav-item">

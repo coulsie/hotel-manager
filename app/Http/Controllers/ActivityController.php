@@ -116,4 +116,34 @@ class ActivityController extends Controller
 
         return back()->with('success', "Prestation '{$activity->name}' imputée sur le compte de la chambre.");
     }
+
+        public function updateCatalog(\Illuminate\Http\Request $request, $id)
+    {
+        $validated = $request->validate([
+            'category' => 'required|string|max:100',
+            'name'     => 'required|string|max:191',
+            'price'    => 'required|numeric|min:0',
+            'unit'     => 'required|string|max:50',
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('hotel_activities')
+            ->where('id', $id)
+            ->update([
+                'category'   => $validated['category'],
+                'name'       => $validated['name'],
+                'price'      => $validated['price'],
+                'unit'       => $validated['unit'],
+                'updated_at' => now(),
+            ]);
+
+        return back()->with('success', "La prestation « {$validated['name']} » a été mise à jour.");
+    }
+
+    public function destroyCatalog($id)
+    {
+        \Illuminate\Support\Facades\DB::table('hotel_activities')->where('id', $id)->delete();
+
+        return back()->with('success', "L'offre a été retirée du catalogue des activités.");
+    }
+
 }

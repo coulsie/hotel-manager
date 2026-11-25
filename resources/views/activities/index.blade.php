@@ -10,7 +10,7 @@
             <h3 class="fw-bold mb-1">
                 <i class="bi bi-water text-primary me-2"></i>Activités & Services Annexes
             </h3>
-            <p class="text-muted small mb-0">Pass Piscine, Spa, Coworking, Salles de Séminaire & Navettes Aéroport.</p>
+            <p class="text-muted small mb-0">Pass Piscine, Spa & Bien-être, Navettes Aéroport & Boutique.</p>
         </div>
         <button type="button" class="btn btn-dark rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#newCatalogModal">
             <i class="bi bi-plus-circle-fill text-warning me-1"></i> Nouvelle Offre au Catalogue
@@ -117,7 +117,7 @@
                             </div>
                         </div>
 
-                        <!-- Notes / Détails (Heure de vol, créneau massage...) -->
+                        <!-- Notes / Détails -->
                         <div class="mb-4">
                             <label class="form-label fw-bold small">Observation / Créneau horaire</label>
                             <input type="text" name="notes" class="form-control form-control-sm" placeholder="Ex: Vol Air Côte d'Ivoire 18h30, Massage 15h00...">
@@ -135,11 +135,9 @@
         <div class="col-lg-7">
             <!-- Tableau des dernières ventes / imputations -->
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
-                <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold mb-0 text-uppercase text-dark">
-                        <i class="bi bi-clock-history text-primary me-2"></i>Dernières Activités & Prestations
-                    </h6>
-                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3">{{ $bookings->count() }} récentes</span>
+                <div class="card-header bg-dark text-white py-3 px-4 d-flex justify-content-between align-items-center">
+                    <span class="fw-bold small text-uppercase"><i class="bi bi-clock-history text-warning me-2"></i>Dernières Prestations Enregistrées</span>
+                    <span class="badge bg-warning text-dark rounded-pill">{{ $bookings->count() }}</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -184,28 +182,53 @@
                                         <td colspan="5" class="text-center py-4 text-muted">Aucune activité enregistrée pour le moment.</td>
                                     </tr>
                                 @endforelse
+
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Aperçu rapide du catalogue -->
+            <!-- Aperçu rapide du catalogue avec boutons Modifier / Supprimer -->
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-header bg-light py-2 px-4 border-bottom">
+                <div class="card-header bg-light py-2 px-4 border-bottom d-flex justify-content-between align-items-center">
                     <span class="fw-bold small text-uppercase text-muted">Tarifs du Catalogue Actif</span>
+                    <span class="badge bg-secondary-subtle text-dark rounded-pill">{{ $activities->count() }} offre(s)</span>
                 </div>
                 <div class="card-body p-3">
                     <div class="row g-2">
                         @foreach($activities as $act)
                             <div class="col-md-6">
-                                <div class="border rounded-3 p-2 d-flex justify-content-between align-items-center bg-white">
+                                <div class="border rounded-3 p-2 px-3 d-flex justify-content-between align-items-center bg-white shadow-sm h-100">
                                     <div>
-                                        <span class="badge bg-secondary-subtle text-dark text-uppercase" style="font-size: 0.65rem;">{{ $act->category }}</span>
-                                        <div class="fw-semibold small">{{ $act->name }}</div>
+                                        <span class="badge bg-primary-subtle text-primary text-uppercase" style="font-size: 0.65rem;">{{ $act->category }}</span>
+                                        <div class="fw-semibold small text-dark mt-1">{{ $act->name }}</div>
+                                        <div class="fw-bold text-success small">
+                                            {{ number_format($act->price, 0, ',', ' ') }} F <span class="text-muted fw-normal">/ {{ $act->unit }}</span>
+                                        </div>
                                     </div>
-                                    <div class="fw-bold text-primary small text-nowrap ms-2">
-                                        {{ number_format($act->price, 0, ',', ' ') }} F
+                                    <div class="d-flex align-items-center gap-1 ms-2">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editCatalogModal"
+                                                data-id="{{ $act->id }}"
+                                                data-category="{{ $act->category }}"
+                                                data-name="{{ $act->name }}"
+                                                data-price="{{ $act->price }}"
+                                                data-unit="{{ $act->unit }}"
+                                                title="Modifier cette offre">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+
+                                        <form action="{{ route('activities.catalog.destroy', $act->id) }}" method="POST" class="d-inline"
+                                              onsubmit="return confirm('Supprimer définitivement « {{ addslashes($act->name) }} » du catalogue ?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" title="Supprimer">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -234,8 +257,6 @@
                     <select name="category" class="form-select" required>
                         <option value="piscine">Piscine & Transats</option>
                         <option value="spa">Spa & Bien-être</option>
-                        <option value="coworking">Coworking & Day-Use</option>
-                        <option value="seminaire">Salle de Séminaire</option>
                         <option value="navette">Navette & Location Véhicule</option>
                         <option value="boutique">Boutique & Divers</option>
                     </select>
@@ -258,6 +279,51 @@
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
                 <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Enregistrer au Catalogue</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Fenêtre Modale : Modifier une Offre du Catalogue -->
+<div class="modal fade" id="editCatalogModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form id="editCatalogForm" method="POST" class="modal-content rounded-4 border-0 shadow">
+            @csrf
+            @method('PUT')
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-pencil-square text-warning me-2"></i>Modifier l'Offre du Catalogue
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Catégorie *</label>
+                    <select name="category" id="editCatCategory" class="form-select" required>
+                        <option value="piscine">Piscine & Transats</option>
+                        <option value="spa">Spa & Bien-être</option>
+                        <option value="navette">Navette & Location Véhicule</option>
+                        <option value="boutique">Boutique & Divers</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Nom de la prestation *</label>
+                    <input type="text" name="name" id="editCatName" class="form-control" required>
+                </div>
+                <div class="row g-2">
+                    <div class="col-7">
+                        <label class="form-label fw-bold small">Tarif (FCFA) *</label>
+                        <input type="number" name="price" id="editCatPrice" min="0" step="500" class="form-control fw-bold" required>
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label fw-bold small">Unité *</label>
+                        <input type="text" name="unit" id="editCatUnit" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Enregistrer les modifications</button>
             </div>
         </form>
     </div>
@@ -295,6 +361,20 @@
         qtyInput.addEventListener('input', updateActivityTotal);
         modeDirect.addEventListener('change', toggleBillingMode);
         modeRoom.addEventListener('change', toggleBillingMode);
+
+        // Pré-remplir la modale d'édition du catalogue
+        const editModal = document.getElementById('editCatalogModal');
+        if (editModal) {
+            editModal.addEventListener('show.bs.modal', function (event) {
+                const btn = event.relatedTarget;
+                const id = btn.getAttribute('data-id');
+                document.getElementById('editCatalogForm').action = `/activities/catalog/${id}`;
+                document.getElementById('editCatCategory').value = btn.getAttribute('data-category');
+                document.getElementById('editCatName').value = btn.getAttribute('data-name');
+                document.getElementById('editCatPrice').value = btn.getAttribute('data-price');
+                document.getElementById('editCatUnit').value = btn.getAttribute('data-unit');
+            });
+        }
     });
 </script>
 @endsection
