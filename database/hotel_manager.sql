@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3307
--- Généré le : ven. 27 nov. 2026 à 14:06
+-- Généré le : ven. 27 nov. 2026 à 14:45
 -- Version du serveur : 11.4.9-MariaDB
 -- Version de PHP : 8.3.28
 
@@ -207,7 +207,7 @@ CREATE TABLE IF NOT EXISTS `customers` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `customers_company_id_foreign` (`company_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `customers`
@@ -240,7 +240,8 @@ INSERT INTO `customers` (`id`, `company_id`, `full_name`, `phone`, `email`, `nat
 (24, NULL, 'KONE YAYA', '0405021326', NULL, 'Ivoirienne', 'standard', NULL, 'CNI', 'cni21022', NULL, NULL, '2026-11-23 16:32:02', '2026-11-23 16:32:02'),
 (25, NULL, 'Kouadio Seraphin', '0143677424', NULL, 'Ivoirienne', 'standard', NULL, 'CNI', 'CNI 123333', NULL, NULL, '2026-11-23 16:43:42', '2026-11-23 16:43:42'),
 (26, NULL, 'Koné Mariam', '0124536966', NULL, 'Ivoirienne', 'standard', NULL, 'CNI', 'cni21022', NULL, NULL, '2026-11-24 13:12:45', '2026-11-24 13:12:45'),
-(27, NULL, 'Coulibaly Sie Yacouba', '0407050602', NULL, 'Ivoirienne', 'standard', NULL, 'CNI', NULL, NULL, NULL, '2026-11-27 13:59:16', '2026-11-27 13:59:16');
+(27, NULL, 'Coulibaly Sie Yacouba', '0407050602', NULL, 'Ivoirienne', 'standard', NULL, 'CNI', NULL, NULL, NULL, '2026-11-27 13:59:16', '2026-11-27 13:59:16'),
+(28, NULL, 'Yao Théophile', '0707584639', 'theoyao@gmail.com', 'Ivoirienne', 'standard', NULL, 'CNI', NULL, 'Paris', 'Client inscrit via réservation en ligne (Site Web)', '2026-11-27 14:36:55', '2026-11-27 14:36:55');
 
 -- --------------------------------------------------------
 
@@ -605,7 +606,7 @@ CREATE TABLE IF NOT EXISTS `migrations` (
   `migration` varchar(191) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `migrations`
@@ -649,7 +650,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (35, '2026_11_17_125718_create_hr_management_tables', 18),
 (37, '2026_11_24_133004_create_conference_spaces_tables', 19),
 (38, '2026_11_25_134717_add_space_booking_id_to_billings_table', 20),
-(39, '2026_11_27_124412_add_image_to_rooms_table', 21);
+(39, '2026_11_27_124412_add_image_to_rooms_table', 21),
+(40, '2026_11_27_142034_create_gallery_items_table', 22);
 
 -- --------------------------------------------------------
 
@@ -866,7 +868,7 @@ CREATE TABLE IF NOT EXISTS `reservations` (
   PRIMARY KEY (`id`),
   KEY `reservations_customer_id_foreign` (`customer_id`),
   KEY `reservations_room_id_foreign` (`room_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `reservations`
@@ -876,7 +878,8 @@ INSERT INTO `reservations` (`id`, `customer_id`, `room_id`, `check_in_date`, `ch
 (1, 23, 1, '2026-11-24', '2026-11-26', 2, 90000.00, 11000.00, 'completed', NULL, 'Abidjan', NULL, '2026-11-23 16:15:30', '2026-11-27 08:09:31'),
 (2, 26, 2, '2026-11-26', '2026-11-30', 4, 300000.00, 120000.00, 'confirmed', NULL, 'Abidjan', NULL, '2026-11-24 13:12:45', '2026-11-24 13:13:13'),
 (3, 23, 1, '2026-11-28', '2026-11-29', 1, 45000.00, 0.00, 'confirmed', 'Abidjan', 'Abidjan', '15h30', '2026-11-27 13:37:34', '2026-11-27 13:37:34'),
-(4, 27, 11, '2026-11-28', '2026-11-29', 1, 25000.00, 0.00, 'confirmed', 'Abidjan', 'Abidjan', '17h30', '2026-11-27 13:52:17', '2026-11-27 13:59:16');
+(4, 27, 11, '2026-11-28', '2026-11-29', 1, 25000.00, 0.00, 'confirmed', 'Abidjan', 'Abidjan', '17h30', '2026-11-27 13:52:17', '2026-11-27 13:59:16'),
+(5, 28, 10, '2026-11-28', '2026-11-29', 1, 75000.00, 0.00, 'confirmed', 'Paris', 'Abidjan', '22h', '2026-11-27 14:36:55', '2026-11-27 14:36:55');
 
 -- --------------------------------------------------------
 
@@ -1150,7 +1153,7 @@ INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, 
 ('AuMy3u28C26MFA7i83B7HgYteZsyX2TBZIBVKFGY', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJ6MkhCQ1pkaW42MHU0OGtmNVh0UTRZVkt0Nm5aWEZrY1VJZ0R3WTVmIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1795786627),
 ('iaiPJHvcHZYy46OwKVRvgzrSfbBKuETb60un4V0f', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiI2MlhqTmFJZE00ZjAwYkVNMldTalZxTko1YjJRSlczc0NLcXhWN3RkIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1795786627),
 ('LmZXUqZje6Cjg6d3dtZ7tbaTgZcUz0Jzl3dXMjfi', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJidlk0TzI0VndUV01VU29iQnlxQnZUdEY4YVkzbmRWcXJnbkRybVpDIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1795786627),
-('DnZrcw6cXWDl6KAMQupJIzMu8WaWgYj4ZBQqfjLo', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJUdElucnlUOVlPWktJMjlWZG0wSDRuY2xWVk4ybXdXeVZMSlUzSGdzIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9yZXNlcnZhdGlvbnMiLCJyb3V0ZSI6InJlc2VydmF0aW9ucy5pbmRleCJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX0sImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjoxLCJwYXNzd29yZF9oYXNoX3dlYiI6IjZhY2Y1OTJjYjY1ODk1MDZkZTdhOGM4YmMwNDE4ZDAzNTJhMWU5NTg4NjYwN2Q1YTk3ODk2MDI3ZTQ5ZTQ3ZWUifQ==', 1795788323),
+('DnZrcw6cXWDl6KAMQupJIzMu8WaWgYj4ZBQqfjLo', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36', 'eyJfdG9rZW4iOiJUdElucnlUOVlPWktJMjlWZG0wSDRuY2xWVk4ybXdXeVZMSlUzSGdzIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwXC9yZXNlcnZlcj9jaGVja19pbl9kYXRlPTIwMjYtMTEtMjgmY2hlY2tfb3V0X2RhdGU9MjAyNi0xMi0wMiZ0eXBlPSIsInJvdXRlIjoicHVibGljLmJvb2tpbmcuaW5kZXgifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119LCJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI6MSwicGFzc3dvcmRfaGFzaF93ZWIiOiI2YWNmNTkyY2I2NTg5NTA2ZGU3YThjOGJjMDQxOGQwMzUyYTFlOTU4ODY2MDdkNWE5Nzg5NjAyN2U0OWU0N2VlIn0=', 1795790677),
 ('DfENzMaJ47qoA1ZXx0hKah2XxhZJRR6iHpCMSeGg', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiIwY0VMTUZ3WU16aGV6U3R1SnVIc0dicHgwVlZxWThCa3lxaTRLbUxTIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1795786627),
 ('1wL8oVFpHGH5KU1gmVPJYuZGpIVj4EJ9dSy1PVvF', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJrbEthV1diaDJPdUg5QThJZVBzUWwyNWpMb0lUUkZOUlk0OWRxWGNuIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1795786630),
 ('73IS4YJqqR1bzS2dzwcQuGWiaUiSEfUo91tEuKyo', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36', 'eyJfdG9rZW4iOiJMSUc0VXZwSnJPdGc3Zzk1MGlvMlRIeUxLOGMza05jcW1CR3A2UkZKIiwidXJsIjp7ImludGVuZGVkIjoiaHR0cDpcL1wvMTI3LjAuMC4xOjgwMDAifSwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEyNy4wLjAuMTo4MDAwIiwicm91dGUiOiJkYXNoYm9hcmQifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==', 1795786630),

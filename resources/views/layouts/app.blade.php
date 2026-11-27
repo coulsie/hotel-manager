@@ -412,6 +412,14 @@
                             </li>
 
                             <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('admin.gallery.*') ? 'active fw-bold text-primary' : '' }}" href="{{ route('admin.gallery.index') }}">
+                                    <i class="bi bi-images text-info me-2"></i>
+                                    <span>Galerie & Album Hôtel</span>
+                                </a>
+                            </li>
+
+
+                            <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('admin.menu.create') ? 'active fw-bold text-primary' : '' }}" href="{{ route('admin.menu.create') }}">
                                     <i class="bi bi-journal-text text-primary me-2"></i>
                                     <span>Carte & Menu Restau</span>

@@ -21,6 +21,7 @@ use App\Http\Controllers\HrController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\ConferenceSpaceController;
 use App\Http\Controllers\PublicBookingController;
+use App\Http\Controllers\Admin\GalleryController;
 
 // ==========================================================================
 // 0. AUTHENTIFICATION (Accès public)
@@ -267,13 +268,23 @@ Route::middleware(['auth'])->group(function () {
 
 
 
-Route::get('/reserver', [PublicBookingController::class, 'index'])->name('public.booking.index');
-Route::post('/reserver', [PublicBookingController::class, 'store'])->name('public.booking.store');
+    Route::get('/reserver', [PublicBookingController::class, 'index'])->name('public.booking.index');
+    Route::post('/reserver', [PublicBookingController::class, 'store'])->name('public.booking.store');
 
 
+
+
+    Route::prefix('admin/gallery')->name('admin.gallery.')->group(function () {
+        Route::get('/', [GalleryController::class, 'index'])->name('index');
+        Route::post('/', [GalleryController::class, 'store'])->name('store');
+        Route::put('/{id}', [GalleryController::class, 'update'])->name('update');
+        Route::delete('/{id}', [GalleryController::class, 'destroy'])->name('destroy');
+    });
 
 
 });
+
+
 // ==========================================================================
 // 0 BIS. PORTAIL CLIENT EN CHAMBRE (Accès public via QR Code)
 // ==========================================================================

@@ -1,11 +1,21 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Réservation en Ligne - Hotel Manager Resort</title>
+
+
+    <!-- Chargement local rapide via Vite (déjà compilé dans public/build) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="https://jsdelivr.net">
+    <!-- Chargement non-bloquant des icônes Bootstrap -->
+    <link rel="stylesheet" href="https://jsdelivr.net" media="print" onload="this.media='all'">
+
+
+
     <style>
         body { background-color: #f8fafc; font-family: 'Segoe UI', Roboto, sans-serif; }
         .hero-banner {
@@ -194,6 +204,107 @@
 
     </div>
 
+
+        <!-- ================================================================= -->
+        <!-- GALERIE ALBUM DE L'HÔTEL (RESTAURANT, PISCINE, SALLES, SPECTACLE) -->
+        <!-- ================================================================= -->
+        <div class="mt-5 pt-4 border-top">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                <div>
+                    <h4 class="fw-bold text-dark mb-1">
+                        <i class="bi bi-images text-primary me-2"></i>Découvrez nos Espaces & Infrastructures
+                    </h4>
+                    <p class="text-muted small mb-0">Gastronomie, détente au bord de l'eau, salles professionnelles et soirée spectacles</p>
+                </div>
+
+                <!-- Filtres Album -->
+                <div class="d-flex flex-wrap gap-2" id="galleryFilters">
+                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold active" data-filter="all">Tout voir</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" data-filter="chambres">🛏️ Chambres</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" data-filter="restaurant">🍽️ Restaurant</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" data-filter="piscine">🏊 Piscine</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" data-filter="salles">🎤 Salles Pro</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" data-filter="spectacle">🎟️ Spectacles</button>
+                </div>
+            </div>
+
+            @php
+                $galleryItems = [
+                    ['cat' => 'chambres',   'title' => 'Suite VIP & Salon Privé',       'desc' => 'Espace salon, bureau exécutif et literie King Size',         'img' => 'rooms/suite-vip.jpg'],
+                    ['cat' => 'chambres',   'title' => 'Chambre Luxe & Confort',        'desc' => 'Ambiance feutrée, TV Smart et espace détente',               'img' => 'rooms/luxe.jpg'],
+                    ['cat' => 'restaurant', 'title' => 'Restaurant Gastronomique',      'desc' => 'Cuisine locale et internationale, service continu & room service', 'img' => 'gallery/restaurant.jpg'],
+                    ['cat' => 'piscine',    'title' => 'Piscine & Espace Détente',      'desc' => 'Bassin extérieur, transats et rafraîchissements au bar',     'img' => 'gallery/piscine.jpg'],
+                    ['cat' => 'salles',     'title' => 'Salle de Conférence & Séminaire','desc' => 'Équipement audiovisuel complet, vidéoprojecteur et Wi-Fi',   'img' => 'gallery/seminaire.jpg'],
+                    ['cat' => 'salles',     'title' => 'Espace Coworking & Réunions',   'desc' => 'Postes connectés, pauses café et climatisation',            'img' => 'gallery/coworking.jpg'],
+                    ['cat' => 'spectacle',  'title' => 'Salle de Spectacle & Concerts', 'desc' => 'Scène équipée, soirées culturelles et galas',                'img' => 'gallery/spectacle.jpg'],
+                    ['cat' => 'restaurant', 'title' => 'Hall d\'Accueil & Réception',   'desc' => 'Accueil personnalisé 24h/24 et conciergerie',                'img' => 'gallery/reception.jpg'],
+                ];
+            @endphp
+
+                        <div class="row g-3" id="hotelGalleryGrid">
+                @forelse($galleryItems ?? [] as $item)
+                    @php
+                        $rawImg = data_get($item, 'image') ?? data_get($item, 'img');
+                        $imgUrl = asset('storage/' . ltrim((string) $rawImg, '/'));
+                        $cat    = data_get($item, 'category') ?? data_get($item, 'cat');
+                        $title  = data_get($item, 'title');
+                        $desc   = data_get($item, 'description') ?? data_get($item, 'desc');
+                    @endphp
+                    <div class="col-sm-6 col-md-4 col-lg-3 gallery-item" data-category="{{ $cat }}">
+                        <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 room-card"
+                             style="cursor: pointer;"
+                             data-bs-toggle="modal"
+                             data-bs-target="#lightboxModal"
+                             data-img="{{ $imgUrl }}"
+                             data-title="{{ $title }}"
+                             data-desc="{{ $desc }}">
+                            <div class="position-relative" style="height: 175px; overflow: hidden;">
+                                <img src="{{ $imgUrl }}"
+                                     alt="{{ $title }}"
+                                     class="w-100 h-100"
+                                     loading="lazy"
+                                     decoding="async"
+                                     style="object-fit: cover;">
+                                <span class="badge bg-dark bg-opacity-75 position-absolute bottom-0 end-0 m-2 rounded-pill px-2 py-1 small">
+                                    <i class="bi bi-arrows-fullscreen"></i>
+                                </span>
+                            </div>
+                            <div class="card-body p-3">
+                                <h6 class="fw-bold text-dark mb-1 small">{{ $title }}</h6>
+                                <p class="text-muted mb-0" style="font-size: 0.78rem;">{{ $desc }}</p>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="col-12">
+                        <div class="alert alert-light border rounded-4 text-center text-muted small">
+                            Aucune photo publiée dans l'album pour le moment.
+                        </div>
+                    </div>
+                @endforelse
+            </div>
+
+        </div>
+
+        <!-- Modale Lightbox Plein Écran pour l'Album -->
+        <div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content bg-dark text-white border-0 rounded-4 overflow-hidden shadow-lg">
+                    <div class="modal-header border-0 py-2 px-3">
+                        <h6 class="modal-title fw-bold" id="lightboxTitle"></h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                    </div>
+                    <div class="modal-body p-0 text-center bg-black">
+                        <img id="lightboxImage" src="" alt="" class="img-fluid" style="max-height: 75vh; object-fit: contain;">
+                    </div>
+                    <div class="modal-footer border-0 py-2 px-3 justify-content-start">
+                        <small class="text-light opacity-75" id="lightboxDesc"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
     <!-- Modale de finalisation de réservation -->
     <div class="modal fade" id="bookingModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -290,6 +401,33 @@
                         }
                     });
                 }
+
+               // 3. Filtrage de la galerie album par catégorie
+                document.querySelectorAll('#galleryFilters button').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        document.querySelectorAll('#galleryFilters button').forEach(b => {
+                            b.classList.remove('btn-primary', 'active');
+                            b.classList.add('btn-outline-secondary');
+                        });
+                        this.classList.remove('btn-outline-secondary');
+                        this.classList.add('btn-primary', 'active');
+
+                        const filter = this.dataset.filter;
+                        document.querySelectorAll('.gallery-item').forEach(card => {
+                            card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
+                        });
+                    });
+                });
+
+                // 4. Ouverture en grand format (Lightbox)
+                document.querySelectorAll('[data-bs-target="#lightboxModal"]').forEach(card => {
+                    card.addEventListener('click', function () {
+                        document.getElementById('lightboxImage').src = this.dataset.img;
+                        document.getElementById('lightboxTitle').textContent = this.dataset.title;
+                        document.getElementById('lightboxDesc').textContent = this.dataset.desc;
+                    });
+                });
+
             });
 
     </script>

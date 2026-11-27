@@ -15,7 +15,7 @@ class PublicBookingController extends Controller
     /**
      * Afficher la vitrine publique de réservation en ligne.
      */
-       public function index(Request $request)
+         public function index(Request $request)
     {
         $checkIn  = $request->input('check_in_date', Carbon::tomorrow()->toDateString());
         $checkOut = $request->input('check_out_date', Carbon::tomorrow()->addDay()->toDateString());
@@ -45,8 +45,15 @@ class PublicBookingController extends Controller
 
         $availableRooms = $query->orderBy('price_per_night')->get();
 
-        return view('public.booking', compact('availableRooms', 'checkIn', 'checkOut', 'nights'));
+        // Récupérer les photos de la galerie album depuis la base de données
+        $galleryItems = DB::table('gallery_items')
+            ->orderBy('sort_order')
+            ->orderByDesc('id')
+            ->get();
+
+        return view('public.booking', compact('availableRooms', 'checkIn', 'checkOut', 'nights', 'galleryItems'));
     }
+
 
     /**
      * Enregistrer une réservation en ligne depuis le site web.
