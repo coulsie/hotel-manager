@@ -6,8 +6,8 @@
     <title>Connexion - Hotel Manager</title>
     <!-- Chargement de Bootstrap via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <!-- Icônes Bootstrap -->
-   
+    <!-- Icônes Bootstrap (CDN de secours si non importées via Vite) -->
+    <link rel="stylesheet" href="https://jsdelivr.net">
 
     <style>
         body {
@@ -29,6 +29,9 @@
         .btn-login:hover {
             opacity: 0.9;
             transform: translateY(-1px);
+        }
+        .toggle-password {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -76,12 +79,15 @@
                         </div>
                     </div>
 
-                    <!-- Champ Mot de passe -->
+                    <!-- Champ Mot de passe avec bouton Œil -->
                     <div class="mb-4">
                         <label for="password" class="form-label fw-bold text-secondary small text-uppercase">Mot de passe</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-lock"></i></span>
-                            <input type="password" class="form-control border-start-0 ps-0 text-dark" id="password" name="password" placeholder="••••••••" required>
+                            <input type="password" class="form-control border-start-0 border-end-0 ps-0 text-dark" id="password" name="password" placeholder="••••••••" required>
+                            <button class="input-group-text bg-light text-muted border-start-0 toggle-password" type="button" id="togglePasswordBtn" title="Afficher / Masquer le mot de passe">
+                                <i class="bi bi-eye" id="togglePasswordIcon"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -99,6 +105,22 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const passwordInput = document.getElementById('password');
+            const toggleBtn     = document.getElementById('togglePasswordBtn');
+            const toggleIcon    = document.getElementById('togglePasswordIcon');
+
+            toggleBtn.addEventListener('click', function () {
+                const isPassword = passwordInput.getAttribute('type') === 'password';
+                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+
+                toggleIcon.classList.toggle('bi-eye', !isPassword);
+                toggleIcon.classList.toggle('bi-eye-slash', isPassword);
+            });
+        });
+    </script>
 
 </body>
 </html>
