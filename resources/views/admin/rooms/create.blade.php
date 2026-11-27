@@ -41,7 +41,7 @@
                     <h5 class="card-title fw-bold mb-0"><i class="bi bi-plus-circle me-2"></i>Ajouter une Chambre</h5>
                 </div>
                 <div class="card-body p-4">
-                    <form action="{{ route('admin.rooms.store') }}" method="POST">
+                    <form action="{{ route('admin.rooms.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3">
                             <label class="form-label fw-bold">Numéro de la chambre *</label>
@@ -51,20 +51,29 @@
                         <div class="mb-3">
                             <label class="form-label fw-bold">Type / Standing *</label>
                             <select name="type" class="form-select fw-semibold" required>
-                                <option value="Standard">🛏️ Standard</option>
-                                <option value="Double">👥 Double / Twin</option>
-                                <option value="Deluxe">✨ Deluxe</option>
-                                <option value="Suite Junior">👑 Suite Junior</option>
-                                <option value="Suite VIP">💎 Suite VIP</option>
+                                <option value="Standard" {{ old('type') === 'Standard' ? 'selected' : '' }}>🛏️ Standard</option>
+                                <option value="Double" {{ old('type') === 'Double' ? 'selected' : '' }}>👥 Double / Twin</option>
+                                <option value="Deluxe" {{ old('type') === 'Deluxe' ? 'selected' : '' }}>✨ Deluxe</option>
+                                <option value="Suite Junior" {{ old('type') === 'Suite Junior' ? 'selected' : '' }}>👑 Suite Junior</option>
+                                <option value="Suite VIP" {{ old('type') === 'Suite VIP' ? 'selected' : '' }}>💎 Suite VIP</option>
                             </select>
                         </div>
 
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label class="form-label fw-bold">Tarif par nuit (FCFA) *</label>
                             <div class="input-group">
                                 <input type="number" name="price_per_night" value="{{ old('price_per_night') }}" class="form-control fw-bold text-success" placeholder="Ex: 35000" min="0" step="500" required>
                                 <span class="input-group-text fw-bold">FCFA</span>
                             </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-camera-fill text-primary me-1"></i>Photo de la chambre <span class="text-muted fw-normal small">(Optionnel)</span>
+                            </label>
+                            <input type="file" name="image" id="newRoomImageInput" class="form-control" accept="image/jpeg,image/png,image/jpg,image/webp">
+                            <div class="form-text small">Format JPG, PNG ou WebP (max 2 Mo).</div>
+                            <img id="newRoomImagePreview" src="#" alt="Aperçu" class="img-fluid rounded-3 border mt-2 d-none" style="max-height: 140px; width: 100%; object-fit: cover;">
                         </div>
 
                         <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm">
@@ -74,6 +83,26 @@
                 </div>
             </div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const input = document.getElementById('newRoomImageInput');
+                const preview = document.getElementById('newRoomImagePreview');
+
+                if (input && preview) {
+                    input.addEventListener('change', function (e) {
+                        const file = e.target.files[0];
+                        if (file) {
+                            preview.src = URL.createObjectURL(file);
+                            preview.classList.remove('d-none');
+                        } else {
+                            preview.classList.add('d-none');
+                        }
+                    });
+                }
+            });
+        </script>
+
 
         <!-- Tableau des chambres avec colonne Action (Droite) -->
         <div class="col-lg-8">
@@ -93,11 +122,28 @@
                                     <th class="text-end pe-4">Action</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                                                       <tbody>
                                 @forelse($rooms ?? [] as $room)
+                                    @php
+                                        $roomThumb = $room->image
+                                            ? asset('storage/' . ltrim($room->image, '/'))
+                                            : null;
+                                    @endphp
+
                                     <!-- Ligne normale -->
                                     <tr id="room-view-{{ $room->id }}">
-                                        <td class="ps-4 fw-bold text-primary">{{ $room->number }}</td>
+                                        <td class="ps-4 fw-bold text-primary">
+                                            <div class="d-flex align-items-center gap-2">
+                                                @if($roomThumb)
+                                                    <img src="{{ $roomThumb }}" alt="Ch. {{ $room->number }}" class="rounded-2 border shadow-sm" style="width: 38px; height: 38px; object-fit: cover;">
+                                                @else
+                                                    <span class="badge bg-light text-muted border d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="Aucune photo">
+                                                        <i class="bi bi-image"></i>
+                                                    </span>
+                                                @endif
+                                                <span>{{ $room->number }}</span>
+                                            </div>
+                                        </td>
                                         <td class="fw-semibold">{{ $room->type }}</td>
                                         <td class="text-end fw-bold text-success text-nowrap">{{ number_format($room->price_per_night, 0, ',', ' ') }} F</td>
                                         <td class="text-center">
@@ -126,13 +172,12 @@
                                                 </button>
                                             </form>
                                         </td>
-
                                     </tr>
 
                                     <!-- Ligne de modification (s'affiche au clic sur Modifier) -->
                                     <tr id="room-edit-{{ $room->id }}" class="d-none table-warning">
                                         <td colspan="5" class="p-3">
-                                            <form action="{{ route('admin.rooms.update', $room->id) }}" method="POST" class="row g-2 align-items-center m-0">
+                                            <form action="{{ route('admin.rooms.update', $room->id) }}" method="POST" enctype="multipart/form-data" class="row g-2 align-items-center m-0">
                                                 @csrf
                                                 @method('PUT')
                                                 <div class="col-md-2">
@@ -166,6 +211,16 @@
                                                         <i class="bi bi-x-lg"></i>
                                                     </button>
                                                 </div>
+
+                                                <div class="col-12 mt-2 pt-2 border-top border-warning-subtle d-flex align-items-center gap-3">
+                                                    <label class="form-label fw-bold small mb-0 text-nowrap">
+                                                        <i class="bi bi-camera-fill text-primary me-1"></i>Photo de la chambre :
+                                                    </label>
+                                                    <input type="file" name="image" class="form-control form-control-sm" accept="image/*">
+                                                    @if($roomThumb)
+                                                        <img src="{{ $roomThumb }}" alt="Aperçu" class="rounded border" style="width: 32px; height: 32px; object-fit: cover;">
+                                                    @endif
+                                                </div>
                                             </form>
                                         </td>
                                     </tr>
@@ -175,6 +230,7 @@
                                     </tr>
                                 @endforelse
                             </tbody>
+
                         </table>
                     </div>
                 </div>

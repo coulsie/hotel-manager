@@ -40,15 +40,24 @@ class RoomController extends Controller
     /**
      * Update the specified resource in storage.
      */
-
-        public function update(Request $request, Room $room)
+    public function update(Request $request, Room $room)
     {
         $validated = $request->validate([
             'number'          => 'required|string|max:50|unique:rooms,number,' . $room->id,
             'type'            => 'required|string|max:191',
             'price_per_night' => 'required|numeric|min:0',
             'status'          => 'required|string|in:available,occupied,dirty,maintenance',
+            'image'           => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
+
+        if ($request->hasFile('image')) {
+            // Supprimer l'ancienne photo du disque si elle existe
+            if ($room->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($room->image)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($room->image);
+            }
+
+            $validated['image'] = $request->file('image')->store('rooms', 'public');
+        }
 
         $room->update($validated);
 
@@ -57,11 +66,16 @@ class RoomController extends Controller
     }
 
 
-        public function destroy(Room $room)
+       public function destroy(Room $room)
     {
         if ($room->status === 'occupied') {
             return redirect()->route('admin.rooms.create')
                 ->withErrors(['delete' => "Impossible de supprimer la chambre {$room->number} car elle est actuellement occupée."]);
+        }
+
+        // Supprimer la photo physique sur le disque si elle existe
+        if ($room->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($room->image)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($room->image);
         }
 
         $roomNumber = $room->number;
@@ -184,20 +198,26 @@ class RoomController extends Controller
         return view('rooms.status', compact('rooms'));
     }
 
-
     public function store(Request $request)
     {
         $request->validate([
-            'number' => 'required|string|max:50|unique:rooms,number',
-            'type' => 'required|string',
+            'number'          => 'required|string|max:50|unique:rooms,number',
+            'type'            => 'required|string',
             'price_per_night' => 'required|numeric|min:0',
+            'image'           => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('rooms', 'public');
+        }
+
         Room::create([
-            'number' => $request->number,
-            'type' => $request->type,
+            'number'          => $request->number,
+            'type'            => $request->type,
             'price_per_night' => $request->price_per_night,
-            'status' => 'available',
+            'status'          => 'available',
+            'image'           => $imagePath,
         ]);
 
         return redirect()->route('admin.rooms.create')->with('success', "La chambre {$request->number} a été ajoutée avec succès.");
@@ -212,18 +232,28 @@ class RoomController extends Controller
     }
 
     // 2. Changer le statut de propreté d'une chambre en un clic
-    public function updateHousekeepingStatus(Request $request, Room $room)
+      public function updateHousekeepingStatus(Request $request, Room $room)
     {
         $request->validate([
-            'status' => 'required|string|in:available,occupied,cleaning'
+            'status' => 'required|string|in:available,occupied,dirty,cleaning,maintenance',
         ]);
+
+        // Sécurité : empêcher de libérer une chambre qui a encore un client en séjour actif
+        if ($request->status === 'available') {
+            $hasActiveGuest = \App\Models\Reservation::where('room_id', $room->id)
+                ->where('status', 'checked_in')
+                ->exists();
+
+            if ($hasActiveGuest) {
+                return back()->with('error', "Action impossible : un client est actuellement enregistré (check-in) dans la chambre {$room->number}.");
+            }
+        }
 
         $room->update(['status' => $request->status]);
 
         return redirect()->route('housekeeping.index')
-            ->with('success', "Le statut de la {$room->number} a été mis à jour avec succès.");
+            ->with('success', "Le statut de la chambre {$room->number} a été mis à jour avec succès.");
     }
-
 
         // Afficher l'historique complet des scans IoT
     public function accessLogsIndex()
@@ -357,7 +387,6 @@ public function extendStay(\Illuminate\Http\Request $request, \App\Models\Room $
 
     return redirect()->back()->with('success', "{$actionMsg} pour la Chambre {$room->number} (Total : {$newDuration} nuit(s) • Nouveau départ : {$newExpiry->format('d/m/Y à H:i')}).");
 }
-
 
 
 }

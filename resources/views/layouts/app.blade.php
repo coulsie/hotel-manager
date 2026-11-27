@@ -215,6 +215,19 @@
                                 </a>
                             </li>
                             @endcan
+                            @can('gerer_checkin')
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('public.booking.*') ? 'active fw-bold text-primary' : '' }}"
+                                href="{{ route('public.booking.index') }}"
+                                target="_blank"
+                                title="Ouvrir la page publique de réservation client">
+                                    <i class="bi bi-globe2 text-info me-2"></i>
+                                    <span>Site Web (Résa en ligne)</span>
+                                    <i class="bi bi-box-arrow-up-right small ms-auto text-muted"></i>
+                                </a>
+                            </li>
+                            @endcan
+
 
                             @can('gerer_crm')
                             <li class="nav-item">

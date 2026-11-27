@@ -9,6 +9,14 @@ class Room extends Model
     // Autorise l'enregistrement en masse de toutes les colonnes dans MariaDB
     protected $guarded = [];
 
+    protected $fillable = [
+        'number',
+        'type',
+        'status',
+        'price_per_night',
+        'image',
+    ];
+
      public function magneticCards()
     {
         return $this->hasMany(MagneticCard::class);

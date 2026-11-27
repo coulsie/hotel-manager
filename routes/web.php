@@ -20,6 +20,7 @@ use App\Http\Controllers\CrmController;
 use App\Http\Controllers\HrController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\ConferenceSpaceController;
+use App\Http\Controllers\PublicBookingController;
 
 // ==========================================================================
 // 0. AUTHENTIFICATION (Accès public)
@@ -263,6 +264,14 @@ Route::middleware(['auth'])->group(function () {
 
         return response($svg, 200, ['Content-Type' => 'image/svg+xml']);
     })->name('qr.generate');
+
+
+
+Route::get('/reserver', [PublicBookingController::class, 'index'])->name('public.booking.index');
+Route::post('/reserver', [PublicBookingController::class, 'store'])->name('public.booking.store');
+
+
+
 
 });
 // ==========================================================================
